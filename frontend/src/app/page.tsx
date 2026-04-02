@@ -1,3 +1,8 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth-context';
 import PublicLayout from './components/public-home/public-layout';
 import HeroSection from './components/public-home/hero-section';
 import ServicesSection from './components/public-home/services-section';
@@ -26,6 +31,23 @@ import MissionSection from './components/public-home/mission-section';
  * 8. Mission
  */
 export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <PublicLayout>
       {/* Hero Section with Intro Slider + Tracking Lookup */}
@@ -37,18 +59,14 @@ export default function HomePage() {
       {/* Categories Section */}
       <CategoriesSection />
 
-      {/* Clients Section + Stats */}
+      {/* Clients Section */}
       <ClientsSection />
 
-      {/* Stats Section inside wrapper */}
-      <div className="conteiner">
-        <StatsSection />
-      </div>
+      {/* Stats Section */}
+      <StatsSection />
 
       {/* Testimonials Section */}
-      <div className="py-12 bg-gray-50">
-        <TestimonialsSection />
-      </div>
+      <TestimonialsSection />
 
       {/* Benefits Section */}
       <BenefitsSection />

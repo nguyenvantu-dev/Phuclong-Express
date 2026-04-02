@@ -1,37 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Coffee Theme Palette */
+  --coffee-50: #FDFBF7;
+  --coffee-100: #F5F0E8;
+  --coffee-200: #E8DFD0;
+  --coffee-300: #D4C4A8;
+  --coffee-400: #B8A380;
+  --coffee-500: #9C8260;
+  --coffee-600: #806A4D;
+  --coffee-700: #6F4E37;
+  --coffee-800: #5C3F2E;
+  --coffee-900: #3B2F2A;
+  --coffee-950: #2C2416;
+
+  --accent: #E07850;
+  --accent-hover: #C85A30;
+
+  --background: #FDFBF7;
+  --foreground: #2C2416;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-coffee-50: var(--coffee-50);
+  --color-coffee-100: var(--coffee-100);
+  --color-coffee-200: var(--coffee-200);
+  --color-coffee-300: var(--coffee-300);
+  --color-coffee-400: var(--coffee-400);
+  --color-coffee-500: var(--coffee-500);
+  --color-coffee-600: var(--coffee-600);
+  --color-coffee-700: var(--coffee-700);
+  --color-coffee-800: var(--coffee-800);
+  --color-coffee-900: var(--coffee-900);
+  --color-coffee-950: var(--coffee-950);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --font-sans: 'Be Vietnam Pro', Arial, Helvetica, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: #ffffff;
-  color: #171717;
-  font-family: Arial, Helvetica, sans-serif;
-  background-color: #f9f9f9;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Be Vietnam Pro', Arial, Helvetica, sans-serif;
+  background-color: var(--coffee-50);
 }
 
 /* Public Home Page Styles */
 
-/* Intro Section */
-.intro {
-  height: 600px;
-  margin-bottom: 30px;
-  position: relative;
-  background-color: #000;
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display SC', serif;
 }
 
-/* Header */
+/* Intro Section - Modern Hero */
+.intro {
+  height: 85vh;
+  min-height: 600px;
+  margin-bottom: 0;
+  position: relative;
+  background: linear-gradient(135deg, var(--coffee-900) 0%, var(--coffee-800) 100%);
+}
+
+/* Header - Glass Navbar */
 header {
-  background-color: #5cc6ee !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--coffee-200);
 }
 
 .intro__slider {
@@ -102,11 +141,12 @@ header {
 
 .intro__title {
   position: relative;
-  font-size: 110px;
-  font-family: 'Roboto', sans-serif;
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-family: 'Playfair Display SC', serif;
   line-height: 0.9;
   color: #fff;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .intro__title-amp {
@@ -127,12 +167,15 @@ header {
   padding: 0 15px;
 }
 
-/* Request Form */
+/* Request Form - Glass Style */
 .request-form {
   width: 100%;
   max-width: 400px;
-  background-color: #5cc6ee;
-  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -157,14 +200,14 @@ header {
 
 /* Section */
 .section {
-  padding: 50px 0;
+  padding: 80px 0;
 }
 
 .section__title {
-  font-family: 'Roboto', sans-serif;
-  font-size: 45px;
-  font-weight: bold;
-  color: #5cc6ee;
+  font-family: 'Playfair Display SC', serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  color: var(--coffee-800);
   line-height: 1.2;
   margin-bottom: 40px;
 }
@@ -177,34 +220,41 @@ header {
   background-color: #f9f9f9;
 }
 
-/* Services */
+/* Services - Modern Cards */
 .services {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
   padding: 30px 0 50px;
   justify-content: space-evenly;
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+  background-color: var(--coffee-50);
+  border-radius: 12px;
 }
 
 .services__item {
   display: flex;
   flex-direction: column;
-  width: 43%;
-  padding: 0 25px;
-  margin-top: 30px;
+  padding: 2rem;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(111, 78, 55, 0.1);
+  transition: all 0.3s ease;
+}
+
+.services__item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(111, 78, 55, 0.15);
 }
 
 .services__title {
-  font-family: 'Roboto', sans-serif;
-  font-size: 22px;
-  font-weight: bold;
+  font-family: 'Playfair Display SC', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
   line-height: 1.2;
-  color: #2c2c2c;
+  color: var(--coffee-800);
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
 }
 
 .services__img {
@@ -330,9 +380,11 @@ span.text {
 /* Testimonials */
 .center__title {
   text-align: center;
-  font-size: 25px;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-family: 'Playfair Display SC', serif;
   margin-top: 30px;
   margin-bottom: 30px;
+  color: var(--coffee-800);
 }
 
 .small-container {
@@ -424,38 +476,40 @@ span.text {
   line-height: 1.4;
 }
 
-/* Team */
+/* Team - Modern Grid */
 .team {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
   margin: 0 -15px;
 }
 
 .team__col {
   padding: 0 15px;
-  width: 33.33333%;
   margin-bottom: 30px;
 }
 
 .team__photo {
-  box-shadow: 10px 5px 13px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 24px rgba(111, 78, 55, 0.12);
   margin-bottom: 13px;
   display: block;
-  width: 350px;
+  width: 100%;
   max-height: 240px;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
 }
 
 .team__photo:hover {
-  transform: translateY(-10px);
-  transition: transform 0.5s;
+  transform: translateY(-8px);
 }
 
 .team__name {
   margin-bottom: 5px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 18px;
-  color: #2c2c2c;
-  font-weight: bold;
+  font-family: 'Playfair Display SC', serif;
+  font-size: 1.125rem;
+  color: var(--coffee-800);
+  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -503,15 +557,16 @@ span.text {
   width: 100%;
 }
 
-/* Mission */
+/* Mission - Modern Style */
 .mission-title {
   width: 100%;
-  font-family: 'Roboto', sans-serif;
-  font-size: 85px;
-  color: rgba(0, 0, 0, 0.05);
-  font-weight: bold;
+  font-family: 'Playfair Display SC', serif;
+  font-size: clamp(3rem, 8vw, 6rem);
+  color: var(--coffee-200);
+  font-weight: 700;
   text-align: center;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .mission {
@@ -519,10 +574,10 @@ span.text {
   margin-top: -23px;
   padding: 60px 30px;
   margin-bottom: 30px;
-  font-family: 'Roboto', sans-serif;
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.16);
+  font-family: 'Karla', sans-serif;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(111, 78, 55, 0.1);
   text-align: center;
 }
 
@@ -530,21 +585,24 @@ span.text {
 .mission::after {
   content: "";
   display: block;
-  width: 41.6666%;
-  height: 2px;
+  width: 30%;
+  height: 3px;
   position: absolute;
   bottom: 0;
   z-index: 1;
+  border-radius: 2px;
 }
 
 .mission::before {
-  background-color: #5cc6ee;
+  background-color: var(--coffee-600);
   right: 50%;
+  transform: translateX(50%);
 }
 
 .mission::after {
-  background-color: #FC2C2B;
+  background-color: var(--accent);
   left: 50%;
+  transform: translateX(-50%);
 }
 
 .mission__subtitle {
@@ -589,18 +647,45 @@ span.text {
 
 /* Other */
 .bestship {
-  color: #5cc6ee;
-  font-weight: bold;
+  color: var(--coffee-600);
+  font-weight: 700;
+}
+
+/* Interactive States */
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(224, 120, 80, 0.3);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(111, 78, 55, 0.15);
 }
 
 /* Responsive */
 @media (max-width: 991px) {
   .intro__title {
-    font-size: 90px;
+    font-size: clamp(2.5rem, 6vw, 4rem);
   }
 
   .intro__title-amp {
-    font-size: 120px;
+    font-size: clamp(3rem, 6vw, 5rem);
     right: auto;
     left: 50%;
     transform: translate3d(-50%, -50%, 0);
@@ -610,8 +695,8 @@ span.text {
     text-align: center;
   }
 
-  .services__item {
-    width: 50%;
+  .services {
+    grid-template-columns: 1fr;
   }
 
   .clients {

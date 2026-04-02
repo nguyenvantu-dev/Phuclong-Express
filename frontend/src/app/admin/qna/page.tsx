@@ -142,23 +142,23 @@ export default function QnaPage() {
                 {data?.data?.map((item) => (
                   <tr key={item.ID} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm">{item.ID}</td>
-                    <td className="px-4 py-3 text-sm">{item.UserName}</td>
+                    <td className="px-4 py-3 text-sm">{item.username}</td>
                     <td className="px-4 py-3 text-sm">{item.CauHoi}</td>
                     <td className="px-4 py-3 text-sm">
-                      {item.NgayHoi ? new Date(item.NgayHoi).toLocaleDateString('vi-VN') : ''}
+                      {item.NgayTao ? new Date(item.NgayTao).toLocaleDateString('vi-VN') : ''}
                     </td>
                     <td className="px-4 py-3 text-sm">{item.TraLoi || '-'}</td>
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`px-2 py-1 text-xs rounded ${
-                          item.DaTraLoi ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          item.TraLoi ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                         }`}
                       >
-                        {item.DaTraLoi ? 'Đã trả lời' : 'Chưa trả lời'}
+                        {item.TraLoi ? 'Đã trả lời' : 'Chưa trả lời'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center space-x-1">
-                      {!item.DaTraLoi && (
+                      {!item.TraLoi && (
                         <button
                           onClick={() => setAnsweringId(item.ID)}
                           className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"

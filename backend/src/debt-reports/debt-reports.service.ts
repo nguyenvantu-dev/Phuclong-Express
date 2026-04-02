@@ -196,11 +196,11 @@ export class DebtReportsService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,
@@ -644,11 +644,11 @@ export class DebtReportsService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,
@@ -699,11 +699,11 @@ export class DebtReportsService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,
@@ -1260,11 +1260,11 @@ export class DebtReportsService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,
@@ -1357,11 +1357,11 @@ export class DebtReportsService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,
@@ -1400,11 +1400,11 @@ export class DebtReportsService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,
@@ -1443,11 +1443,11 @@ export class DebtReportsService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,

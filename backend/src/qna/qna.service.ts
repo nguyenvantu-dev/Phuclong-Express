@@ -22,8 +22,8 @@ export class QnaService {
   ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
     try {
       const [results] = await this.sequelize.query(
-        `EXEC SP_Lay_DanhSach_ThacMac
-          @UserName = :username,
+        `EXEC SP_Lay_ThacMac
+          @username = :username,
           @DaTraLoi = :daTraLoi,
           @PageSize = :limit,
           @PageNum = :page`,
@@ -59,7 +59,7 @@ export class QnaService {
   ): Promise<{ success: boolean; message?: string }> {
     try {
       await this.sequelize.query(
-        `EXEC SP_CapNhat_TraLoi_ThacMac @ID = :id, @TraLoi = :traLoi`,
+        `EXEC SP_CapNhat_TraLoiThacMac @ID = :id, @TraLoi = :traLoi`,
         {
           replacements: {
             id,
@@ -73,11 +73,11 @@ export class QnaService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,
@@ -116,11 +116,11 @@ export class QnaService {
       if (username) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
-            @UserName = :username,
-            @ChucNang = :chucNang,
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
             @HanhDong = :hanhDong,
-            @Ma = :ma,
-            @GhiChu = :ghiChu`,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
           {
             replacements: {
               username,
@@ -137,6 +137,52 @@ export class QnaService {
       return { success: true };
     } catch (error) {
       console.error('Error in deleteQna:', error.message);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * Create new Q&A question
+   * Matches: HoiDap.cs -> btTaoCauHoi_Click() -> ThemThacMac()
+   */
+  async createQna(cauHoi: string, username?: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_Them_ThacMac @username = :username, @CauHoi = :cauHoi`,
+        {
+          replacements: {
+            username: username || '',
+            cauHoi: cauHoi.trim(),
+          },
+          type: 'SELECT' as const,
+        },
+      );
+
+      // Log the action
+      if (username) {
+        await this.sequelize.query(
+          `EXEC SP_Them_SystemLogs
+            @NguoiTao = :username,
+            @Nguon = :chucNang,
+            @HanhDong = :hanhDong,
+            @DoiTuong = :ma,
+            @NoiDung = :ghiChu`,
+          {
+            replacements: {
+              username,
+              chucNang: 'HoiDap:ThemThacMac',
+              hanhDong: 'ThemMoi',
+              ma: '',
+              ghiChu: `CauHoi: ${cauHoi.trim()}`,
+            },
+            type: 'SELECT' as const,
+          },
+        );
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error in createQna:', error.message);
       return { success: false, message: error.message };
     }
   }

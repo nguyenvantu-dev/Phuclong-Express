@@ -36,3 +36,12 @@ export class AnswerQnaDto {
   @IsString()
   traLoi: string;
 }
+
+/**
+ * Create Q&A question
+ * Matches: HoiDap.cs -> btTaoCauHoi_Click() -> ThemThacMac()
+ */
+export class CreateQnaDto {
+  @IsString()
+  cauHoi: string;
+}

@@ -1100,12 +1100,11 @@ export interface QnaQuery {
 
 export interface QnaItem {
   ID: number;
-  UserName: string;
+  username: string;
   CauHoi: string;
-  TraLoi: string;
-  NgayHoi: string;
-  NgayTraLoi?: string;
-  DaTraLoi: boolean;
+  TraLoi: string | null;
+  NgayTao: string;
+  NgayTraLoi: string | null;
 }
 
 export interface QnaResponse {
@@ -1117,6 +1116,13 @@ export interface QnaResponse {
 
 export const getQnaList = async (params: QnaQuery): Promise<QnaResponse> => {
   const response = await apiClient.get('/qna', { params });
+  return response.data;
+};
+
+export const createQna = async (
+  cauHoi: string,
+): Promise<{ success: boolean; message?: string }> => {
+  const response = await apiClient.post('/qna', { cauHoi });
   return response.data;
 };
 
@@ -1408,6 +1414,92 @@ export interface TrackingSearchResult {
  */
 export const searchTracking = async (code: string): Promise<TrackingSearchResult> => {
   const response = await apiClient.get<TrackingSearchResult>(`/tracking/search/${code}`);
+  return response.data;
+};
+
+/**
+ * Get tracking list with filters
+ * GET /tracking
+ */
+export interface TrackingQueryParams {
+  username?: string;
+  statuses?: string;
+  search?: string;
+  trackingNumber?: string;
+  tenLoHang?: string;
+  quocGiaId?: number;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const getTracking = async (params: TrackingQueryParams): Promise<any[]> => {
+  const response = await apiClient.get('/tracking', { params });
+  return response.data.data || [];
+};
+
+/**
+ * Get tracking list with full response (including pagination)
+ * GET /tracking
+ */
+export const getTrackingList = async (params: TrackingQueryParams): Promise<{
+  data: any[];
+  total: number;
+  page: number;
+  limit: number;
+}> => {
+  const response = await apiClient.get('/tracking', { params });
+  return response.data;
+};
+
+/**
+ * Get tracking by ID
+ * GET /tracking/:id
+ */
+export const getTrackingById = async (id: number): Promise<any> => {
+  const response = await apiClient.get(`/tracking/${id}`);
+  return response.data;
+};
+
+/**
+ * Get tracking details
+ * GET /tracking/:id/details
+ */
+export const getTrackingDetails = async (id: number): Promise<any> => {
+  const response = await apiClient.get(`/tracking/${id}/details`);
+  return response.data;
+};
+
+/**
+ * Update tracking
+ * PUT /tracking/:id
+ */
+export const updateTracking = async (
+  id: number,
+  data: {
+    trackingNumber?: string;
+    orderNumber?: string;
+    ngayDatHang?: string;
+    nhaVanChuyenId?: number;
+    quocGiaId?: number;
+    tinhTrang?: string;
+    ghiChu?: string;
+    kien?: string;
+    mawb?: string;
+    hawb?: string;
+  }
+): Promise<any> => {
+  const response = await apiClient.put(`/tracking/${id}`, data);
+  return response.data;
+};
+
+/**
+ * Get tracking history
+ * GET /tracking/:id/history
+ */
+export const getTrackingHistory = async (id: number): Promise<any[]> => {
+  const response = await apiClient.get(`/tracking/${id}/history`);
   return response.data;
 };
 

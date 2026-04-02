@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { QnaService } from './qna.service';
-import { QueryQnaDto, AnswerQnaDto } from './dto/qna.dto';
+import { QueryQnaDto, AnswerQnaDto, CreateQnaDto } from './dto/qna.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
@@ -28,10 +28,21 @@ export class QnaController {
   }
 
   /**
+   * Create new Q&A question
+   * Matches: HoiDap.cs -> btTaoCauHoi_Click() -> ThemThacMac()
+   */
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  async createQna(@Body() createDto: CreateQnaDto) {
+    return this.qnaService.createQna(createDto.cauHoi);
+  }
+
+  /**
    * Answer Q&A question
    * Matches: gvThacMac_RowUpdating() -> CapNhatTraLoiThacMac() in HoiDapAdmin.cs
    */
   @Put(':id/answer')
+  @UseGuards(JwtAuthGuard)
   async answerQna(
     @Param('id') id: number,
     @Body() answerDto: AnswerQnaDto,
@@ -48,6 +59,7 @@ export class QnaController {
    * Matches: gvThacMac_RowDeleting() -> XoaThacMac() in HoiDapAdmin.cs
    */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async deleteQna(@Param('id') id: number) {
     return this.qnaService.deleteQna(id, 'admin');
   }

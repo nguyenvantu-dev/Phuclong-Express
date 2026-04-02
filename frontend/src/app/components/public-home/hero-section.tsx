@@ -6,7 +6,7 @@ import { EffectFade, Autoplay, Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/navigation';
-import { FaSearch } from 'react-icons/fa';
+import { FiSearch, FiTruck, FiPackage, FiShield } from 'react-icons/fi';
 import { searchTracking } from '@/lib/api';
 
 interface TrackingHistoryItem {
@@ -22,11 +22,21 @@ interface TrackingResultState {
   history?: TrackingHistoryItem[];
 }
 
+// Custom colors based on #5cc6ee
+const colors = {
+  primary: '#5cc6ee',
+  primaryHover: '#4ab3dc',
+  primaryDark: '#2a8fb3',
+  accent: '#ff6b35',
+  text: '#1e293b',
+  textLight: '#f8fafc',
+};
+
 /**
  * Hero Section Component
  *
- * Displays intro slider with tracking lookup form.
- * Reverts to original logic: only show timeline history
+ * Modern hero with full-width slider, glass tracking form, and bold typography.
+ * Uses #5cc6ee as primary color.
  */
 export default function HeroSection() {
   const [trackingCode, setTrackingCode] = useState('');
@@ -74,9 +84,9 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="intro" id="intro">
+    <section className="relative h-[85vh] min-h-[600px] overflow-hidden">
       {/* Slider */}
-      <div className="intro__slider" id="introSlider">
+      <div className="absolute inset-0">
         <Swiper
           modules={[EffectFade, Autoplay, Navigation]}
           effect="fade"
@@ -87,11 +97,18 @@ export default function HeroSection() {
             nextEl: '#introSliderNext',
           }}
           loop={true}
+          className="h-full"
         >
           {slides.map((slide, index) => (
-            <SwiperSlide key={index}>
+            <SwiperSlide key={index} className="h-full">
+              <div
+                className="absolute inset-0 z-10"
+                style={{
+                  background: `linear-gradient(135deg, rgba(42, 143, 179, 0.9) 0%, rgba(92, 198, 238, 0.7) 50%, rgba(42, 143, 179, 0.5) 100%)`,
+                }}
+              />
               <img
-                className="intro__slider-photo"
+                className="w-full h-full object-cover"
                 src={slide.src}
                 alt={slide.alt}
               />
@@ -100,98 +117,166 @@ export default function HeroSection() {
         </Swiper>
       </div>
 
-      {/* Content */}
-      <div className="conteiner absolute left-0 right-0 top-0 h-full flex items-end justify-between z-10 px-4 md:px-8">
-        <div className="intro__inner flex items-end justify-between relative w-full">
-          {/* Tracking Form */}
-          <div className="request-form request-form--intro" data-aos="fade-right">
-            <div className="request-form__header">
-              <h3 className="request-form__title">
-                TRA CỨU TRACKING <FaSearch style={{ color: 'white', fontSize: '24px' }} />
-              </h3>
-            </div>
-            <form onSubmit={handleTrackingSearch} className="p-4">
-              <div className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  placeholder="Nhập mã tracking..."
-                  value={trackingCode}
-                  onChange={(e) => setTrackingCode(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-                >
-                  Tìm
-                </button>
-              </div>
-
-              {/* Results - Timeline Style */}
-              {trackingResult && (
-                <div className="mt-4">
-                  {trackingResult.status === 'pending' && (
-                    <div className="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm text-center">
-                      {trackingResult.message}
-                    </div>
-                  )}
-                  {trackingResult.status === 'not_found' && (
-                    <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                      {trackingResult.message}
-                    </div>
-                  )}
-                  {trackingResult.status === 'error' && (
-                    <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                      {trackingResult.message}
-                    </div>
-                  )}
-                  {trackingResult.status === 'found' && trackingResult.history && (
-                    <div className="timeline-wf" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                      {trackingResult.history.map((item, idx) => (
-                        <div key={idx} className="entry" style={{ display: 'flex', marginBottom: '15px' }}>
-                          <div className="title" style={{ width: '30%', textAlign: 'right', paddingRight: '15px' }}>
-                            <h3 style={{ fontSize: '12px', margin: 0 }}>
-                              {formatDate(item.ngay)}
-                            </h3>
-                          </div>
-                          <div className="timeline-wf-body" style={{ width: '70%', paddingLeft: '10px' }}>
-                            <div style={{ fontWeight: '500', color: '#333' }}>
-                              {item.moTa}
-                            </div>
-                            {item.ghiChu && (
-                              <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                                <b>Ghi chú:</b> {item.ghiChu}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+      {/* Content Overlay */}
+      <div className="relative z-20 h-full flex items-center">
+        <div className="container mx-auto px-4 md:px-8 flex flex-col lg:flex-row items-end justify-between gap-12">
+          {/* Tracking Form - Glass Style */}
+          <div
+            className="w-full max-w-md p-6 rounded-2xl backdrop-blur-xl"
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <h3
+              className="flex items-center justify-center gap-3 text-xl font-bold mb-4"
+              style={{ color: colors.textLight }}
+            >
+              <FiPackage className="w-6 h-6" />
+              TRA CỨU TRACKING
+            </h3>
+            <form onSubmit={handleTrackingSearch} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Nhập mã tracking..."
+                value={trackingCode}
+                onChange={(e) => setTrackingCode(e.target.value)}
+                className="w-full px-5 py-4 rounded-xl text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 backdrop-blur-sm transition-all border border-white/20 bg-white/10"
+              />
+              <button
+                type="submit"
+                className="w-full py-4 rounded-xl font-bold transition-all cursor-pointer hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
+                style={{ backgroundColor: colors.primary, color: 'white' }}
+              >
+                <FiSearch className="w-5 h-5" />
+                Tìm kiếm
+              </button>
             </form>
+
+            {/* Results - Timeline Style */}
+            {trackingResult && (
+              <div className="mt-4 max-h-64 overflow-y-auto">
+                {trackingResult.status === 'pending' && (
+                  <div
+                    className="p-4 rounded-xl text-center animate-pulse"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: colors.textLight }}
+                  >
+                    {trackingResult.message}
+                  </div>
+                )}
+                {trackingResult.status === 'not_found' && (
+                  <div
+                    className="p-4 rounded-xl text-sm"
+                    style={{ backgroundColor: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5' }}
+                  >
+                    {trackingResult.message}
+                  </div>
+                )}
+                {trackingResult.status === 'error' && (
+                  <div
+                    className="p-4 rounded-xl text-sm"
+                    style={{ backgroundColor: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5' }}
+                  >
+                    {trackingResult.message}
+                  </div>
+                )}
+                {trackingResult.status === 'found' && trackingResult.history && (
+                  <div className="space-y-3">
+                    {trackingResult.history.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex gap-4 p-3 rounded-lg"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+                      >
+                        <div className="w-1/4 text-right">
+                          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                            {formatDate(item.ngay)}
+                          </p>
+                        </div>
+                        <div className="w-3/4">
+                          <p className="font-medium" style={{ color: colors.textLight }}>
+                            {item.moTa}
+                          </p>
+                          {item.ghiChu && (
+                            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                              <span className="font-medium">Ghi chú:</span> {item.ghiChu}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Intro Text */}
-          <div className="intro__text" data-aos="fade-left">
-            <div className="intro__countries">USA</div>
-            <h1 className="intro__title">
-              <span className="intro__title-amp">&amp;</span>
-              Mua hộ<br />
+          {/* Intro Text - Bold Typography */}
+          <div className="text-right flex-1" data-aos="fade-left">
+            <div
+              className="mb-4 text-lg font-medium tracking-widest uppercase"
+              style={{ color: 'rgba(255,255,255,0.8)' }}
+            >
+              <FiTruck className="inline mr-2" />
+              Usa
+            </div>
+            <h1
+              className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight"
+              style={{
+                color: colors.textLight,
+                textShadow: '0 4px 30px rgba(0,0,0,0.2)',
+              }}
+            >
+              <span className="text-white">&</span>
+              <br />
+              Mua hộ
+              <br />
               Vận chuyển
             </h1>
           </div>
+        </div>
+      </div>
 
-          {/* Slider Arrows */}
-          <div className="intro__slider-arrows">
-            <button className="intro__slider-btn intro__slider-btn--prev" id="introSliderPrev" type="button">
-              Prev
-            </button>
-            <button className="intro__slider-btn intro__slider-btn--next" id="introSliderNext" type="button">
-              Next
-            </button>
-          </div>
+      {/* Slider Arrows */}
+      <div className="absolute bottom-8 right-8 z-30 flex gap-2">
+        <button
+          className="w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer hover:bg-white/30"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
+          id="introSliderPrev"
+          type="button"
+        >
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          className="w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer hover:bg-white/30"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
+          id="introSliderNext"
+          type="button"
+        >
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Feature Pills */}
+      <div className="absolute bottom-8 left-8 z-30 hidden md:flex gap-3">
+        <div
+          className="px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: colors.textLight }}
+        >
+          <FiShield className="w-4 h-4" />
+          <span className="text-sm font-medium">Bảo hiểm hàng hóa</span>
+        </div>
+        <div
+          className="px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: colors.textLight }}
+        >
+          <FiTruck className="w-4 h-4" />
+          <span className="text-sm font-medium">Giao hàng toàn quốc</span>
         </div>
       </div>
     </section>

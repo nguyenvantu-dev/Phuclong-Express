@@ -1,23 +1,32 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FaBoxOpen, FaFileInvoice, FaUsers, FaHandshake } from 'react-icons/fa';
+import { FiPackage, FiFileText, FiUsers, FiUserCheck } from 'react-icons/fi';
 
 /**
  * Stats Section Component
  *
  * Displays animated counters for package counts, orders, customers, and partners.
  * Uses Intersection Observer to trigger count-up animation on scroll.
+ * Uses #5cc6ee as primary color.
  */
 export default function StatsSection() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
+  const colors = {
+    primary: '#5cc6ee',
+    primaryLight: '#e0f7ff',
+    primaryDark: '#2a8fb3',
+    text: '#1e293b',
+    textMuted: '#64748b',
+  };
+
   const stats = [
-    { value: 1435, label: 'KIỆN HÀNG ĐÃ GIAO', icon: FaBoxOpen },
-    { value: 2675, label: 'ĐƠN HÀNG', icon: FaFileInvoice },
-    { value: 4436, label: 'KHÁCH HÀNG', icon: FaUsers },
-    { value: 749, label: 'ĐỐI TÁC DOANH NGHIỆP', icon: FaHandshake },
+    { value: 1435, label: 'KIỆN HÀNG ĐÃ GIAO', icon: FiPackage },
+    { value: 2675, label: 'ĐƠN HÀNG', icon: FiFileText },
+    { value: 4436, label: 'KHÁCH HÀNG', icon: FiUsers },
+    { value: 749, label: 'ĐỐI TÁC DOANH NGHIỆP', icon: FiUserCheck },
   ];
 
   useEffect(() => {
@@ -39,35 +48,49 @@ export default function StatsSection() {
   }, []);
 
   return (
-    <div className="wrapper" ref={sectionRef}>
-      <div className="container1">
-        <i className="fas fa-solid fa-people-carry-box" aria-hidden="true"></i>
-        <span className="num" data-val="1435">
-          {isVisible ? stats[0].value.toLocaleString() : '0'}
-        </span>
-        <span className="text">{stats[0].label}</span>
+    <section
+      ref={sectionRef}
+      className="py-16 md:py-20"
+      style={{ backgroundColor: '#1e293b' }}
+    >
+      <div className="container mx-auto px-4">
+        <h2
+          className="text-3xl md:text-4xl font-bold text-center mb-4 text-white"
+        >
+          Thành tựu của chúng tôi
+        </h2>
+        <p
+          className="text-center mb-12 max-w-2xl mx-auto"
+          style={{ color: colors.primary }}
+        >
+          Những con số khẳng định uy tín và chất lượng dịch vụ
+        </p>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => (
+            <div
+              key={index}
+              className="text-center p-6 rounded-2xl hover:bg-white/5 transition-all duration-300"
+            >
+              <div
+                className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+                style={{ backgroundColor: colors.primary }}
+              >
+                <stat.icon className="w-8 h-8 text-white" />
+              </div>
+              <span
+                className="block text-4xl md:text-5xl font-black mb-2"
+                style={{ color: colors.primary }}
+              >
+                {isVisible ? stat.value.toLocaleString() : '0'}
+              </span>
+              <span className="text-white/70 text-sm font-medium uppercase tracking-wider">
+                {stat.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="container1">
-        <i className="fas fa-solid fa-file-invoice" aria-hidden="true"></i>
-        <span className="num" data-val="2675">
-          {isVisible ? stats[1].value.toLocaleString() : '0'}
-        </span>
-        <span className="text">{stats[1].label}</span>
-      </div>
-      <div className="container1">
-        <i className="fas fa-solid fa-users" aria-hidden="true"></i>
-        <span className="num" data-val="4436">
-          {isVisible ? stats[2].value.toLocaleString() : '0'}
-        </span>
-        <span className="text">{stats[2].label}</span>
-      </div>
-      <div className="container1 container1__end">
-        <i className="fas fa-solid fa-handshake" aria-hidden="true"></i>
-        <span className="num" data-val="749">
-          {isVisible ? stats[3].value.toLocaleString() : '0'}
-        </span>
-        <span className="text">{stats[3].label}</span>
-      </div>
-    </div>
+    </section>
   );
 }

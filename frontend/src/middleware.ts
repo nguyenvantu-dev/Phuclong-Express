@@ -27,6 +27,24 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Check for token in cookies or headers
+  const accessToken = request.cookies.get('accessToken')?.value;
+  const authHeader = request.headers.get('authorization');
+
+  // Protected routes that require authentication
+  const protectedRoutes = ['/', '/hoi-dap'];
+
+  const isProtectedRoute = protectedRoutes.some(route =>
+    pathname === route || pathname.startsWith(route + '/')
+  );
+
+  // If accessing protected route without auth, redirect to login
+  if (isProtectedRoute && !accessToken && !authHeader?.startsWith('Bearer ')) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
   // Allow all routes - client-side auth will handle redirects
   // If no token in localStorage, axios 401 interceptor will redirect
   return NextResponse.next();
