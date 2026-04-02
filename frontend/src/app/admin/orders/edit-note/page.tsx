@@ -36,7 +36,7 @@ function EditNotePageContent() {
 
   // Get order IDs and redirect param from query param
   const idsParam = searchParams.get('id') || '';
-  const returnUrl = searchParams.get('rt') === 'ch' ? '/can-hang' : '/admin/orders';
+  const returnUrl = searchParams.get('rt') === 'ch' ? '/can-hang' : '/admin/order-management-list';
   const orderIds = idsParam ? idsParam.split(',').map((id) => parseInt(id, 10)).filter((id) => !isNaN(id)) : [];
   const isMassUpdate = orderIds.length > 1;
   const isSingleUpdate = orderIds.length === 1;
@@ -100,7 +100,7 @@ function EditNotePageContent() {
         <div className="rounded-lg bg-red-50 p-4 text-red-700">
           Vui lòng chọn đơn hàng trước khi bổ sung ghi chú.
         </div>
-        <Link href="/admin/orders" className="text-blue-600 hover:underline">
+        <Link href="/admin/order-management-list" className="text-blue-600 hover:underline">
           ← Quay lại danh sách orders
         </Link>
       </div>
@@ -113,7 +113,7 @@ function EditNotePageContent() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/admin/orders"
+            href="/admin/order-management-list"
             className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +220,7 @@ function EditNotePageContent() {
         {/* Action buttons */}
         <div className="flex justify-end gap-4 border-t pt-4">
           <Link
-            href="/admin/orders"
+            href="/admin/order-management-list"
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Hủy

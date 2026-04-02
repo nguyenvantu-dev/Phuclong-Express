@@ -98,7 +98,7 @@ export default function ImportOrdersPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/admin/orders"
+            href="/admin/order-management-list"
             className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,7 +267,7 @@ export default function ImportOrdersPage() {
                 Import tiếp
               </button>
               <Link
-                href="/admin/orders"
+                href="/admin/order-management-list"
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Về danh sách đơn hàng
