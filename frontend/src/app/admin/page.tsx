@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
  *
  * Redirects to /orders as the default admin page.
  */
+export const dynamic = 'force-dynamic';
+
 export default function AdminPage() {
   redirect('/admin/orders');
 }
