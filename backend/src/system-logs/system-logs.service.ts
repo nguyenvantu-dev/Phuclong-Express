@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
+const tedious = require('tedious');
 
 export interface QuerySystemLogsDto {
   username?: string;
@@ -50,6 +51,7 @@ export class SystemLogsService {
           encrypt: true,
           trustServerCertificate: true,
         },
+        dialectModule: tedious
       });
 
       let whereClause = 'WHERE 1=1';
@@ -132,6 +134,7 @@ export class SystemLogsService {
         encrypt: true,
         trustServerCertificate: true,
       },
+      dialectModule: tedious
     });
 
     const [result]: any[] = await sequelize.query(`

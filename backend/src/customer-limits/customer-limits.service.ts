@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
+const tedious = require('tedious');
+
 
 export interface CustomerLimit {
   ID: number;
@@ -45,6 +47,7 @@ export class CustomerLimitsService {
         encrypt: true,
         trustServerCertificate: true,
       },
+      dialectModule: tedious
     });
   }
 

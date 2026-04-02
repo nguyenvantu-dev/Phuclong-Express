@@ -2,6 +2,7 @@ import { Module, Global } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
+const tedious = require('tedious');
 
 /**
  * Global Database Module
