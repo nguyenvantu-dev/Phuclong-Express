@@ -152,8 +152,8 @@ export default function HoiDapPage() {
                     </td>
                   </tr>
                 ) : (
-                  questions.map((item) => (
-                    <tr key={item.ID} className="border-b">
+                  questions.map((item, index) => (
+                    <tr key={item.ID ?? `q-${index}`} className="border-b">
                       <td className="border border-gray-300 px-2 py-2">{item.username}</td>
                       <td className="border border-gray-300 px-2 py-2">{item.CauHoi}</td>
                       <td className="border border-gray-300 px-2 py-2">
