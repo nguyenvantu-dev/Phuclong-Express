@@ -1,0 +1,289 @@
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  Inject,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Sequelize } from 'sequelize-typescript';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { User, UserModel } from '../users/entities/user.entity';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { AuthResponseDto } from './dto/auth-response.dto';
+
+/**
+ * Auth Service
+ *
+ * Handles user authentication using Sequelize.
+ * Supports both old ASP.NET Identity (PBKDF2) and new bcrypt passwords.
+ */
+@Injectable()
+export class AuthService {
+  private userModel: typeof User;
+
+  constructor(
+    @Inject('SEQUELIZE') private sequelize: Sequelize,
+    private jwtService: JwtService,
+  ) {
+    if (!sequelize.models.User) {
+      UserModel(sequelize);
+    }
+    this.userModel = sequelize.models.User as typeof User;
+  }
+
+  /**
+   * Validate user credentials
+   * Tries both old PBKDF2 and new bcrypt
+   */
+  async validateUser(username: string, password: string): Promise<User | null> {
+    const user = await this.userModel.findOne({
+      where: { UserName: username },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const userData = user.get();
+    const passwordHash = userData.PasswordHash;
+
+    console.log(userData.Id, userData.UserName, passwordHash, password);
+
+    if (!passwordHash) {
+      return null;
+    }
+
+    // Try PBKDF2 first
+    const isValidOld = await this.verifyAspNetIdentityPassword(password, passwordHash);
+    if (isValidOld) {
+      userData.roles = await this.getUserRoles(userData.Id);
+      return userData;
+    }
+
+    // Try bcrypt
+    if (await bcrypt.compare(password, passwordHash)) {
+      userData.roles = await this.getUserRoles(userData.Id);
+      return userData;
+    }
+
+    return null;
+  }
+
+  /**
+   * Verify password using PBKDF2-SHA1 (1000 iterations)
+   */
+  private async verifyAspNetIdentityPassword(
+    password: string,
+    passwordHash: string,
+  ): Promise<boolean> {
+    try {
+      const decoded = Buffer.from(passwordHash, 'base64');
+      if (decoded.length < 18) {
+        return false;
+      }
+
+      const salt = decoded.slice(1, 17);
+      const savedHash = decoded.slice(17);
+
+      const derivedKey = crypto.pbkdf2Sync(
+        password,
+        salt,
+        1000,
+        savedHash.length,
+        'sha1',
+      );
+
+      return crypto.timingSafeEqual(derivedKey, savedHash);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Login user and generate tokens
+   */
+  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+    const user = await this.validateUser(loginDto.username, loginDto.password);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return this.generateAuthResponse(user);
+  }
+
+  /**
+   * Register new user
+   */
+  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+    // Check if username exists
+    const existingUsername = await this.userModel.findOne({
+      where: { UserName: registerDto.username },
+    });
+
+    if (existingUsername) {
+      throw new ConflictException('Username already exists');
+    }
+
+    // Check if email exists
+    const existingEmail = await this.userModel.findOne({
+      where: { Email: registerDto.email },
+    });
+
+    if (existingEmail) {
+      throw new ConflictException('Email already exists');
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(registerDto.password, salt);
+
+    // Create user
+    const user = await this.userModel.create({
+      UserName: registerDto.username,
+      Email: registerDto.email,
+      PasswordHash: hashedPassword,
+      HoTen: registerDto.hoTen,
+      diaChi: registerDto.diaChi,
+      tinhThanh: registerDto.tinhThanh,
+      soTaiKhoan: registerDto.soTaiKhoan,
+      hinhThucNhanHang: registerDto.hinhThucNhanHang,
+      khachBuon: registerDto.khachBuon || false,
+      linkTaiKhoanMang: registerDto.linkTaiKhoanMang,
+      vungMien: registerDto.vungMien,
+      roles: ['user'],
+    });
+
+    return this.generateAuthResponse(user);
+  }
+
+  /**
+   * Refresh access token
+   */
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+      });
+
+      const user = await this.userModel.findByPk(payload.sub);
+
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      const accessToken = this.jwtService.sign(
+        { sub: user.Id, username: user.UserName },
+        { expiresIn: '15m' },
+      );
+
+      return { accessToken };
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  /**
+   * Generate authentication response with tokens
+   */
+  private generateAuthResponse(user: User): AuthResponseDto {
+    console.log('[Auth] Generating token for user:', user.Id, user.UserName);
+    const payload = { sub: user.Id, username: user.UserName };
+    console.log('[Auth] Payload:', payload);
+
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: '7d',
+      secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.Id,
+        username: user.UserName,
+        email: user.Email,
+        hoTen: user.HoTen,
+        roles: user.roles,
+      },
+    };
+  }
+
+  // ========== Role Management ==========
+
+  /**
+   * Get all roles
+   */
+  async getRoles(): Promise<any[]> {
+    try {
+      const [data]: any[] = await this.sequelize.query(`
+        SELECT Id, Name FROM dbo.AspNetRoles ORDER BY Name
+      `);
+      return data || [];
+    } catch (error) {
+      console.error('Error getting roles:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Get roles for a specific user
+   */
+  async getUserRoles(userId: string): Promise<string[]> {
+    try {
+      const [data]: any[] = await this.sequelize.query(`
+        SELECT r.Name
+        FROM dbo.AspNetUserRoles ur
+        JOIN dbo.AspNetRoles r ON ur.RoleId = r.Id
+        WHERE ur.UserId = '${userId}'
+      `);
+      return (data || []).map((row: any) => row.Name);
+    } catch (error) {
+      console.error('Error getting user roles:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Create new role
+   */
+  async createRole(roleName: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      // Check if role exists
+      const [existing]: any[] = await this.sequelize.query(`
+        SELECT Id FROM dbo.AspNetRoles WHERE Name = '${roleName}'
+      `);
+
+      if (existing.length > 0) {
+        return { success: false, message: 'Role already exists' };
+      }
+
+      await this.sequelize.query(`
+        INSERT INTO dbo.AspNetRoles (Name) VALUES ('${roleName}')
+      `);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error creating role:', error.message);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * Delete role
+   */
+  async deleteRole(roleId: number): Promise<{ success: boolean }> {
+    try {
+      await this.sequelize.query(`
+        DELETE FROM dbo.AspNetRoles WHERE Id = ${roleId}
+      `);
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting role:', error.message);
+      return { success: false };
+    }
+  }
+}

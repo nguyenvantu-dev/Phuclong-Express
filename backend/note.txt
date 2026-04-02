@@ -1,0 +1,6578 @@
+CREATE PROCEDURE [dbo].[CongNo_DanhSach]
+	(
+	@UserName nvarchar(100) 
+	,@Status int
+	)
+AS
+BEGIN
+	SELECT * FROM [CONGNO] 
+	where ([UserName] = @UserName or @UserName is null) and [Status] = @Status
+END;
+
+CREATE PROCEDURE [dbo].[CongNo_Insert]
+	@NoiDung nvarchar(100)
+	,@NgayGhiNo date
+	,@DR float
+	,@CR float
+	,@UserName nvarchar(100)
+	,@GhiChu nvarchar(500)
+	,@Status int
+	,@LoHangID int
+	,@NguoiTao nvarchar(250)
+	,@LoaiPhatSinh int
+AS
+	
+BEGIN
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @UserName
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+	   INSERT INTO [dbo].[CONGNO]
+			  ([NoiDung],[NgayGhiNo],[DR],[CR],[UserName]
+			   ,[GhiChu],[Status],[style], LoHangID, NguoiTao)
+			VALUES
+			(@NoiDung,@NgayGhiNo,@DR,@CR,@UserName
+			,@GhiChu,@Status,@LoaiPhatSinh,@LoHangID, @NguoiTao
+			)
+	END
+END;
+
+CREATE PROCEDURE [dbo].[CongNo_Top_DanhSach]
+	(
+	@UserName nvarchar(100) 
+	,@Status int
+	)
+AS
+BEGIN
+
+	if @UserName ='' and @Status = -1 -- chon tat ca
+			SELECT top 100 * FROM [CONGNO]  where style =2 
+			order by CongNo_ID desc,NgayGhiNo desc
+	else if @UserName ='' and @Status <> -1 -- chon tat ca user va chon loai status
+		begin
+			SELECT top 100 * FROM [CONGNO] 
+			where  style =2 and [Status] = @Status 
+			order by CongNo_ID desc,NgayGhiNo desc;
+		end
+	else if @UserName <>'' and @Status =-1 -- chon user & tất ca các status
+		begin
+			SELECT top 100 * FROM [CONGNO] 
+			where style =2 and [UserName] = @UserName 
+			order by CongNo_ID desc,NgayGhiNo desc;
+		end
+	else if @UserName <>'' and @Status <>-1 -- chon user chọn status
+		begin
+			SELECT top 100 * FROM [CONGNO] 
+			where style =2 and [UserName] = @UserName  and [Status] = @Status 
+			order by CongNo_ID desc,NgayGhiNo desc;
+		end
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[CongNo_Update_Status]
+(
+	@CongNo_ID int 
+	,@Status int
+	,@NguoiTao nvarchar(250)
+)
+AS
+BEGIN
+	DECLARE @NgayGhiNo datetime
+	DECLARE @UserName nvarchar(250)
+	SELECT @NgayGhiNo = NgayGhiNo, @UserName = UserName FROM CONGNO WHERE CongNo_ID = @CongNo_ID
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @UserName
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		update [CONGNO] 
+		set [Status] = @Status
+		, NgayCapNhatCuoi = GETDATE()
+		, NguoiCapNhatCuoi = @NguoiTao
+		where [CongNo_ID] = @CongNo_ID 
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[DonHang_InsertItem]
+	@username nvarchar(100)
+	,@usernamesave nvarchar(100)
+	,@linkweb nvarchar(500)
+	,@linkhinh nvarchar(500)
+	,@corlor nvarchar(50)
+	,@size nvarchar(50)
+	,@soluong int
+	,@dongiaweb float
+	,@saleoff float
+	,@phuthu float
+	,@shipUSA float
+	,@tax float
+	,@cong float
+	,@loaitien nvarchar(10)
+	,@ghichu nvarchar(max)
+	,@tygia float
+	,@giasauoffUSD float
+	,@giasauoffVND float
+	,@tiencongUSD float
+	,@tiencongVND float
+	,@tongtienUSD float
+	,@tongtienVND float
+	,@ordernumber nvarchar(50)
+	,@trangthaiOrder nvarchar(50)
+	,@ngaysaveLink date
+	,@ngaymuahang date
+AS
+BEGIN
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		INSERT INTO [dbo].[DON_HANG] ([username] ,[usernamesave]  ,[linkweb] ,[linkhinh] ,[corlor]
+           ,[size] ,[soluong] ,[dongiaweb] ,[saleoff] ,[phuthu]
+           ,[shipUSA] ,[tax] ,[cong] ,[loaitien] ,[ghichu]
+           ,[tygia] ,[giasauoffUSD] ,[giasauoffVND] ,[tiencongUSD] ,[tiencongVND]
+           ,[tongtienUSD] ,[tongtienVND] ,[ordernumber] ,[trangthaiOrder] ,[ngaysaveLink]
+           ,[ngaymuahang] )
+		   values ( @username ,@usernamesave ,@linkweb ,@linkhinh ,@corlor
+			,@size ,@soluong  ,@dongiaweb ,@saleoff  ,@phuthu  
+			,@shipUSA  ,@tax  ,@cong  ,@loaitien ,@ghichu
+			,@tygia ,@giasauoffUSD ,@giasauoffVND ,@tiencongUSD ,@tiencongVND
+			,@tongtienUSD ,@tongtienVND ,@ordernumber ,@trangthaiOrder ,@ngaysaveLink
+			,@ngaymuahang )
+
+		DECLARE @ID int;
+		SET @ID = @@IDENTITY;
+	
+		IF(
+			(@trangthaiOrder = 'Ordered' OR @trangthaiOrder = 'Shipped' OR @trangthaiOrder = 'Completed') 
+			 AND (@ordernumber is not null AND @ordernumber <> '')
+			)
+		BEGIN
+			-- insert CONGNO
+			INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, NguoiTao)
+			VALUES (@ID, N'Phí mua ' + CAST(@ID as nvarchar(20)), @NgayGhiNo, CAST(CEILING(@tongtienVND * 1) / 1 as int), 0, @username, 1, 1, @usernamesave)
+		END
+		ELSE IF( -- Nếu đang ở trạng thái Ordered/Completed mà chuyển qua Received/Cancelled thì xóa khỏi CONGNO
+			(@trangthaiOrder = 'Received' OR @trangthaiOrder = 'Cancelled')
+		)
+		BEGIN
+			DELETE CONGNO WHERE DonHang_ID = @ID
+		END
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Approve_CongNo]
+	@CongNo_ID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @NgayGhiNo datetime
+	DECLARE @UserName nvarchar(250)
+	SELECT @NgayGhiNo = NgayGhiNo, @UserName = UserName FROM CONGNO WHERE CongNo_ID = @CongNo_ID
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @UserName
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE CONGNO 
+		SET [Status] = 1 
+		, NgayCapNhatCuoi = GETDATE()
+		, NguoiCapNhatCuoi = @NguoiTao
+		WHERE CongNo_ID = @CongNo_ID
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_ChiTietCongNo]
+	@username nvarchar(100)
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	SET QUERY_GOVERNOR_COST_LIMIT 0;
+
+	SELECT count(*) AS TOTALROW
+	FROM [CONGNO] CN
+	WHERE CN.DaXoa = 0 and CN.[Status] =1 and CN.[UserName] = @username;
+
+	WITH cte_CongNos AS (
+    SELECT 
+			ROW_NUMBER() OVER(ORDER BY [CongNo_ID] desc) [STT]
+			,[CongNo_ID]
+		FROM [CONGNO]
+		WHERE DaXoa = 0 and [Status] =1 and [UserName] = @username
+	) SELECT 
+		CN.[CongNo_ID], CN.[NgayGhiNo], CN.[NoiDung], CN.[DR], CN.[CR], LK.LuyKe, CN.GhiChu
+	FROM 
+		cte_CongNos CTE
+		INNER JOIN [CONGNO] CN ON CTE.[CongNo_ID] = CN.[CongNo_ID]
+		INNER JOIN (select t1.CongNo_ID, t1.CanDoi, SUM(t2.CanDoi) as LuyKe
+						from CONGNO t1
+						inner join CONGNO t2 on t1.CongNo_ID >= t2.CongNo_ID
+						where t1.DaXoa = 0 and t2.DaXoa = 0 and t1.[UserName] = @username and t2.[UserName] = @username and t1.[Status] =1 and t2.[Status] =1
+						group by t1.CongNo_ID, t1.CanDoi
+						) LK ON CN.CongNo_ID = LK.CongNo_ID
+	WHERE STT between (@PageNum-1) * @PageSize+1 and (@PageNum-1) * @PageSize + @PageSize
+	ORDER BY STT
+
+	SELECT 'A' as Loai, sum(DR) as SoTien
+	FROM [CONGNO] CN
+	left join Don_Hang DH on CN.DonHang_ID = DH.ID
+	where CN.DaXoa = 0 and CN.username = @username and (trangthaiorder in ('Ordered', 'Completed', 'Shipped') or (trangthaiorder is null)) and [Status] = 1
+	union
+	SELECT 'B' as Loai, sum(CR) as SoTien
+	FROM [CONGNO] CN
+	where CN.DaXoa = 0 and CN.username = @username and [Status] = 1
+	union
+	SELECT 'C' as Loai, sum(DR) as SoTien
+	FROM [CONGNO] CN
+	left join Don_Hang DH on CN.DonHang_ID = DH.ID
+	where CN.DaXoa = 0 and CN.username = @username and trangthaiorder = 'Completed' and [Status] = 1
+	union
+	SELECT 'F' as Loai, sum(DR) as SoTien
+	FROM [CONGNO] CN
+	left join Don_Hang DH on CN.DonHang_ID = DH.ID
+	where CN.DaXoa = 0 and CN.username = @username and trangthaiorder = 'Ordered' and [Status] = 1
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_ChiTietCongNo1]
+	@username nvarchar(100)
+	,@TuKyID int
+	,@DenKyID int
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	SET QUERY_GOVERNOR_COST_LIMIT 0;
+
+	declare @NgayBatDau datetime
+	declare @NgayKetThuc datetime
+	declare @SoDauKy float
+	declare @DaDong bit
+	declare @TenKy int
+	
+	IF(@TuKyID=-1)
+	BEGIN
+		SET @NgayBatDau = '1900-01-01'
+		SET @SoDauKy = 0
+	END
+	ELSE
+	BEGIN
+		SELECT @NgayBatDau = Ky.NgayDauKy, @SoDauKy = ISNULL( CK.DauKy, 0), @DaDong = DaDong, @TenKy = TenKy
+		FROM tbKy Ky
+		LEFT JOIN tbChotKy CK on Ky.KyID = CK.KyID and UserName = @username
+		WHERE Ky.KyID = @TuKyID;
+
+		IF(@DaDong = 0) -- chưa đóng kỳ, phải tạm tính số đầu kỳ từ kỳ đã đóng gần nhất
+		BEGIN
+			Declare @KyIDDaDongGanNhat int;
+			Declare @ThangKyDaDongGanNhat int;
+			Declare @NamKyDaDongGanNhat int;
+			Declare @TenKyDaDongGanNhat int;
+			Declare @NgayCuoiKyDaDongGanNhat datetime;
+			declare @SoCuoiKyDaDongGanNhat float;
+
+
+			--Lấy kỳ đã đóng gần nhất
+			SELECT @KyIDDaDongGanNhat = Ky.KyID, @ThangKyDaDongGanNhat = Ky.Thang, @NamKyDaDongGanNhat = Ky.Nam, @TenKyDaDongGanNhat = Ky.TenKy 
+			, @NgayCuoiKyDaDongGanNhat = Ky.NgayCuoiKy, @SoCuoiKyDaDongGanNhat = ISNULL( CK.CuoiKy, 0)
+			FROM tbKy Ky
+			LEFT JOIN tbChotKy CK on Ky.KyID = CK.KyID and UserName = @username
+			WHERE Ky.KyID = (select top 1 KyID from tbKy where DaDong = 1 and TenKy < @TenKy order by TenKy desc)
+
+
+			--select @KyIDDaDongGanNhat = KyID, @ThangKyDaDongGanNhat = Thang, @NamKyDaDongGanNhat = Nam, @TenKyDaDongGanNhat = TenKy  
+			--from (
+			--	SELECT *
+			--		, row_number() over (order by TenKy desc) as rn
+			--	FROM tbKy
+			--	WHERE TenKy < @TenKy
+			--	and DaDong = 1
+			--	) KQ
+			--where rn=1
+
+			--Tạm tính số đầu kỳ
+			IF (@KyIDDaDongGanNhat is null)
+			BEGIN
+				select @SoDauKy = ISNULL(sum(CanDoi),0)
+				FROM [CONGNO] CN
+				WHERE DaXoa = 0 and [Status] =1 and [UserName] = @username and NgayGhiNo <= @NgayBatDau;
+			END
+			ELSE
+			BEGIN
+				select @SoDauKy = @SoCuoiKyDaDongGanNhat + ISNULL(sum(CanDoi),0)
+				FROM [CONGNO] CN
+				WHERE DaXoa = 0 and [Status] =1 and [UserName] = @username and NgayGhiNo > @NgayCuoiKyDaDongGanNhat and NgayGhiNo <= @NgayBatDau;
+			END
+		END
+	END
+
+	IF(@TuKyID=-1)
+	BEGIN
+		SET @NgayKetThuc = '2900-01-01'
+	END
+	ELSE
+	BEGIN
+		SELECT @NgayKetThuc = Ky.NgayCuoiKy
+		FROM tbKy Ky
+		WHERE KyID = @DenKyID;
+	END
+
+	SELECT count(*) AS TOTALROW
+	FROM [CONGNO] CN
+	WHERE DaXoa = 0 and [Status] =1 and [UserName] = @username and NgayGhiNo >= @NgayBatDau and NgayGhiNo <= @NgayKetThuc;
+
+	WITH cte_CongNos AS (
+		SELECT 
+				--ROW_NUMBER() OVER(ORDER BY NgayGhiNo desc, CongNo_ID desc) [STT]
+				ROW_NUMBER() OVER(ORDER BY CONVERT(date, NgayGhiNo) desc, CongNo_ID desc) [STT]
+				,[CongNo_ID]
+				, NgayGhiNo
+				, CanDoi
+				, DaXoa
+				, UserName
+				, [Status]
+			FROM [CONGNO]
+			WHERE DaXoa = 0 and [Status] =1 and [UserName] = @username and NgayGhiNo >= @NgayBatDau and NgayGhiNo <= @NgayKetThuc
+		) 
+		SELECT 
+			CN.[CongNo_ID], CN.[NgayGhiNo], CN.[NoiDung], CN.[DR], CN.[CR], LK.LuyKe, CN.GhiChu
+		FROM 
+			cte_CongNos CTE
+			INNER JOIN [CONGNO] CN ON CTE.[CongNo_ID] = CN.[CongNo_ID]
+			INNER JOIN (
+							select t1.CongNo_ID, isnull (SUM(t2.CanDoi),0) + @SoDauKy as LuyKe
+							from cte_CongNos t1
+							inner join cte_CongNos t2 on t1.STT <= t2.STT and t2.NgayGhiNo >= @NgayBatDau 
+							where t1.DaXoa = 0 and t2.DaXoa = 0 
+							and t1.[UserName] = @username and t2.[UserName] = @username 
+							and t1.[Status] =1 and t2.[Status] =1
+							and t1.NgayGhiNo >= @NgayBatDau  and t1.NgayGhiNo <= @NgayKetThuc
+							group by t1.CongNo_ID
+							) LK ON CN.CongNo_ID = LK.CongNo_ID
+		WHERE CTE.STT between (@PageNum-1) * @PageSize+1 and (@PageNum-1) * @PageSize + @PageSize
+		ORDER BY CTE.STT;
+
+	--declare @tempCongNo TABLE(
+ --                       STT int
+ --                       , NgayGhiNo datetime
+	--					, CongNo_ID bigint
+	--					, CanDoi float
+	--					, DaXoa bit
+	--					, UserName nvarchar(50)
+	--					, [Status] bit
+ --                      )
+	--insert into @tempCongNo (STT, NgayGhiNo, CongNo_ID, CanDoi, DaXoa, UserName, [Status])
+	--select ROW_NUMBER() OVER (ORDER BY NgayGhiNo desc, CongNo_ID desc) AS STT, NgayGhiNo, CongNo_ID, CanDoi, DaXoa, UserName, [Status] 
+	--from CONGNO where [UserName] = @username;
+
+	--SELECT CN.[CongNo_ID], CN.[NgayGhiNo], CN.[NoiDung], CN.[DR], CN.[CR], LK.LuyKe, CN.GhiChu
+	--FROM CONGNO CN  
+	--INNER JOIN (
+	--			select 
+	--			t1.CongNo_ID, t1.STT, SUM(t2.CanDoi) + @SoDauKy  as LuyKe
+	--			from @tempCongNo t1
+	--			inner join @tempCongNo t2 on t1.STT <= t2.STT and t2.NgayGhiNo >= @NgayBatDau
+	--			where t1.DaXoa = 0 and t2.DaXoa = 0
+	--			and t1.[UserName] = @username and t2.[UserName] = @username 
+	--			and t1.[Status] =1 and t2.[Status] =1
+	--			and t1.NgayGhiNo >= @NgayBatDau
+	--			and t1.STT between (@PageNum-1) * @PageSize+1 and (@PageNum-1) * @PageSize + @PageSize
+	--			group by t1.CongNo_ID, t1.STT
+	--			) LK on LK.CongNo_ID = CN.CongNo_ID
+	--ORDER BY LK.STT;
+
+	SELECT 'A' as Loai, sum(DR) as SoTien
+	FROM [CONGNO] CN
+	left join Don_Hang DH on CN.DonHang_ID = DH.ID
+	where CN.DaXoa = 0 and CN.username = @username and (trangthaiorder in ('Ordered', 'Completed', 'Shipped') or (trangthaiorder is null)) and [Status] = 1
+	union
+	SELECT 'B' as Loai, sum(CR) as SoTien
+	FROM [CONGNO] CN
+	where CN.DaXoa = 0 and CN.username = @username and [Status] = 1
+	union
+	SELECT 'C' as Loai, sum(DR) as SoTien
+	FROM [CONGNO] CN
+	left join Don_Hang DH on CN.DonHang_ID = DH.ID
+	where CN.DaXoa = 0 and CN.username = @username and trangthaiorder = 'Completed' and [Status] = 1
+	union
+	SELECT 'F' as Loai, sum(DR) as SoTien
+	FROM [CONGNO] CN
+	left join Don_Hang DH on CN.DonHang_ID = DH.ID
+	where CN.DaXoa = 0 and CN.username = @username and trangthaiorder = 'Ordered' and [Status] = 1
+
+
+	select @SoDauKy as DauKy
+	, ISNULL(sum(DR), 0) as TongPhatSinh
+	, ISNULL(sum(CR), 0) as TongThanhToan
+	, @SoDauKy + ISNULL(sum(CanDoi),0) as CuoiKy
+	FROM [CONGNO] CN
+	WHERE DaXoa = 0 and [Status] =1 and [UserName] = @username and NgayGhiNo >= @NgayBatDau and NgayGhiNo <= @NgayKetThuc;
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_CongNoKhachHang]
+AS
+BEGIN
+	select CDCN.UserName, CDCN.TienNo, CDCN.TienHangChuaGiao
+	, CASE WHEN CDCN.TienHangChuaGiao = 0 AND CDCN.TienNo > 0 THEN 999999 
+			WHEN CDCN.TienHangChuaGiao = 0 AND CDCN.TienNo < 0 THEN -999999 
+			WHEN CDCN.TienHangChuaGiao = 0 AND CDCN.TienNo = 0 THEN 0 
+			ELSE CDCN.TienNo*100/CDCN.TienHangChuaGiao END as PhanTram
+	 from
+	(
+		SELECT CN.[UserName]
+			, sum([CanDoi]) as TienNo
+			, Sum(CASE WHEN DH.trangthaiorder = 'Ordered' THEN CN.DR ELSE 0 END) AS TienHangChuaGiao
+			--, sum([CanDoi]) / Sum(CASE WHEN DH.trangthaiorder = 'Ordered' THEN CN.DR ELSE 0 END)
+		FROM [CONGNO] CN
+		left join Don_Hang DH on CN.DonHang_ID = DH.ID and trangthaiorder = 'Ordered'
+		WHERE CN.HienTai = 1 and CN.DaXoa = 0 and [Status] = 1
+		GROUP BY CN.[UserName]
+	) CDCN
+	ORDER BY CDCN.TienNo desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_CongNoKhachHangTheoLo]
+	@TuNgay datetime
+	,@DenNgay datetime
+AS
+BEGIN
+	SELECT KQ.*
+	, (KQ.TienLoHangA + KQ.TienPhiHaiQuanB) as TongTienLoHangAB
+	, ((KQ.TienLoHangA + KQ.TienPhiHaiQuanB) - DaThu) as ConLai
+	FROM   
+	(
+		SELECT LH.*
+		, ISNULL((select sum(TongTienShipVeVN_VND) from tbLoHang_PhiShipVeVN where LoHangID = LH.LoHangID),0) as TienLoHangA
+		, ISNULL((select sum(TongTienThueHaiQuan_VND) from tbLoHang_ThueHaiQuan where LoHangID = LH.LoHangID),0) as TienPhiHaiQuanB
+		--, ISNULL((select sum(TienVND) from tbLoHang_ChiPhiLoHang where LoHangID = LH.LoHangID),0) as TienChiPhiLoHangC
+		, ISNULL((select sum(CR) from CONGNO where HienTai = 1 and DaXoa = 0 and LoHangID = LH.LoHangID),0) as DaThu
+		FROM tbLoHang LH
+		WHERE NgayLoHang between @TuNgay and @DenNgay
+	) KQ
+	ORDER BY KQ.NgayLoHang desc, KQ.LoHangID desc
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_CongNoTheoDotHang]
+	@TuNgay datetime
+	,@DenNgay datetime
+AS
+BEGIN
+	SELECT KQ.*, U.DiaChi, U.PhoneNumber, U.HoTen, DH.DiaChiNhanHang
+	FROM 
+	(
+		SELECT CN1.username
+				, CN1.TenDotHang
+				, CN1.ngayveVN
+				, sum(DR) as TongTien
+				, sum(CASE WHEN [style] in (3,4) THEN DR ELSE 0 END) as TienShip
+				, sum(CASE WHEN [style] = 1 THEN DR ELSE 0 END) as TienHang 
+				, sum(CASE WHEN [style] = 3 THEN DR ELSE 0 END) as TienShipVeVN
+				, sum(CASE WHEN [style] = 4 THEN DR ELSE 0 END) as TienShipTrongNuoc
+				, sum(CASE WHEN [style] = 5 THEN CR ELSE 0 END) as TienDatCoc
+		FROM
+			(
+				SELECT CN.UserName, CN.DR, CN.CR, CN.style, DH.TenDotHang, DH.ngayveVN
+				FROM CONGNO CN 
+				INNER JOIN DON_HANG DH on CN.DonHang_ID = DH.ID
+				WHERE CN.DaXoa = 0
+				and CN.HienTai = 1
+				and CN.[Status] = 1
+				and CN.[style] in (1,3,4,5)
+				and DH.DaXoa = 0
+				and DH.TenDotHang in (select distinct TenDotHang from DON_HANG where ngayveVN between @TuNgay and @DenNgay)
+				and (DH.trangthaiorder in ('Ordered', 'Completed', 'Shipped') or (DH.trangthaiorder is null))
+		
+				UNION ALL
+		
+				SELECT CN.UserName, CN.DR, CN.CR, CN.style, CN.TenDotHang, CONVERT(datetime,  CN.TenDotHang, 112)
+				FROM CONGNO CN 
+				WHERE CN.DaXoa = 0
+				and CN.HienTai = 1
+				and CN.[Status] = 1
+				and CN.[style] in (1,3,4,5)
+				and CN.TenDotHang in (select distinct TenDotHang from DON_HANG where ngayveVN between @TuNgay and @DenNgay)
+			) CN1
+		GROUP BY CN1.username, CN1.TenDotHang, CN1.ngayveVN
+	) KQ
+	INNER JOIN AspNetUsers U ON KQ.username = U.UserName
+	LEFT JOIN DotHang DH ON KQ.TenDotHang = DH.TenDotHang and KQ.username = DH.UserName
+	ORDER BY KQ.TenDotHang desc, KQ.UserName
+
+
+	--SELECT username, sum(tongtienVND) as tongtienVND, sum(CanHang_TienShipVeVN) as CanHang_TienShipVeVN, sum(CanHang_TienShipTrongNuoc) as CanHang_TienShipTrongNuoc FROM DON_HANG WHERE TenDotHang = @TenDotHang and DaXoa = 0 and (trangthaiorder in ('Ordered', 'Completed', 'Shipped') or (trangthaiorder is null)) group by username
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_DoiChieuCongNo]
+	@TuNgay datetime
+	,@OrderNumber nvarchar(100)
+AS
+BEGIN
+	CREATE TABLE #tbTemp (ordernumber nvarchar(100))
+
+	IF(@OrderNumber <> '')
+	BEGIN
+		SET @OrderNumber = '%' + @OrderNumber + '%'
+		INSERT INTO #tbTemp
+			select distinct ordernumber from DON_HANG where DaXoa = 0 and trangthaiOrder in ('Ordered', 'Shipped', 'Completed') and  ngaymuahang >= @TuNgay and ordernumber like @OrderNumber
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #tbTemp
+			select distinct ordernumber from DON_HANG where DaXoa = 0 and trangthaiOrder in ('Ordered', 'Shipped', 'Completed') and  ngaymuahang >= @TuNgay
+	END
+	
+	SELECT A.*, B.SoLinkB, B.SotienB, B.SotienBVND, B.tracking_number, KiemTra = CASE WHEN A.SoTienA < B.SotienB AND abs(A.SoTienA - B.SotienB) >= 0.1 THEN 'Sai' ELSE '' END, KiemTraVND = CASE WHEN A.SoTienAVND < B.SotienBVND AND abs(A.SoTienAVND - B.SotienBVND) >= 1000 THEN 'Sai' ELSE '' END
+	FROM (select DH.ordernumber, SUM(soluong) as SoLinkA, ISNULL(SUM(tongtienUSD), 0) as SoTienA, ISNULL(SUM(tongtienVND), 0) as SoTienAVND, max([ngaymuahang]) as ngaymuahang
+			from DON_HANG DH
+			inner join #tbTemp T on DH.ordernumber = T.ordernumber
+			where DaXoa = 0 
+			group by DH.ordernumber
+			) A
+	LEFT JOIN (select LO.OrderNumber,SUM(TongSoLink) as SoLinkB, ISNULL(SUM(TongTienOrder), 0) as SotienB, ISNULL(SUM(TongTienOrderVND), 0) as SotienBVND, tracking_number
+				from LIST_ORDER LO
+				inner join #tbTemp T on LO.ordernumber = T.ordernumber
+				group by LO.OrderNumber, tracking_number
+				) B ON A.ordernumber = B.OrderNumber
+	ORDER BY A.ngaymuahang desc
+	
+	-- quanglm them ngay 28/09/2016
+	SELECT ISNULL(SUM(A.SoTienA), 0) as SoTienA
+	 ,ISNULL(SUM(A.SoTienAVND), 0) as SoTienAVND
+	 ,ISNULL(SUM(B.SotienB), 0) as SoTienB 
+	 ,ISNULL(SUM(B.SotienBVND), 0) as SoTienBVND 
+	 ,ISNULL(SUM(A.SoTienCong), 0) as SoTienCong
+	 ,ISNULL(SUM(A.SoTienCongVND), 0) as SoTienCongVND
+	 ,ISNULL(SUM(A.SoTienA), 0) - ISNULL(SUM(B.SotienB), 0) as TienChenhLech 
+	 ,ISNULL(SUM(A.SoTienAVND), 0) - ISNULL(SUM(B.SotienBVND), 0) as TienChenhLechVND 
+	FROM (select DH.ordernumber, SUM(soluong) as SoLinkA, ISNULL(SUM(tongtienUSD), 0) as SoTienA, ISNULL(SUM(tongtienVND), 0) as SoTienAVND, max([ngaymuahang]) as ngaymuahang,ISNULL(SUM(tiencongUSD), 0) as SoTienCong,ISNULL(SUM(tiencongVND), 0) as SoTienCongVND
+			from DON_HANG DH
+			inner join #tbTemp T on DH.ordernumber = T.ordernumber
+			where DaXoa = 0 
+			group by DH.ordernumber
+			) A
+	LEFT JOIN (select LO.OrderNumber,SUM(TongSoLink) as SoLinkB, ISNULL(SUM(TongTienOrder), 0) as SotienB, ISNULL(SUM(TongTienOrderVND), 0) as SotienBVND, tracking_number
+				from LIST_ORDER LO
+				inner join #tbTemp T on LO.ordernumber = T.ordernumber
+				group by LO.OrderNumber, tracking_number
+				) B ON A.ordernumber = B.OrderNumber
+
+	DROP TABLE #tbTemp;
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_BaoCao_DoiChieuCongNo1]
+	@TuNgay nvarchar(50)
+    ,@DenNgay nvarchar(50)
+	,@UserName nvarchar(100)
+	,@OrderNumber nvarchar(100)
+AS
+BEGIN
+	CREATE TABLE #tbTemp (ordernumber nvarchar(100))
+
+	DECLARE @Sql nvarchar(MAX);
+	SET @Sql = 'INSERT INTO #tbTemp select distinct ordernumber from DON_HANG where DaXoa = 0 and trangthaiOrder in (''Ordered'', ''Shipped'', ''Completed'') '
+	
+	IF(@OrderNumber <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ordernumber like ''%' + @OrderNumber + '%'''
+	END
+
+	IF(@TuNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ngaymuahang > ''' + @TuNgay + ''''
+	END
+	
+	IF(@DenNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ngaymuahang < ''' + @DenNgay + ''''
+	END
+
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @UserName + ''''
+	END
+
+	EXEC sp_executesql @Sql;
+
+
+	SELECT A.*, B.SoLinkB, B.SotienB, B.SotienBVND, B.tracking_number, KiemTra = CASE WHEN A.SoTienA < B.SotienB AND abs(A.SoTienA - B.SotienB) >= 0.1 THEN 'Sai' ELSE '' END, KiemTraVND = CASE WHEN A.SoTienAVND < B.SotienBVND AND abs(A.SoTienAVND - B.SotienBVND) >= 1000 THEN 'Sai' ELSE '' END
+	FROM (select DH.ordernumber, SUM(soluong) as SoLinkA, ISNULL(SUM(tongtienUSD), 0) as SoTienA, ISNULL(SUM(tongtienVND), 0) as SoTienAVND, max([ngaymuahang]) as ngaymuahang
+			, STUFF((
+						SELECT distinct ', ' +  username
+						FROM DON_HANG 
+						WHERE (DaXoa = 0  AND ordernumber = DH.ordernumber) 
+						FOR XML PATH(''),TYPE).value('(./text())[1]','VARCHAR(MAX)')
+						,1,1,'') AS UserName
+			from DON_HANG DH
+			inner join #tbTemp T on DH.ordernumber = T.ordernumber
+			where DaXoa = 0 
+			group by DH.ordernumber
+			) A
+	LEFT JOIN (select LO.OrderNumber,SUM(TongSoLink) as SoLinkB, ISNULL(SUM(TongTienOrder), 0) as SotienB, ISNULL(SUM(TongTienOrderVND), 0) as SotienBVND, tracking_number
+				from LIST_ORDER LO
+				inner join #tbTemp T on LO.ordernumber = T.ordernumber
+				group by LO.OrderNumber, tracking_number
+				) B ON A.ordernumber = B.OrderNumber
+	ORDER BY A.ngaymuahang desc
+	
+	-- quanglm them ngay 28/09/2016
+	SELECT ISNULL(SUM(A.SoTienA), 0) as SoTienA
+	 ,ISNULL(SUM(A.SoTienAVND), 0) as SoTienAVND
+	 ,ISNULL(SUM(B.SotienB), 0) as SoTienB 
+	 ,ISNULL(SUM(B.SotienBVND), 0) as SoTienBVND 
+	 ,ISNULL(SUM(A.SoTienCong), 0) as SoTienCong
+	 ,ISNULL(SUM(A.SoTienCongVND), 0) as SoTienCongVND
+	 ,ISNULL(SUM(A.SoTienA), 0) - ISNULL(SUM(B.SotienB), 0) as TienChenhLech 
+	 ,ISNULL(SUM(A.SoTienAVND), 0) - ISNULL(SUM(B.SotienBVND), 0) as TienChenhLechVND 
+	FROM (select DH.ordernumber, SUM(soluong) as SoLinkA, ISNULL(SUM(tongtienUSD), 0) as SoTienA, ISNULL(SUM(tongtienVND), 0) as SoTienAVND, max([ngaymuahang]) as ngaymuahang,ISNULL(SUM(tiencongUSD), 0) as SoTienCong,ISNULL(SUM(tiencongVND), 0) as SoTienCongVND
+			from DON_HANG DH
+			inner join #tbTemp T on DH.ordernumber = T.ordernumber
+			where DaXoa = 0 
+			group by DH.ordernumber
+			) A
+	LEFT JOIN (select LO.OrderNumber,SUM(TongSoLink) as SoLinkB, ISNULL(SUM(TongTienOrder), 0) as SotienB, ISNULL(SUM(TongTienOrderVND), 0) as SotienBVND, tracking_number
+				from LIST_ORDER LO
+				inner join #tbTemp T on LO.ordernumber = T.ordernumber
+				group by LO.OrderNumber, tracking_number
+				) B ON A.ordernumber = B.OrderNumber
+
+	DROP TABLE #tbTemp;
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_InPhieuShipTheoDotHang]
+	@TenDotHang nvarchar(50)
+	,@UserName nvarchar(250)
+AS
+BEGIN
+	SELECT KQ.*, U.DiaChi, U.PhoneNumber, U.HoTen, DH.DiaChiNhanHang, DH.SoVanDon, DH.NgayGuiHang
+	FROM 
+	(
+		SELECT CN1.username
+				, CN1.TenDotHang
+				, CN1.ngayveVN
+				, sum(DR) as TongTien
+				, sum(CASE WHEN [style] in (3,4) THEN DR ELSE 0 END) as TienShip
+				, sum(CASE WHEN [style] = 1 THEN DR ELSE 0 END) as TienHang 
+				, sum(CASE WHEN [style] = 3 THEN DR ELSE 0 END) as TienShipVeVN
+				, sum(CASE WHEN [style] = 4 THEN DR ELSE 0 END) as TienShipTrongNuoc
+				, sum(CASE WHEN [style] = 5 THEN CR ELSE 0 END) as TienDatCoc
+		FROM
+			(
+				SELECT CN.UserName, CN.DR, CN.CR, CN.style, DH.TenDotHang, DH.ngayveVN
+				FROM CONGNO CN 
+				INNER JOIN DON_HANG DH on CN.DonHang_ID = DH.ID
+				WHERE CN.DaXoa = 0
+				and CN.HienTai = 1
+				and CN.[Status] = 1
+				and CN.[style] in (1,3,4,5)
+				and DH.DaXoa = 0
+				and DH.TenDotHang = @TenDotHang
+				and CN.UserName = @UserName
+				and (DH.trangthaiorder in ('Ordered', 'Completed', 'Shipped') or (DH.trangthaiorder is null))
+		
+				UNION ALL
+		
+				SELECT CN.UserName, CN.DR, CN.CR, CN.style, CN.TenDotHang, CONVERT(datetime,  CN.TenDotHang, 112)
+				FROM CONGNO CN 
+				WHERE CN.DaXoa = 0
+				and CN.HienTai = 1
+				and CN.[Status] = 1
+				and CN.[style] in (1,3,4,5)
+				and CN.TenDotHang = @TenDotHang
+				and CN.UserName = @UserName
+			) CN1
+		GROUP BY CN1.username, CN1.TenDotHang, CN1.ngayveVN
+	) KQ
+	INNER JOIN AspNetUsers U ON KQ.username = U.UserName
+	LEFT JOIN DotHang DH ON KQ.TenDotHang = DH.TenDotHang and KQ.username = DH.UserName
+	ORDER BY KQ.TenDotHang desc, KQ.UserName
+
+	SELECT DH.*, HM.DaQuaHanMuc, HM.LaKhachVip, LH.TenLoaiHang
+	FROM Don_Hang DH
+	LEFT JOIN HanMucKhachHang HM ON DH.username = HM.UserName
+	LEFT JOIN LoaiHang LH ON DH.LoaiHangID = LH.LoaiHangID 
+	WHERE DH.TenDotHang = @TenDotHang and DH.username = @UserName and DH.DaXoa = 0 and (DH.trangthaiorder in ('Ordered', 'Completed', 'Shipped') or (DH.trangthaiorder is null))
+	ORDER BY DH.ngaymuahang desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_LaiLoTheoLo]
+	@TuNgay datetime
+	,@DenNgay datetime
+AS
+BEGIN
+	SELECT KQ.*
+	, (KQ.TienLoHangA + KQ.TienPhiHaiQuanB) as TongTienLoHangAB
+	, ((KQ.TienLoHangA + KQ.TienPhiHaiQuanB) - TienChiPhiLoHangC) as LaiLoD
+	FROM   
+	(
+		SELECT LH.NgayLoHang, LH.TenLoHang
+		, ISNULL((select sum(TongTienShipVeVN_VND) from tbLoHang_PhiShipVeVN where LoHangID in (select LoHangID from tbLoHang where TenLoHang = LH.TenLoHang)),0) as TienLoHangA
+		, ISNULL((select sum(TongTienThueHaiQuan_VND) from tbLoHang_ThueHaiQuan where LoHangID in (select LoHangID from tbLoHang where TenLoHang = LH.TenLoHang)),0) as TienPhiHaiQuanB
+		, ISNULL((select sum(TienVND) from tbLoHang_ChiPhiLoHang where TenLoHang = LH.TenLoHang),0) as TienChiPhiLoHangC
+		FROM tbLoHang LH
+		WHERE NgayLoHang between @TuNgay and @DenNgay
+		GROUP BY NgayLoHang, TenLoHang
+	) KQ
+	ORDER BY KQ.NgayLoHang desc
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_TongCongNoTheoUser]
+	@username nvarchar(100)
+	,@TuNgay datetime
+	,@DenNgay datetime
+
+AS
+BEGIN
+	IF(@username = '')
+	BEGIN
+		select 
+			U.[UserName]
+			,ISNULL((select sum([CanDoi]) from [CONGNO] where HienTai = 1 and DaXoa = 0 and Status =1 and [NgayGhiNo] < @TuNgay and UserName = U.UserName), 0) as DauKy
+			,ISNULL(sum([DR]), 0) as PhanThu
+			,ISNULL(sum([CR]), 0) as PhanChi
+			--,sum([CR]) - sum([DR])  as ChenhLech
+			,ISNULL((select sum([CanDoi]) from [CONGNO] where HienTai = 1 and DaXoa = 0 and Status =1 and [NgayGhiNo] < @TuNgay and UserName = U.UserName),0) + ISNULL(sum([CanDoi]), 0) as CuoiKy
+			,ISNULL((select sum(tongtienVND) from Don_Hang where DaXoa = 0  and ngaymuahang < @DenNgay and UserName = U.UserName and trangthaiorder in ('Ordered', 'Shipped')),0)  as TienOrdered
+			,case when ISNULL((select sum(tongtienVND) from Don_Hang where DaXoa = 0  and ngaymuahang < @DenNgay and UserName = U.UserName and trangthaiorder in ('Ordered', 'Shipped')),0) <>0 then
+					(ISNULL((select sum([CanDoi]) from [CONGNO] where HienTai = 1 and DaXoa = 0 and Status =1 and [NgayGhiNo] < @TuNgay and UserName = U.UserName),0) + ISNULL(sum([CanDoi]), 0)/ISNULL((select sum(tongtienVND) from Don_Hang where DaXoa = 0  and ngaymuahang < @DenNgay and UserName = U.UserName and trangthaiorder in ('Ordered', 'Shipped')),0))
+			else
+					0
+			end PhanTram
+		FROM 
+		(SELECT distinct UserName FROM CONGNO WHERE HienTai = 1 and DaXoa = 0) U
+		LEFT JOIN [CONGNO] CN ON U.UserName = CN.UserName and HienTai = 1 and DaXoa = 0 and [Status] = 1 and [NgayGhiNo] between @TuNgay and @DenNgay
+		group by U.[UserName]
+	END
+	ELSE
+	BEGIN
+		select 
+			U.[UserName]
+			,ISNULL((select sum([CanDoi]) from [CONGNO] where HienTai = 1 and DaXoa = 0 and Status =1 and [NgayGhiNo] < @TuNgay and UserName = U.UserName), 0) as DauKy
+			,ISNULL(sum([DR]), 0) as PhanThu
+			,ISNULL(sum([CR]), 0) as PhanChi
+			--,sum([CR]) - sum([DR])  as ChenhLech
+			,ISNULL((select sum([CanDoi]) from [CONGNO] where HienTai = 1 and DaXoa = 0 and Status =1 and [NgayGhiNo] < @TuNgay and UserName = U.UserName),0) + ISNULL(sum([CanDoi]), 0) as CuoiKy
+			,ISNULL((select sum(tongtienVND) from Don_Hang where DaXoa = 0  and ngaymuahang < @DenNgay and UserName = U.UserName and trangthaiorder in ('Ordered', 'Shipped')),0)  as TienOrdered
+			,case when ISNULL((select sum(tongtienVND) from Don_Hang where DaXoa = 0  and ngaymuahang < @DenNgay and UserName = U.UserName and trangthaiorder in ('Ordered', 'Shipped')),0) <>0 then  
+					(ISNULL((select sum([CanDoi]) from [CONGNO] where HienTai = 1 and DaXoa = 0 and Status =1 and [NgayGhiNo] < @TuNgay and UserName = U.UserName),0) + ISNULL(sum([CanDoi]), 0) /ISNULL((select sum(tongtienVND) from Don_Hang where DaXoa = 0  and ngaymuahang < @DenNgay and UserName = U.UserName and trangthaiorder in ('Ordered', 'Shipped')),0))
+			else
+					0
+			end PhanTram 
+		FROM 
+		(SELECT distinct UserName FROM CONGNO WHERE HienTai = 1 and DaXoa = 0) U
+		LEFT JOIN [CONGNO] CN ON U.UserName = CN.UserName and HienTai = 1 and DaXoa = 0 and [Status] = 1 and [NgayGhiNo] between @TuNgay and @DenNgay
+		WHERE U.UserName = @username
+		group by U.[UserName]
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_BaoCao_TongDoanhThu]
+	@TuNgay datetime
+	,@DenNgay datetime
+
+AS
+BEGIN
+    
+	select 
+		0 - ISNULL((select sum([CanDoi]) from [CONGNO] where HienTai = 1 and DaXoa = 0 and Status =1 and [NgayGhiNo] < @TuNgay), 0) as DauKy
+		,sum([DR]) as PhanNo
+		,sum([CR]) as PhanCo
+		,sum([CR]) - sum([DR])  as ChenhLech
+		,0 - ISNULL((select sum([CanDoi]) from [CONGNO] where HienTai = 1 and DaXoa = 0 and Status =1 and [NgayGhiNo] < @TuNgay),0) - sum([CanDoi]) as CanDoi
+		,sum(CASE WHEN trangthaiOrder='Ordered' THEN DH.[tongtienVND] ELSE 0 END) as SoTienOrdered
+		,sum(CASE WHEN trangthaiOrder='Completed' THEN DH.[tongtienVND] ELSE 0 END) as SoTienCompleted
+		--,isnull((select sum([tongtienVND]) from DH  where  [DaXoa] =0 and trangthaiOrder='Ordered' ),0) as SoTienOrdered
+		--,isnull((select sum([tongtienVND]) from DH  where [DaXoa] =0 and trangthaiOrder='Completed' ),0) as SoTienCompleted
+	FROM 
+		[CONGNO] cn
+		INNER JOIN 
+		(
+		select cn.CongNo_ID from [CONGNO] cn
+		where 
+		[Status] = 1
+		and HienTai = 1
+		and DaXoa = 0
+		and [NgayGhiNo] between @TuNgay and @DenNgay
+		) CNDH ON cn.CongNo_ID = CNDH.CongNo_ID 
+		LEFT JOIN [DON_HANG] DH ON cn.DonHang_ID = DH.ID
+	--where 
+		
+		--[Status] = 1
+		--and DaXoa = 0
+		--and [NgayGhiNo] between @TuNgay and @DenNgay
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CanHang]
+	@ID int
+	,@LoaiHangID int
+	,@CanHang_SoKg float
+	,@CanHang_TienShipVeVN float
+	,@CanHang_TienShipTrongNuoc float
+	,@CanHang_GhiChuShipVeVN nvarchar(max)
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	DECLARE @username nvarchar(50)
+	SELECT @username = username FROM [DON_HANG] WHERE ID =@ID
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 3))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 3)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE [dbo].[DON_HANG]
+		SET LoaiHangID = @LoaiHangID
+			,CanHang_SoKg = @CanHang_SoKg
+			,CanHang_TienShipVeVN = @CanHang_TienShipVeVN
+			,CanHang_TienShipTrongNuoc = @CanHang_TienShipTrongNuoc
+			,trangthaiOrder = 'Shipped'
+		WHERE ID =@ID
+
+		--Phí ship về VN
+		IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 3))
+		BEGIN
+			UPDATE CONGNO
+			SET DR = CAST(CEILING(@CanHang_TienShipVeVN * 1) / 1 as int)
+			, UserName = @username
+			, DaXoa = 0
+			, GhiChu = 'CN: ' + CAST(@CanHang_SoKg as nvarchar(50)) + ' - ' + @CanHang_GhiChuShipVeVN
+			, NgayCapNhatCuoi = GETDATE()
+			, NguoiCapNhatCuoi = @NguoiTao
+			WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 3
+		END
+		ELSE
+		BEGIN
+			INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, GhiChu, HienTai, NguoiTao)
+			VALUES (@ID, N'Phí ship về VN ' + CAST(@ID as nvarchar(20)), @NgayGhiNo, CAST(CEILING(@CanHang_TienShipVeVN * 1) / 1 as int), 0, @username, 1, 3, 'CN: ' + CAST(@CanHang_SoKg as nvarchar(50)) + ' - ' + @CanHang_GhiChuShipVeVN, 1, @NguoiTao)
+		END
+	END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_BoSungGhiChu]
+	@id nvarchar(4000)
+	,@BoSungGhiChu nvarchar(100)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	
+	UPDATE DON_HANG
+	SET  ghichu =  @BoSungGhiChu
+	WHERE ID in (SELECT s as ID FROM dbo.SplitString(@id, ','))
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_CapNhatDotHang]
+	@TenDotHang nvarchar(50)
+	,@UserName nvarchar(100)
+	,@CanNang float
+	,@PhiShipVeVN_USD float
+	,@TyGia float
+	,@PhiShipVeVN_VND float
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 3))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 3)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE DotHang
+		SET CanNang = @CanNang
+		, PhiShipVeVN_USD = @PhiShipVeVN_USD
+		, TyGia = @TyGia
+		, PhiShipVeVN_VND = @PhiShipVeVN_VND
+		WHERE TenDotHang = @TenDotHang AND UserName = @UserName
+
+		IF(EXISTS (SELECT * FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 3))
+		BEGIN
+			UPDATE CONGNO 
+			SET DR = @PhiShipVeVN_VND 
+			, NgayCapNhatCuoi = GETDATE()
+			, NguoiCapNhatCuoi = @NguoiTao
+			WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 3
+		END
+		ELSE
+		BEGIN
+			INSERT INTO CONGNO(NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, TenDotHang, HienTai, NguoiTao)
+			VALUES (N'Phí ship về VN ' + @TenDotHang, @NgayGhiNo, @PhiShipVeVN_VND, 0, @username, 1, 3, @TenDotHang, 1, @NguoiTao)
+		END
+	END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_CauHinh]
+(	
+    @TenCauHinh nvarchar(250)
+    ,@GiaTriCauHinh nvarchar(255)	
+)	
+AS
+BEGIN
+    SET NOCOUNT ON;
+    if not exists(select * from CauHinh where TenCauHinh=@TenCauHinh)
+    begin
+        insert into CauHinh(TenCauHinh,GiaTriCauHinh) values(@TenCauHinh,@GiaTriCauHinh)
+    end
+    else begin	
+        update CauHinh set GiaTriCauHinh=@GiaTriCauHinh where TenCauHinh=@TenCauHinh
+    end
+	
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_CauHoiThacMac]
+	@ID int
+	,@CauHoi nvarchar(500)
+AS
+BEGIN
+		UPDATE THACMAC
+		SET CauHoi = @CauHoi
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_ChiTietTracking]
+	@ChiTietTrackingID int
+	,@LinkHinhDaiDien nvarchar(max)
+	,@SoLuong int
+	,@Gia float
+	,@GhiChu nvarchar(max)
+AS
+BEGIN
+	UPDATE tbChiTietTracking
+	SET LinkHinhDaiDien = CASE WHEN @LinkHinhDaiDien is not null AND @LinkHinhDaiDien <> '' THEN @LinkHinhDaiDien ELSE LinkHinhDaiDien END
+	, SoLuong = @SoLuong
+	, Gia = @Gia
+	, GhiChu = @GhiChu
+	WHERE ChiTietTrackingID = @ChiTietTrackingID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_ChuyenVeReceived]
+	@ordernumber nvarchar(50)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	--DELETE CONGNO WHERE DonHang_ID IN (select ID from [DON_HANG] where [ordernumber] = @ordernumber)
+	INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, GhiChu, HienTai)
+	SELECT DonHang_ID, N'Chuyển về Received ' + CAST(DonHang_ID as nvarchar(20)), GETDATE(), DR * (-1), CR, UserName, [Status], style, '', 0
+	FROM CONGNO WHERE HienTai = 1 AND DonHang_ID IN (select ID from [DON_HANG] where [ordernumber] = @ordernumber)
+	
+	UPDATE CONGNO SET HienTai = 0 WHERE HienTai = 1 AND DonHang_ID IN (select ID from [DON_HANG] where [ordernumber] = @ordernumber)
+		
+	
+	DELETE LIST_ORDER WHERE [ordernumber] = @ordernumber
+	
+
+	UPDATE [dbo].[DON_HANG]
+	SET [trangthaiOrder] = 'Received'
+	WHERE [ordernumber] = @ordernumber
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_CompleteDotHang]
+	@username nvarchar(100)
+	--,@ShipperID int
+	,@TenDotHang nvarchar(100)
+	--,@SoVanDon nvarchar(100)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	--IF(@SoVanDon = '')
+	--BEGIN
+		UPDATE DON_HANG
+		SET trangthaiOrder = 'Completed'
+		WHERE username = @username 
+		--and ShipperID = @ShipperID
+		and TenDotHang = @TenDotHang
+		--and (SoVanDon is null OR SoVanDon = '')
+	--END
+	--ELSE
+	--BEGIN
+	--	UPDATE DON_HANG
+	--	SET trangthaiOrder = 'Completed'
+	--	WHERE username = @username 
+	--	and ShipperID = @ShipperID
+	--	and TenDotHang = @TenDotHang
+	--	and SoVanDon = @SoVanDon
+	--END
+	
+	UPDATE DotHang
+	SET DaComplete = 1
+	WHERE username = @username 
+	and TenDotHang = @TenDotHang
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_CongNo]
+	@CongNo_ID int
+	,@NoiDung nvarchar(100)
+	--,@NgayGhiNo datetime
+	,@DR float
+	,@CR float
+	,@UserName nvarchar(100)
+	,@GhiChu nvarchar(500)
+	,@Status int
+	,@LoHangID int
+	,@NguoiTao nvarchar(250)
+	,@udNoiDung bit
+	,@udDR bit
+	,@udCR bit
+	,@udUserName bit
+	,@udGhiChu bit
+	,@udStatus bit
+	,@udLoHangID bit
+AS
+	
+BEGIN
+	
+	DECLARE @usernameOld nvarchar(50)
+	DECLARE	@NgayGhiNoOld datetime
+	SELECT @usernameOld = username, @NgayGhiNoOld = NgayGhiNo FROM CONGNO WHERE CongNo_ID = @CongNo_ID
+
+	DECLARE	@DuocCapNhat int
+	DECLARE	@DuocCapNhatOld int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @username
+	EXEC @DuocCapNhatOld = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @usernameOld
+
+	IF ((@DuocCapNhat = 0) AND (@DuocCapNhatOld = 0))
+	BEGIN
+		UPDATE CONGNO
+		SET 
+		--,[NgayGhiNo] = @NgayGhiNo
+		NoiDung = (CASE WHEN @udNoiDung = 1 THEN @NoiDung ELSE NoiDung END)
+		,[DR] = (CASE WHEN @udDR = 1 THEN @DR ELSE [DR] END)
+		,[CR] = (CASE WHEN @udCR = 1 THEN @CR ELSE [CR] END)
+		,[UserName] = (CASE WHEN @udUserName = 1 THEN @UserName ELSE [UserName] END)
+		,[GhiChu] = (CASE WHEN @udGhiChu = 1 THEN @GhiChu ELSE [GhiChu] END)
+		,[Status] = (CASE WHEN @udStatus = 1 THEN @Status ELSE [Status] END)
+		,[LoHangID] = (CASE WHEN @udLoHangID = 1 THEN @LoHangID ELSE [LoHangID] END)
+		, NgayCapNhatCuoi = GETDATE()
+		, NguoiCapNhatCuoi = @NguoiTao
+		WHERE CongNo_ID = @CongNo_ID
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_CongNo_LoHang_PhiShipVeVN]
+	@LoHangID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+	DECLARE @TinhTrang as nvarchar(50);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DECLARE @TongTienShipVeVN int
+		SELECT @TongTienShipVeVN = SUM(TongTienShipVeVN_VND) FROM tbLoHang_PhiShipVeVN WHERE LoHangID = @LoHangID
+
+		--Phí ship về VN
+		IF(@TongTienShipVeVN > 0)
+		BEGIN
+			IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6))
+			BEGIN
+				UPDATE CONGNO
+				SET DR = CAST(CEILING(@TongTienShipVeVN * 1) / 1 as int)
+				, UserName = @UserName
+				, DaXoa = 0
+				, NgayCapNhatCuoi = GETDATE()
+				, NguoiCapNhatCuoi = @NguoiTao
+				WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6
+			END
+			ELSE
+			BEGIN
+				INSERT INTO CONGNO(LoHangID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, HienTai, NguoiTao)
+				VALUES (@LoHangID, N'Phí ship về VN lô hàng ' + CAST(@LoHangID as nvarchar(20)), GETDATE(), CAST(CEILING(@TongTienShipVeVN * 1) / 1 as int), 0, @UserName, 1, 6, 1, @NguoiTao)
+			END
+		END
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_CongNo_LoHang_ThueHaiQuan]
+	@LoHangID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+	DECLARE @TinhTrang as nvarchar(50);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DECLARE @TongTienThueHaiQuan int
+		SELECT @TongTienThueHaiQuan = SUM(TongTienThueHaiQuan_VND) FROM tbLoHang_ThueHaiQuan WHERE LoHangID = @LoHangID
+
+		--Thuế hải quan
+		IF(@TongTienThueHaiQuan > 0)
+		BEGIN
+			IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7))
+			BEGIN
+				UPDATE CONGNO
+				SET DR = CAST(CEILING(@TongTienThueHaiQuan * 1) / 1 as int)
+				, UserName = @UserName
+				, DaXoa = 0
+				, NgayCapNhatCuoi = GETDATE()
+				, NguoiCapNhatCuoi = @NguoiTao
+				WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7
+			END
+			ELSE
+			BEGIN
+				INSERT INTO CONGNO(LoHangID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, HienTai, NguoiTao)
+				VALUES (@LoHangID, N'Thuế hải quan lô hàng ' + CAST(@LoHangID as nvarchar(20)), GETDATE(), CAST(CEILING(@TongTienThueHaiQuan * 1) / 1 as int), 0, @UserName, 1, 7, 1, @NguoiTao)
+			END
+		END
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_CongNoSimple]
+	@CongNo_ID int
+	,@NoiDung nvarchar(100)
+	--,@NgayGhiNo datetime
+	,@DR float
+	,@CR float
+	,@GhiChu nvarchar(500)
+	,@NguoiTao nvarchar(250)
+AS
+	
+BEGIN
+	
+	DECLARE @usernameOld nvarchar(50)
+	DECLARE	@NgayGhiNoOld datetime
+	SELECT @usernameOld = username, @NgayGhiNoOld = NgayGhiNo FROM CONGNO WHERE CongNo_ID = @CongNo_ID
+
+	DECLARE	@DuocCapNhat int
+	DECLARE	@DuocCapNhatOld int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @usernameOld
+	EXEC @DuocCapNhatOld = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @usernameOld
+
+	IF ((@DuocCapNhat = 0) AND (@DuocCapNhatOld = 0))
+	BEGIN
+		UPDATE CONGNO
+		SET NoiDung = @NoiDung
+		--,[NgayGhiNo] = @NgayGhiNo
+		,[DR] = @DR
+		,[CR] = @CR
+		,[GhiChu] = @GhiChu
+		, NgayCapNhatCuoi = GETDATE()
+		, NguoiCapNhatCuoi = @NguoiTao
+		WHERE CongNo_ID = @CongNo_ID
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_CongShipVeVN]
+	@ID int
+	,@LoaiHangID int
+	,@LoaiTien nvarchar(50)
+	,@TienCongShipVeVN float
+	,@KhachBuon bit
+AS
+BEGIN
+	UPDATE CongShipVeVN
+	SET LoaiHangID = @LoaiHangID
+	, LoaiTien = @LoaiTien
+	, TienCongShipVeVN = @TienCongShipVeVN
+	, KhachBuon = @KhachBuon
+	WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_DiaChiNhanHang]
+	@ID int
+	,@UserName nvarchar(250)
+	,@DiaChi nvarchar(max)
+AS
+BEGIN
+		UPDATE DiaChiNhanHang
+		SET UserName = @UserName
+		,DiaChi = @DiaChi
+		WHERE ID = @ID
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_DotHang_Ship]
+	@TenDotHang nvarchar(100)
+	,@UserName nvarchar(100)
+	,@ShipperID int
+	,@NgayGuiHang date
+	,@SoVanDon nvarchar(100)
+	,@PhiShipTrongNuoc float
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	DECLARE @TyGiaVND float;
+	DECLARE @PhiShipHang nvarchar(100);
+	DECLARE @GuiHang_Tien float;
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 4))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 4)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE DotHang
+		SET ShipperID = @ShipperID
+		, NgayGuiHang = @NgayGuiHang 
+		, SoVanDon = @SoVanDon
+		, PhiShipTrongNuoc = @PhiShipTrongNuoc
+		WHERE TenDotHang = @TenDotHang AND UserName = @UserName
+
+		UPDATE DON_HANG
+		SET trangthaiOrder = 'Shipped'
+		WHERE TenDotHang = @TenDotHang AND username = @UserName
+
+		IF(EXISTS (SELECT * FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 4))
+		BEGIN
+			UPDATE CONGNO
+			SET DR = @PhiShipTrongNuoc
+			, NgayCapNhatCuoi = GETDATE()
+			, NguoiCapNhatCuoi = @NguoiTao
+			WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 4
+		END
+		ELSE
+		BEGIN
+			IF(@PhiShipTrongNuoc > 0)
+			BEGIN
+				INSERT INTO CONGNO(NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, TenDotHang, HienTai, NguoiTao)
+				VALUES (N'Phí ship trong nước ' + @TenDotHang, GETDATE(), @PhiShipTrongNuoc, 0, @username, 1, 4, @TenDotHang, 1, @NguoiTao)
+			END
+		END
+	END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_DotHang_Ship1]
+	@TenDotHang nvarchar(100)
+	,@UserName nvarchar(100)
+	,@ShipperID int
+	,@NgayGuiHang date
+	,@SoVanDon nvarchar(100)
+	,@PhiShipTrongNuoc float
+	,@DiaChiNhanHang nvarchar(max)
+	,@DatCoc float
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	DECLARE @TyGiaVND float;
+	DECLARE @PhiShipHang nvarchar(100);
+	DECLARE @GuiHang_Tien float;
+	DECLARE	@DuocCapNhat1 int
+	DECLARE	@DuocCapNhat2 int
+	SET @DuocCapNhat1 = 0;
+	SET @DuocCapNhat2 = 0;
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 4))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 4)
+	END
+	EXEC @DuocCapNhat1 = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+	
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 5))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 5)
+	END
+	EXEC @DuocCapNhat2 = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF ((@DuocCapNhat1 = 0) and (@DuocCapNhat2 = 0))
+	BEGIN
+		UPDATE DotHang
+		SET ShipperID = @ShipperID
+		, NgayGuiHang = @NgayGuiHang 
+		, SoVanDon = @SoVanDon
+		, PhiShipTrongNuoc = @PhiShipTrongNuoc
+		, DiaChiNhanHang = @DiaChiNhanHang
+		WHERE TenDotHang = @TenDotHang AND UserName = @UserName
+
+		UPDATE DON_HANG
+		SET trangthaiOrder = 'Shipped'
+		WHERE TenDotHang = @TenDotHang AND username = @UserName
+
+		--Phí ship trong nước
+		IF(EXISTS (SELECT * FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 4))
+		BEGIN
+			UPDATE CONGNO 
+			SET DR = @PhiShipTrongNuoc 
+			, NgayCapNhatCuoi = GETDATE()
+			, NguoiCapNhatCuoi = @NguoiTao
+			WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 4
+		END
+		ELSE
+		BEGIN
+			IF(@PhiShipTrongNuoc > 0)
+			BEGIN
+				INSERT INTO CONGNO(NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, TenDotHang, HienTai, NguoiTao)
+				VALUES (N'Phí ship trong nước ' + @TenDotHang, GETDATE(), @PhiShipTrongNuoc, 0, @username, 1, 4, @TenDotHang, 1, @NguoiTao)
+			END
+		END
+
+		--Đặt cọc
+		IF(EXISTS (SELECT * FROM CONGNO WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 5))
+		BEGIN
+			UPDATE CONGNO 
+			SET CR = @DatCoc 
+			, NgayCapNhatCuoi = GETDATE()
+			, NguoiCapNhatCuoi = @NguoiTao
+			WHERE HienTai = 1 AND TenDotHang = @TenDotHang AND UserName = @UserName AND style = 5
+		END
+		ELSE
+		BEGIN
+			IF(@DatCoc > 0)
+			BEGIN
+				INSERT INTO CONGNO(NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, TenDotHang, HienTai, NguoiTao)
+				VALUES (N'Đặt cọc ' + @TenDotHang, GETDATE(), 0, @Datcoc, @username, 1, 5, @TenDotHang, 1, @NguoiTao)
+			END
+		END
+	END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_GiaTienCong]
+	@ID int
+	,@LoaiTien nvarchar(50)
+	,@TuGia float
+	,@DenGia float
+	,@TienCong1Mon float
+	,@TinhTheoPhanTram bit
+	,@KhachBuon bit
+AS
+BEGIN
+	UPDATE GiaTienCong
+	SET LoaiTien = @LoaiTien
+	, TuGia = @TuGia
+	, DenGia = @DenGia
+	, TienCong1Mon = @TienCong1Mon
+	, TinhTheoPhanTram = @TinhTheoPhanTram
+	, KhachBuon = @KhachBuon
+	WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_HangCoSan]
+	@ID int
+	,@TenHang nvarchar(500)
+	,@LinkHang nvarchar(500)
+	,@GiaTien int
+	,@MoTa nvarchar(2500)
+	,@SoSao int
+	,@ThuTu int
+	,@NoiDungTimKiem nvarchar(max)
+	,@MaSoHang nvarchar(250)
+AS
+BEGIN
+		UPDATE HangCoSan
+		SET TenHang = @TenHang
+		, LinkHang = @LinkHang
+		, GiaTien = @GiaTien
+		, MoTa = @MoTa
+		, SoSao = @SoSao
+		, ThuTu = @ThuTu
+		, NoiDungTimKiem = @NoiDungTimKiem
+		, MaSoHang = @MaSoHang
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_HanMucKhachHang]
+	@ID int
+	,@DaQuaHanMuc bit
+	,@LaKhachVip bit
+AS
+	
+BEGIN
+		UPDATE HanMucKhachHang
+		SET DaQuaHanMuc = @DaQuaHanMuc
+		,LaKhachVip = @LaKhachVip
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_HanMucKhachHangTheoUser]
+	@UserName nvarchar(100)
+	,@DaQuaHanMuc bit
+AS
+	
+BEGIN
+	IF(EXISTS (SELECT * FROM HanMucKhachHang WHERE UserName = @username))
+	BEGIN
+		UPDATE HanMucKhachHang SET DaQuaHanMuc = @DaQuaHanMuc WHERE UserName = @username
+	END
+	ELSE
+	BEGIN
+		INSERT INTO HanMucKhachHang(UserName, DaQuaHanMuc, LaKhachVip) VALUES(@username, @DaQuaHanMuc, 0)
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_HinhAnhHangCoSan]
+	@ID int
+	,@TenHinh nvarchar(250)
+AS
+BEGIN
+		UPDATE HangCoSan
+		SET TenHinh = @TenHinh
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_HinhAnhWebLogo]
+	@ID int
+	,@TenHinh nvarchar(250)
+AS
+BEGIN
+		UPDATE WebLogo
+		SET TenHinh = @TenHinh
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_LoHang]
+	@LoHangID int
+	,@UserName nvarchar(250)
+	,@LoaiTien nvarchar(50)
+	,@TyGia int
+	,@NgayDenDuKien datetime
+	,@NgayDenThucTe datetime
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	DECLARE @TyGia_HienTai nvarchar(50)
+	SELECT @TyGia_HienTai = TyGia FROM [tbLoHang] WHERE LoHangID = @LoHangID
+
+	UPDATE [dbo].[tbLoHang]
+	SET LoaiTien = @LoaiTien
+		,TyGia = @TyGia
+		--,UserName = @UserName
+		,NgayDenDuKien = @NgayDenDuKien
+		,NgayDenThucTe = @NgayDenThucTe
+		,NguoiTao = @NguoiTao
+	WHERE LoHangID =@LoHangID
+
+	IF(@TyGia_HienTai <> @TyGia)
+	BEGIN
+		UPDATE tbLoHang_PhiShipVeVN
+		SET TongTienShipVeVN_VND = CAST(CEILING(CanNang * DonGia * @TyGia * 1) / 1 as int)
+		WHERE LoHangID = @LoHangID
+
+		EXEC SP_CapNhat_CongNo_LoHang_PhiShipVeVN @LoHangID
+
+
+		UPDATE tbLoHang_ThueHaiQuan
+		SET TongTienThueHaiQuan_VND = CAST(CEILING(CanNangSoLuongGiaTri * DonGia * @TyGia * 1 ) / 1 as int)
+		WHERE LoHangID = @LoHangID
+
+		EXEC SP_CapNhat_CongNo_LoHang_ThueHaiQuan @LoHangID
+	END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_LoHang_ChiPhiLoHang]
+	@LoHang_ChiPhiLoHangID int
+	,@LoaiChiPhiLoHangID int
+	,@TienVND float
+AS
+BEGIN
+	UPDATE tbLoHang_ChiPhiLoHang
+	SET LoaiChiPhiLoHangID = @LoaiChiPhiLoHangID
+	, TienVND = @TienVND
+	WHERE LoHang_ChiPhiLoHangID = @LoHang_ChiPhiLoHangID
+	
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_LoHang_PhiShipVeVN]
+	@LoHangID int
+	,@LoHang_PhiShipVeVNID int
+	,@LoaiHangShipID int
+	,@CanNang float
+	,@DonGia int
+	,@TongTienShipVeVN_VND int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE tbLoHang_PhiShipVeVN
+		SET LoaiHangShipID = @LoaiHangShipID
+		, CanNang = @CanNang
+		, DonGia = @DonGia
+		, TongTienShipVeVN_VND = @TongTienShipVeVN_VND
+		WHERE LoHang_PhiShipVeVNID = @LoHang_PhiShipVeVNID
+
+		EXEC SP_CapNhat_CongNo_LoHang_PhiShipVeVN @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_LoHang_PhiShipVeVN_ThanhTien]
+	@LoHangID int
+	,@LoHang_PhiShipVeVNID int
+	,@LoaiHangShipID int
+	,@TongTienShipVeVN_VND int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE tbLoHang_PhiShipVeVN
+		SET LoaiHangShipID = @LoaiHangShipID
+		, TongTienShipVeVN_VND = CAST(CEILING(@TongTienShipVeVN_VND * 1) / 1 as int)
+		WHERE LoHang_PhiShipVeVNID = @LoHang_PhiShipVeVNID
+
+		EXEC SP_CapNhat_CongNo_LoHang_PhiShipVeVN @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_LoHang_ThueHaiQuan]
+	@LoHangID int
+	,@LoHang_ThueHaiQuanID int
+	,@LoaiHangThueHaiQuanID int
+	,@CanNangSoLuongGiaTri float
+	,@DonGia float
+	,@TongTienThueHaiQuan_VND int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE tbLoHang_ThueHaiQuan
+		SET LoaiHangThueHaiQuanID = @LoaiHangThueHaiQuanID
+		, CanNangSoLuongGiaTri = @CanNangSoLuongGiaTri
+		, DonGia = @DonGia
+		, TongTienThueHaiQuan_VND = @TongTienThueHaiQuan_VND
+		WHERE LoHang_ThueHaiQuanID = @LoHang_ThueHaiQuanID
+
+		EXEC SP_CapNhat_CongNo_LoHang_ThueHaiQuan @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_LoHang_ThueHaiQuan_ThanhTien]
+	@LoHangID int
+	,@LoHang_ThueHaiQuanID int
+	,@LoaiHangThueHaiQuanID int
+	,@TongTienThueHaiQuan_VND int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE tbLoHang_ThueHaiQuan
+		SET LoaiHangThueHaiQuanID = @LoaiHangThueHaiQuanID
+		, TongTienThueHaiQuan_VND = CAST(CEILING(@TongTienThueHaiQuan_VND * 1 ) / 1 as int)
+		WHERE LoHang_ThueHaiQuanID = @LoHang_ThueHaiQuanID
+
+		EXEC SP_CapNhat_CongNo_LoHang_ThueHaiQuan @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassCancel]
+	@id nvarchar(4000)
+	,@ghichu nvarchar(500)
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, ''
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		IF(@ghichu <> '')
+		BEGIN
+			SET @ghichu = ' ' + @ghichu
+		END
+
+		UPDATE DON_HANG 
+		SET trangthaiOrder = 'Cancelled'
+		, ghichu = ghichu + @ghichu
+		WHERE ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+		INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, GhiChu, HienTai, NguoiTao)
+		SELECT DonHang_ID, N'Cancel đơn hàng ' + CAST(DonHang_ID as nvarchar(20)), GETDATE(), DR * (-1), CR, UserName, [Status], style, '', 0, @NguoiTao
+		FROM CONGNO WHERE HienTai = 1 AND DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	
+		UPDATE CONGNO 
+		SET HienTai = 0
+		, NguoiCapNhatCuoi = @NguoiTao
+		, NgayCapNhatCuoi = GETDATE()
+		WHERE HienTai = 1 AND DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	END
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassCancel1]
+	@id nvarchar(4000)
+	--,@ghichu nvarchar(500)
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, ''
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		--IF(@ghichu <> '')
+		--BEGIN
+		--	SET @ghichu = ' ' + @ghichu
+		--END
+		select 1;
+
+		UPDATE DON_HANG
+		SET trangthaiOrder = 'Cancelled'
+		--, ghichu = ghichu + @ghichu
+		WHERE ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	
+		--UPDATE CONGNO
+		--SET DaXoa = 1
+		--WHERE DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+		INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, GhiChu, HienTai, NguoiTao)
+		SELECT DonHang_ID, N'Cancel đơn hàng ' + CAST(DonHang_ID as nvarchar(20)), GETDATE(), DR * (-1), CR, UserName, [Status], style, '', 0, @NguoiTao
+		FROM CONGNO WHERE HienTai = 1 AND DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	
+		UPDATE CONGNO 
+		SET HienTai = 0 
+		, NguoiCapNhatCuoi = @NguoiTao
+		, NgayCapNhatCuoi = GETDATE()
+		WHERE HienTai = 1 AND DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	END
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassCancelTracking]
+	@id nvarchar(4000)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE tbTracking
+	SET TinhTrang = 'Cancelled'
+	WHERE TrackingID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassComplete]
+	@id nvarchar(4000)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE DON_HANG
+	SET trangthaiOrder = 'Completed'
+	WHERE ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	
+	--UPDATE CONGNO
+	--SET DaXoa = 1
+	--WHERE DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassCompleteAllTrackingWithFilter]
+	@UserName nvarchar(250)
+	,@TinhTrangFilter nvarchar(100)
+	,@NoiDungTim nvarchar(250)
+	,@TimTheo int
+	,@TrackingNumber nvarchar(500)
+	,@TenLoHang nvarchar(50)
+	,@QuocGiaID int
+	,@DaXoa bit
+	,@TuNgay nvarchar(15)
+	,@DenNgay nvarchar(15)
+	,@TinhTrang nvarchar(50)
+	,@NgayChuyenTinhTrang datetime
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @SqlWhere nvarchar(MAX);
+	SET @SqlWhere = ' WHERE DaXoa = ' + CAST(@DaXoa AS CHAR(1))
+	IF(@UserName <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND UserName = ''' + @UserName + ''''
+	END
+	
+	IF(@TinhTrang <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND TinhTrang in (' + @TinhTrangFilter + ')'
+	END
+	
+	IF(@NoiDungTim <> '')
+	BEGIN
+		IF(@TimTheo = -1)
+		BEGIN
+			SET @SqlWhere = @SqlWhere + ' AND ((TrackingID like N''%' + @NoiDungTim + '%'') OR (OrderNumber like N''%' + @NoiDungTim + '%'') OR (TenLoHang like N''%' + @NoiDungTim + '%'') OR (TrackingNumber like N''%' + @NoiDungTim + '%'') OR (GhiChu like N''%' + @NoiDungTim + '%'') OR (Kien like N''%' + @NoiDungTim + '%'') OR (Mawb like N''%' + @NoiDungTim + '%'') OR (Hawb like N''%' + @NoiDungTim + '%'') OR (TenQuocGia like N''%' + @NoiDungTim + '%''))'
+		END
+		ELSE IF(@TimTheo = 0)
+		BEGIN
+			SET @SqlWhere = @SqlWhere + ' AND (OrderNumber like N''%' + @NoiDungTim + '%'')'
+		END
+	END
+	
+	IF(@TrackingNumber <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND TrackingNumber like ''%' + @TrackingNumber + '%'''
+	END
+
+	IF(@TenLoHang <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND TenLoHang = ''' + @TenLoHang + ''''
+	END
+
+	IF(@QuocGiaID <> -1)
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND TK.QuocGiaID = ' + CAST(@QuocGiaID as nvarchar(10))
+	END
+
+	IF(@TuNgay <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND NgayDatHang >= ''' + @TuNgay + ''''
+	END
+
+	IF(@DenNgay <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND NgayDatHang <= ''' + @DenNgay+ ''''
+	END
+
+
+	--Update tracking
+	DECLARE @SqlUpdateTracking nvarchar(MAX);
+	SET @SqlUpdateTracking = 'UPDATE tbTracking SET TinhTrang = ''Completed'' ' + @SqlWhere
+	EXEC sp_executesql @SqlUpdateTracking;
+
+	IF @NgayChuyenTinhTrang is null
+	BEGIN
+		SET @NgayChuyenTinhTrang = getdate()
+	END
+
+	--Update insert tinhtrangtracking
+	DECLARE @SqlInsertTinhTrangTracking nvarchar(MAX);
+	SET @SqlInsertTinhTrangTracking = 'INSERT INTO tbTinhTrangTracking (TrackingID, TinhTrang, NgayChuyenTinhTrang, NgayTao, NguoiTao)'
+	SET @SqlInsertTinhTrangTracking = @SqlInsertTinhTrangTracking + ' SELECT TrackingID, ''Completed'', ''' + convert(varchar, @NgayChuyenTinhTrang, 120) +''', '''+ convert(varchar, getdate(), 120) +''', ''' + @NguoiTao + ''''
+	SET @SqlInsertTinhTrangTracking = @SqlInsertTinhTrangTracking + ' FROM tbTracking ' + @SqlWhere
+	EXEC sp_executesql @SqlUpdateTracking;
+	
+	EXEC sp_executesql @SqlInsertTinhTrangTracking;
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassCompleteTracking]
+	@id nvarchar(4000)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE tbTracking
+	SET TinhTrang = 'Completed'
+	WHERE TrackingID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassInTransitTracking]
+	@id nvarchar(4000)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE tbTracking
+	SET TinhTrang = 'InTransit'
+	WHERE TrackingID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassReceived]
+	@id nvarchar(4000)
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, ''
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		UPDATE DON_HANG
+		SET trangthaiOrder = 'Received'
+		WHERE ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	
+		--UPDATE CONGNO
+		--SET DaXoa = 1
+		--WHERE DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+		INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, GhiChu, HienTai, NguoiTao)
+		SELECT DonHang_ID, N'Mass Received đơn hàng ' + CAST(DonHang_ID as nvarchar(20)), GETDATE(), DR * (-1), CR, UserName, [Status], style, '', 0, @NguoiTao
+		FROM CONGNO WHERE HienTai = 1 AND DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	
+		UPDATE CONGNO
+		SET HienTai = 0 
+		, NguoiCapNhatCuoi = @NguoiTao
+		, NgayCapNhatCuoi = GETDATE()
+		WHERE HienTai = 1 AND DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	END
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassReceivedTracking]
+	@id nvarchar(4000)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	
+	UPDATE tbTracking
+	SET TinhTrang = 'Received'
+	WHERE TrackingID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassShipped]
+	@id nvarchar(4000)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	
+	UPDATE DON_HANG
+	SET trangthaiOrder = 'Shipped'
+	WHERE ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ',')) and trangthaiOrder = 'Ordered'
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassShippedTracking]
+	@id nvarchar(4000)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	
+	UPDATE tbTracking
+	SET TinhTrang = 'Shipped'
+	WHERE TrackingID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassStatusAllTrackingWithFilter]
+	@UserName nvarchar(250)
+	,@TinhTrangFilter nvarchar(100)
+	,@NoiDungTim nvarchar(250)
+	,@TimTheo int
+	,@TrackingNumber nvarchar(500)
+	,@TenLoHang nvarchar(50)
+	,@QuocGiaID int
+	,@DaXoa bit
+	,@TuNgay nvarchar(15)
+	,@DenNgay nvarchar(15)
+	,@TinhTrang nvarchar(50)
+	,@NgayChuyenTinhTrang datetime
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @SqlWhere nvarchar(MAX);
+	SET @SqlWhere = ' WHERE DaXoa = ' + CAST(@DaXoa AS CHAR(1))
+	IF(@UserName <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND UserName = ''' + @UserName + ''''
+	END
+	
+	IF(@TinhTrangFilter <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND TinhTrang in (' + @TinhTrangFilter + ')'
+	END
+	
+	IF(@NoiDungTim <> '')
+	BEGIN
+		IF(@TimTheo = -1)
+		BEGIN
+			SET @SqlWhere = @SqlWhere + ' AND ((TrackingID like N''%' + @NoiDungTim + '%'') OR (OrderNumber like N''%' + @NoiDungTim + '%'') OR (TenLoHang like N''%' + @NoiDungTim + '%'') OR (TrackingNumber like N''%' + @NoiDungTim + '%'') OR (GhiChu like N''%' + @NoiDungTim + '%'') OR (Kien like N''%' + @NoiDungTim + '%'') OR (Mawb like N''%' + @NoiDungTim + '%'') OR (Hawb like N''%' + @NoiDungTim + '%'') OR (TenQuocGia like N''%' + @NoiDungTim + '%''))'
+		END
+		ELSE IF(@TimTheo = 0)
+		BEGIN
+			SET @SqlWhere = @SqlWhere + ' AND (OrderNumber like N''%' + @NoiDungTim + '%'')'
+		END
+	END
+	
+	IF(@TrackingNumber <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND TrackingNumber like ''%' + @TrackingNumber + '%'''
+	END
+
+	IF(@TenLoHang <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND TenLoHang = ''' + @TenLoHang + ''''
+	END
+
+	IF(@QuocGiaID <> -1)
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND QuocGiaID = ' + CAST(@QuocGiaID as nvarchar(10))
+	END
+
+	IF(@TuNgay <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND NgayDatHang >= ''' + @TuNgay + ''''
+	END
+
+	IF(@DenNgay <> '')
+	BEGIN
+		SET @SqlWhere = @SqlWhere + ' AND NgayDatHang <= ''' + @DenNgay+ ''''
+	END
+
+
+	--Update tracking
+	DECLARE @SqlUpdateTracking nvarchar(MAX);
+	SET @SqlUpdateTracking = 'UPDATE tbTracking SET TinhTrang = ''' + @TinhTrang + ''' ' + @SqlWhere
+	EXEC sp_executesql @SqlUpdateTracking;
+
+	IF @NgayChuyenTinhTrang is null
+	BEGIN
+		SET @NgayChuyenTinhTrang = getdate()
+	END
+
+	--Update insert tinhtrangtracking
+	DECLARE @SqlInsertTinhTrangTracking nvarchar(MAX);
+	SET @SqlInsertTinhTrangTracking = 'INSERT INTO tbTinhTrangTracking (TrackingID, TinhTrang, NgayChuyenTinhTrang, NgayTao, NguoiTao)'
+	SET @SqlInsertTinhTrangTracking = @SqlInsertTinhTrangTracking + ' SELECT TrackingID, ''' + @TinhTrang + ''', ''' + convert(varchar, @NgayChuyenTinhTrang, 120) +''', '''+ convert(varchar, getdate(), 120) +''', ''' + @NguoiTao + ''''
+	SET @SqlInsertTinhTrangTracking = @SqlInsertTinhTrangTracking + ' FROM tbTracking ' + @SqlWhere
+	EXEC sp_executesql @SqlUpdateTracking;
+	
+	EXEC sp_executesql @SqlInsertTinhTrangTracking;
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_MassStatusTracking]
+	@id nvarchar(4000)
+	,@TinhTrang nvarchar(50)
+	,@NgayChuyenTinhTrang datetime
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE tbTracking
+	SET TinhTrang = @TinhTrang
+	WHERE TrackingID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	IF @NgayChuyenTinhTrang is null
+	BEGIN
+		SET @NgayChuyenTinhTrang = getdate()
+	END
+
+	INSERT INTO tbTinhTrangTracking (TrackingID, TinhTrang, NgayChuyenTinhTrang, NgayTao, NguoiTao)
+	SELECT TrackingID, @TinhTrang, @NgayChuyenTinhTrang, getdate(), @NguoiTao
+	FROM tbTracking
+	WHERE TrackingID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_NgayLoHang]
+	@id nvarchar(4000)
+	,@NgayLoHang datetime
+	,@GhiChu nvarchar(500)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	
+	DECLARE @TenLoHang nvarchar(500)
+	DECLARE @UserName nvarchar(100)
+
+	SET @TenLoHang = (CONVERT([nvarchar](50),@NgayLoHang,(112)) + case when @GhiChu='' OR @GhiChu IS NULL then '' else '-' + @GhiChu end)
+
+
+	UPDATE tbTracking
+	SET NgayLoHang = @NgayLoHang 
+	, TenLoHang = @TenLoHang
+	WHERE TrackingID in (SELECT s as ID FROM dbo.SplitString(@id, ','))
+
+	DECLARE RS SCROLL CURSOR FOR 
+	SELECT distinct UserName FROM tbTracking WHERE DaXoa = 0 AND TrackingID in (SELECT s as ID FROM dbo.SplitString(@id, ','))
+	
+	OPEN RS
+	FETCH NEXT FROM RS INTO @UserName
+
+	WHILE( @@FETCH_STATUS = 0)
+	BEGIN
+		IF(EXISTS (SELECT * FROM tbLoHang WHERE TenLoHang = @TenLoHang AND UserName = @UserName))
+		BEGIN
+			UPDATE tbLoHang SET DaXoa = 0 WHERE TenLoHang = @TenLoHang AND UserName = @UserName
+		END
+		ELSE
+		BEGIN
+			INSERT INTO tbLoHang(UserName, NgayLoHang, GhiChu) VALUES(@UserName, @NgayLoHang, @GhiChu)
+		END
+		FETCH NEXT FROM RS INTO @UserName
+	END
+	CLOSE RS
+	DEALLOCATE RS
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_NgayVeVN]
+	@id nvarchar(4000)
+	,@NgayVeVN date
+	,@TenDotHang nvarchar(100)
+	,@BoSungGhiChu nvarchar(100)
+	,@ChuyenSangComplete bit
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	
+	IF(@BoSungGhiChu <> '')
+	BEGIN
+		SET @BoSungGhiChu = ' ' + @BoSungGhiChu 
+	END
+
+	UPDATE DON_HANG
+	SET ngayveVN = @NgayVeVN 
+	, TenDotHang = @TenDotHang
+	, ghichu = ghichu + @BoSungGhiChu
+	WHERE ID in (SELECT s as ID FROM dbo.SplitString(@id, ','))
+
+	IF(@ChuyenSangComplete = 1)
+	BEGIN
+		UPDATE DON_HANG
+		SET trangthaiOrder = 'Completed'
+		WHERE ID in (SELECT s as ID FROM dbo.SplitString(@id, ',')) and (trangthaiOrder = 'Ordered' OR trangthaiOrder = 'Shipped') 
+	END
+
+
+	DECLARE @TyGia float
+	DECLARE @UserName nvarchar(100)
+
+	DECLARE RS SCROLL CURSOR FOR 
+	SELECT distinct username FROM DON_HANG WHERE DaXoa = 0 AND ID in (SELECT s as ID FROM dbo.SplitString(@id, ','))
+	
+	OPEN RS
+	FETCH NEXT FROM RS INTO @UserName
+
+	WHILE( @@FETCH_STATUS = 0)
+	BEGIN
+		IF(EXISTS (SELECT * FROM DotHang WHERE TenDotHang = @TenDotHang AND UserName = @UserName))
+		BEGIN
+			UPDATE DotHang SET NgayVeVN = @NgayVeVN WHERE TenDotHang = @TenDotHang AND UserName = @UserName
+		END
+		ELSE
+		BEGIN
+			SET @TyGia = (SELECT CongShipVeVN FROM TY_GIA WHERE Name = (SELECT top 1 LoaiTien FROM DON_HANG WHERE DaXoa = 0 AND ID in (SELECT s as ID FROM dbo.SplitString(@id, ',')) AND UserName = @UserName))
+			INSERT INTO DotHang(TenDotHang, NgayVeVN, UserName, TyGia) VALUES(@TenDotHang, @NgayVeVN, @UserName, @TyGia)
+		END
+		FETCH NEXT FROM RS INTO @UserName
+	END
+	CLOSE RS
+	DEALLOCATE RS
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhat_ShipHang]
+	@id nvarchar(4000)
+	,@ShipperID int
+	,@NgayGuiHang date
+	,@TenDotHang nvarchar(100)
+	,@SoVanDon nvarchar(100)
+	,@GuiHang_SoKg float
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	
+
+	DECLARE @username nvarchar(100);
+	DECLARE @TyGiaVND float;
+	DECLARE @PhiShipHang nvarchar(100);
+	DECLARE @GuiHang_Tien float;
+
+	SET @username = (SELECT top 1 username FROM DON_HANG WHERE ID in (SELECT s as ID FROM dbo.SplitString(@id, ',')))
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+
+		SELECT @TyGiaVND = TyGiaVND FROM TY_GIA WHERE Name = 'YEN'
+		SELECT @PhiShipHang = GiaTriCauHinh FROM CauHinh WHERE TenCauHinh = 'PhiShipHang'
+		SET @GuiHang_Tien = CAST(@PhiShipHang as float) * @GuiHang_SoKg * @TyGiaVND
+
+
+		UPDATE DON_HANG
+		SET ShipperID = @ShipperID
+		, NgayGuiHang = @NgayGuiHang 
+		, TenDotHang = @TenDotHang
+		, SoVanDon = @SoVanDon
+		, GuiHang_SoKg = @GuiHang_SoKg
+		, GuiHang_Tien = @GuiHang_Tien
+		, trangthaiOrder = 'Shipped'
+		WHERE ID in (SELECT s as ID FROM dbo.SplitString(@id, ','))
+
+		INSERT INTO CONGNO(NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, HienTai, NguoiTao)
+		VALUES (N'Phí ship ' + @TenDotHang, GETDATE(), @GuiHang_Tien, 0, @username, 1, 1, 1, @NguoiTao)
+	END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_Shipper]
+	@ID int
+	,@ShipperName nvarchar(50)
+	,@ShipperPhone nvarchar(20)
+	,@ShipperAddress nvarchar(250)
+AS
+BEGIN
+		UPDATE SHIPPER_MAN
+		SET ShipperName = @ShipperName
+		, ShipperPhone = @ShipperPhone
+		, ShipperAddress = @ShipperAddress
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_TaiKhoanNganHang]
+	@ID int
+	,@TenTaiKhoanNganHang nvarchar(250)
+	,@GhiChu nvarchar(500)
+AS
+BEGIN
+		UPDATE TaiKhoanNganHang
+		SET TenTaiKhoanNganHang = @TenTaiKhoanNganHang
+		,GhiChu = @GhiChu
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_ThongTinWeb]
+	@ID int
+	,@TenThongTin nvarchar(250)
+	,@NoiDungThongTin nvarchar(MAX)
+AS
+BEGIN
+		UPDATE THONGTIN_WEB
+		SET TenThongTin = @TenThongTin
+		, NoiDungThongTin = @NoiDungThongTin
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_TinhTrangTracking]
+	@TinhTrangTrackingID int
+	,@GhiChu nvarchar(max)
+AS
+BEGIN
+	UPDATE tbTinhTrangTracking
+	SET GhiChu = @GhiChu
+	WHERE TinhTrangTrackingID = @TinhTrangTrackingID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_TongTienOrderVND]
+	@OrderNumber nvarchar(50)
+	,@tracking_number nvarchar(100)
+	,@TongTienOrderVND float
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	IF(@tracking_number='')
+	BEGIN
+		UPDATE LIST_ORDER
+		SET TongTienOrderVND = @TongTienOrderVND 
+		WHERE OrderNumber = @OrderNumber
+		and (tracking_number = @tracking_number OR tracking_number is null)
+	END
+	ELSE
+	BEGIN
+		UPDATE LIST_ORDER
+		SET TongTienOrderVND = @TongTienOrderVND 
+		WHERE OrderNumber = @OrderNumber
+		and tracking_number = @tracking_number
+	END
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_Tracking]
+	@TrackingID int
+	,@UserName nvarchar(250)
+	,@TrackingNumber nvarchar(250)
+	,@OrderNumber nvarchar(250)
+	,@NgayDatHang datetime
+	,@NhaVanChuyenID int
+	,@QuocGiaID int
+	,@TinhTrang nvarchar(50)
+	,@GhiChu nvarchar(max)
+	,@NguoiTao nvarchar(250)
+	,@Kien nvarchar(250)
+	,@Mawb nvarchar(250)
+	,@Hawb nvarchar(250)
+	,@CoTaoLoHang bit
+	,@GhiChuLoHang nvarchar(500)
+	,@udUserName bit
+	,@udOrderNumber bit
+	,@udNgayDatHang bit
+	,@udNhaVanChuyenID bit
+	,@udQuocGiaID bit
+	,@udTinhTrang bit
+	,@udGhiChu bit
+	,@udKien bit
+	,@udMawb bit
+	,@udHawb bit
+	,@udGhiChuLoHang bit
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	--DECLARE @UserNameHienTai nvarchar(250)
+	--SELECT @UserNameHienTai = UserName
+	--FROM [tbTracking]
+	--where TrackingID =@TrackingID
+
+	UPDATE [dbo].[tbTracking]
+	SET UserName = (CASE WHEN @udUserName = 1 THEN @UserName ELSE UserName END)
+		,TrackingNumber = @TrackingNumber
+		,OrderNumber = (CASE WHEN @udOrderNumber = 1 THEN @OrderNumber ELSE OrderNumber END)
+		,NgayDatHang = (CASE WHEN @udNgayDatHang = 1 THEN @NgayDatHang ELSE NgayDatHang END)
+		,NhaVanChuyenID = (CASE WHEN @udNhaVanChuyenID = 1 THEN @NhaVanChuyenID ELSE NhaVanChuyenID END)
+		,QuocGiaID = (CASE WHEN @udQuocGiaID = 1 THEN @QuocGiaID ELSE QuocGiaID END)
+		,TinhTrang = (CASE WHEN @udTinhTrang = 1 THEN @TinhTrang ELSE TinhTrang END)
+		,GhiChu = (CASE WHEN @udGhiChu = 1 THEN @GhiChu ELSE GhiChu END)
+		,NguoiTao = @NguoiTao
+		,Kien = (CASE WHEN @udKien = 1 THEN @Kien ELSE Kien END)
+		,Mawb = (CASE WHEN @udMawb = 1 THEN @Mawb ELSE Mawb END)
+		,Hawb = (CASE WHEN @udHawb = 1 THEN @Hawb ELSE Hawb END)
+	WHERE TrackingID =@TrackingID
+
+	IF((@udGhiChuLoHang = 1) AND (@CoTaoLoHang = 1))
+	BEGIN
+		declare @sID nvarchar(50)
+		set @sID = CAST(@TrackingID as nvarchar)
+
+		declare @ngayhientai datetime
+		set @ngayhientai = getdate()
+
+		exec SP_CapNhat_NgayLoHang @sID, @ngayhientai, @GhiChuLoHang
+	END
+
+
+	--IF((@udUserName = 1) AND (@UserNameHienTai <> @UserName))
+	--BEGIN
+	--	EXEC SP_CapNhat_CongNo_Tracking_PhiShipVeVN @TrackingID
+	--	EXEC SP_CapNhat_CongNo_Tracking_PhuThuNhapCanh @TrackingID
+	--END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_TrackingNumber]
+	@OrderNumber nvarchar(50)
+	,@tracking_number nvarchar(100)
+	,@NgayNhanTaiNuocNgoai date
+	,@TrackingLink nvarchar(MAX)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE LIST_ORDER
+	SET NgayNhanTaiNuocNgoai = @NgayNhanTaiNuocNgoai 
+	, tracking_number = @tracking_number
+	, TrackingLink = @TrackingLink
+	WHERE OrderNumber = @OrderNumber
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_TraLoiThacMac]
+	@ID int
+	,@TraLoi nvarchar(500)
+AS
+BEGIN
+		UPDATE THACMAC
+		SET TraLoi = @TraLoi
+		, NgayTraLoi = GETDATE()
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_TyGia]
+	@Name nvarchar(50)
+	,@TyGiaVND float
+	,@CongShipVeVN float
+AS
+BEGIN
+		UPDATE TY_GIA
+		SET TyGiaVND = @TyGiaVND
+		, CongShipVeVN = @CongShipVeVN
+		WHERE Name = @Name
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_WebLogo]
+	@ID int
+	--,@TenHinh nvarchar(250)
+	,@NoiDung nvarchar(500)
+	,@LinkWeb nvarchar(500)
+	,@ThuTu int
+AS
+BEGIN
+		UPDATE WebLogo
+		SET NoiDung = @NoiDung
+		, LinkWeb = @LinkWeb
+		, ThuTu = @ThuTu
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_Website]
+	@ID int
+	,@WebsiteName nvarchar(250)
+	,@GhiChu nvarchar(500)
+AS
+BEGIN
+		UPDATE WEBSITE
+		SET WebsiteName = @WebsiteName
+		,GhiChu = @GhiChu
+		WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_CapNhat_YeuCauShipHang]
+	@TenDotHang nvarchar(100)
+	, @UserName nvarchar(100)
+	, @YeuCauGui_GhiChu nvarchar(500)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE DotHang
+	SET YeuCauGuiHang = 1 
+	, NgayYeuCauGuiHang = getdate()
+	, YeuCauGui_GhiChu = @YeuCauGui_GhiChu
+	WHERE UserName = @UserName AND TenDotHang = @TenDotHang
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhatDonHang]
+	@ID int
+	,@ordernumber nvarchar(50)
+	,@username nvarchar(100)
+	,@usernamesave nvarchar(100)
+	,@linkweb nvarchar(500)
+	,@linkhinh nvarchar(500)
+	,@corlor nvarchar(50)
+	,@size nvarchar(50)
+	,@soluong int
+	,@dongiaweb float
+	,@saleoff float
+	,@phuthu float
+	,@shipUSA float
+	,@tax float
+	,@cong float
+	,@loaitien nvarchar(10)
+	,@ghichu nvarchar(max)
+	,@tygia float
+	,@giasauoffUSD float
+	,@giasauoffVND float
+	,@tiencongUSD float
+	,@tiencongVND float
+	,@tongtienUSD float
+	,@tongtienVND float
+	,@trangthaiOrder nvarchar(50)
+	,@ngaymuahang date
+	,@ngayveVN date
+	,@AdminNote nvarchar(max)
+	,@LoaiHangID int
+	,@QuocGiaID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatDonHang] @ID, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DECLARE @usernameOld nvarchar(50)
+		SELECT @usernameOld = username FROM DON_HANG WHERE  ID = @ID
+
+
+		UPDATE [dbo].[DON_HANG]
+		SET [ordernumber] = @ordernumber
+			,[username] = @username
+			,[usernamesave] = @usernamesave
+			,[linkweb] = @linkweb
+			,[linkhinh] = @linkhinh
+			,[corlor] = @corlor
+			,[size] = @size
+			,[soluong] = @soluong
+			,[dongiaweb] = @dongiaweb
+			,[saleoff] = @saleoff
+			,[phuthu] = @phuthu
+			,[shipUSA] = @shipUSA
+			,[tax] = @tax
+			,[cong] = @cong
+			,[loaitien] = @loaitien
+			,[ghichu] = @ghichu
+			,[tygia] = @tygia
+			,giasauoffUSD = @giasauoffUSD
+			,[tiencongUSD] = @tiencongUSD
+			,[tongtienUSD] = @tongtienUSD
+			,giasauoffVND = @giasauoffVND
+			,[tongtienVND] = @tongtienVND
+			,[tiencongVND] = @tiencongVND
+			,[trangthaiOrder] = @trangthaiOrder
+			,ngaymuahang = @ngaymuahang
+			,ngayveVN = @ngayveVN
+			,[AdminNote] = @AdminNote
+			,[LoaiHangID] = CASE WHEN @LoaiHangID is not null THEN @LoaiHangID ELSE [LoaiHangID] END
+			,[QuocGiaID] = CASE WHEN @QuocGiaID is not null THEN @QuocGiaID ELSE [QuocGiaID] END
+		WHERE ID =@ID
+
+		IF(@username <> @usernameOld)
+		BEGIN
+			UPDATE CONGNO
+			SET UserName = @username
+			, NguoiCapNhatCuoi = @NguoiTao
+			, NgayCapNhatCuoi = GETDATE()
+			WHERE DonHang_ID = @ID
+		END
+
+		IF(@trangthaiOrder = 'Ordered' OR @trangthaiOrder = 'Shipped' OR @trangthaiOrder = 'Completed') 
+		BEGIN
+			IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 1))
+			BEGIN
+				-- update CONGNO
+				UPDATE CONGNO
+				SET DR = CAST(CEILING(@tongtienVND * 1) / 1 as int)
+				, DaXoa = 0
+				, NguoiCapNhatCuoi = @NguoiTao
+				, NgayCapNhatCuoi = GETDATE()
+				WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 1
+			END
+			ELSE
+			BEGIN
+				-- insert CONGNO
+				INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, HienTai, NguoiTao)
+				VALUES (@ID, N'Phí mua ' + CAST(@ID as nvarchar(20)), GETDATE(), CAST(CEILING(@tongtienVND * 1) / 1 as int), 0, @username, 1, 1, 1, @NguoiTao)
+			END
+		END
+		ELSE IF( -- Nếu đang ở trạng thái Ordered/Completed mà chuyển qua Received/Cancelled thì xóa khỏi CONGNO
+			(@trangthaiOrder = 'Received' OR @trangthaiOrder = 'Cancelled')
+		)
+		BEGIN
+			--DELETE CONGNO WHERE DonHang_ID = @ID
+			INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, GhiChu, HienTai, NguoiTao)
+			SELECT DonHang_ID, N'Cập nhật đơn hàng ' + CAST(DonHang_ID as nvarchar(20)), GETDATE(), DR * (-1), CR, UserName, [Status], style, '', 0, @NguoiTao
+			FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID
+	
+			UPDATE CONGNO 
+			SET HienTai = 0 
+			, NguoiCapNhatCuoi = @NguoiTao
+			, NgayCapNhatCuoi = GETDATE()
+			WHERE HienTai = 1 AND DonHang_ID = @ID
+		
+		END
+	END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhatDonHangSimple]
+	@ID int
+	,@WebsiteName nvarchar(100)
+	,@username nvarchar(100)
+	,@linkweb nvarchar(500)
+	,@linkhinh nvarchar(500)
+	,@corlor nvarchar(50)
+	,@size nvarchar(50)
+	,@soluong int
+	,@dongiaweb float
+	,@loaitien nvarchar(10)
+	,@ghichu nvarchar(max)
+	,@tygia float
+	,@saleoff float
+	,@LoaiHangID int
+	,@MaSoHang nvarchar(50)
+	,@QuocGiaID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatDonHang] @ID, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DECLARE @usernameOld nvarchar(50)
+		SELECT @usernameOld = username FROM DON_HANG WHERE  ID = @ID
+
+		UPDATE [dbo].[DON_HANG]
+		SET [username] = @username
+			,WebsiteName = @WebsiteName
+			,[linkweb] = @linkweb
+			,[linkhinh] = @linkhinh
+			,[corlor] = @corlor
+			,[size] = @size
+			,[soluong] = @soluong
+			,[dongiaweb] = @dongiaweb
+			,[loaitien] = @loaitien
+			,[ghichu] = @ghichu
+			,[tygia] = @tygia
+			,[saleoff] = @saleoff
+			,[LoaiHangID] = CASE WHEN @LoaiHangID is not null THEN @LoaiHangID ELSE [LoaiHangID] END
+			,[MaSoHang] = @MaSoHang
+			,[QuocGiaID] = CASE WHEN @QuocGiaID is not null THEN @QuocGiaID ELSE [QuocGiaID] END
+		WHERE ID =@ID
+
+		IF(@username <> @usernameOld)
+		BEGIN
+			UPDATE CONGNO
+			SET UserName = @username
+			, NguoiCapNhatCuoi = @NguoiTao
+			, NgayCapNhatCuoi = GETDATE()
+			WHERE DonHang_ID = @ID
+		END
+
+		DECLARE @HangKhoan bit
+		SELECT @HangKhoan = HangKhoan FROM [DON_HANG] WHERE ID = @ID
+        
+		IF(@HangKhoan=1)
+		BEGIN
+			UPDATE [dbo].[DON_HANG]
+			SET tongtienVND = CAST((CEILING(((@dongiaweb * @soluong * @tygia)) * 1) / 1) as int)
+			WHERE ID = @ID
+
+			IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 1))
+			BEGIN
+				-- update CONGNO
+				UPDATE CONGNO
+				SET DR = CAST((CEILING((@dongiaweb * @soluong) * @tygia * 1) / 1) as int)
+				, NguoiCapNhatCuoi = @NguoiTao
+				, NgayCapNhatCuoi = GETDATE()
+				WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 1
+			END
+		END
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_CapNhatDonHangSimpleCoTamTinh]
+	@ID int
+	,@WebsiteName nvarchar(100)
+	,@username nvarchar(100)
+	,@linkweb nvarchar(500)
+	,@linkhinh nvarchar(500)
+	,@corlor nvarchar(50)
+	,@size nvarchar(50)
+	,@soluong int
+	,@dongiaweb float
+	,@loaitien nvarchar(10)
+	,@ghichu nvarchar(max)
+	,@tygia float
+	,@saleoff float
+	,@cong float
+	,@shipUSA float
+	,@tax float
+	,@phuthu float
+	,@QuocGiaID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatDonHang] @ID, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DECLARE @usernameOld nvarchar(50)
+		SELECT @usernameOld = username FROM DON_HANG WHERE  ID = @ID
+
+		DECLARE @tiencong float
+		DECLARE @tiencongVND float
+		DECLARE @tien float
+		DECLARE @tiencong1mon float
+	
+		SET @tien = ((100 - @saleoff) / 100) * @dongiaweb * @soluong;
+    
+		SET @tiencong = @tien * @cong / 100;
+		DECLARE @TinhCongTheoCongThuc bit
+		DECLARE @tinhtheophantram float
+		DECLARE @khachbuon bit
+		SET @tiencongVND = 0;
+
+	
+		SELECT @khachbuon = KhachBuon FROM AspNetUsers where UserName = @username
+		SELECT @tiencong1mon=TienCong1Mon, @tinhtheophantram = TinhTheoPhanTram FROM GiaTienCong WHERE ((@dongiaweb  > TuGia) and (@dongiaweb  <= DenGia)) and LoaiTien = @loaitien and KhachBuon = @khachbuon
+        
+		IF (@tinhtheophantram=1)
+		BEGIN
+			--SET @cong = @tiencong1mon;
+			SET @tiencong = @tien * @cong / 100;
+			SET @tiencongVND = @tiencong * @tygia;
+		END
+		ELSE
+		BEGIN
+			SET @tiencong = 0;
+			SET @tiencongVND = @tiencong1mon * @soluong;
+		END
+
+
+		SET @tien = @tien + @tien * 0.01 * @tax;
+		SET @tien = @tien + @shipUSA * @soluong;
+		SET @tien = @tien + @phuthu * @soluong;
+
+		UPDATE [dbo].[DON_HANG]
+		SET [username] = @username
+			,WebsiteName = @WebsiteName
+			,[linkweb] = @linkweb
+			,[linkhinh] = @linkhinh
+			,[corlor] = @corlor
+			,[size] = @size
+			,[soluong] = @soluong
+			,[dongiaweb] = @dongiaweb
+			,[loaitien] = @loaitien
+			,[ghichu] = @ghichu
+			,[tygia] = @tygia
+			,[saleoff] = @saleoff
+			, shipUSA = @shipUSA
+			, tax = @tax
+			, phuthu = @phuthu
+			, cong = @cong
+			, giasauoffUSD = @tien
+			, giasauoffVND = @tien * @tygia
+			, tiencongUSD = @tiencong
+			, tiencongVND = @tiencongVND
+			, tongtienUSD = @tien + @tiencong
+			, tongtienVND = CAST((CEILING(((@tien * @tygia) + @tiencongVND) * 1) / 1) as int)
+			,[QuocGiaID] = CASE WHEN @QuocGiaID is not null THEN @QuocGiaID ELSE [QuocGiaID] END
+		WHERE ID =@ID
+
+		IF(@username <> @usernameOld)
+		BEGIN
+			UPDATE CONGNO
+			SET UserName = @username
+			, NguoiCapNhatCuoi = @NguoiTao
+			, NgayCapNhatCuoi = GETDATE()
+			WHERE DonHang_ID = @ID
+		END
+
+		DECLARE @HangKhoan bit
+		SELECT @HangKhoan = HangKhoan FROM [DON_HANG] WHERE ID = @ID
+        
+		IF(@HangKhoan=1)
+		BEGIN
+			UPDATE [dbo].[DON_HANG]
+			SET tongtienVND = CAST((CEILING(((@dongiaweb * @soluong * @tygia)) * 1) / 1) as int)
+			WHERE ID = @ID
+
+			IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 1))
+			BEGIN
+				-- update CONGNO
+				UPDATE CONGNO
+				SET DR = CAST((CEILING((@dongiaweb * @soluong) * @tygia * 1) / 1) as int)
+				, NguoiCapNhatCuoi = @NguoiTao
+				, NgayCapNhatCuoi = GETDATE()
+				WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 1
+			END
+		END
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_ClearDuLieuTheoUser]
+	@UserName nvarchar(100)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE CONGNO SET DaXoa = 1, HienTai = 0 WHERE UserName = @UserName
+	UPDATE DON_HANG SET DaXoa = 1 WHERE username = @UserName
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_DongKy]
+	@KyCanDongID int
+	, @UserName nvarchar(50)
+	, @LaKyDauTien bit
+	, @NguoiTao nvarchar(50)
+AS
+BEGIN
+	SET QUERY_GOVERNOR_COST_LIMIT 0;
+	--select * from tbky
+
+	declare @IDKyDauTien int;
+	SELECT top 1 @IDKyDauTien = KyID FROM tbKy order by TenKy asc
+	IF(@IDKyDauTien = @KyCanDongID)
+	BEGIN
+		SET @LaKyDauTien = 1
+	END
+	
+	Declare @ThangKyCanDong int;
+	Declare @NamKyCanDong int;
+	Declare @DaDong_KyCanDong bit;
+	Declare @TenKyCanDong int;
+
+	Declare @KyIDDaDongGanNhat int;
+	Declare @ThangKyDaDongGanNhat int;
+	Declare @NamKyDaDongGanNhat int;
+	Declare @TenKyDaDongGanNhat int;
+
+	DECLARE @UserNameCanDongKy nvarchar(100)
+
+	Declare @DauKy float;
+	Declare @PhatSinhThuDR float;
+	Declare @PhatSinhChiCR float;
+
+	Declare @NgayDauKy datetime;
+	Declare @NgayCuoiKy datetime;
+	Declare @NgayDauKyLienKeTruoc datetime;
+
+
+	--Lấy thông tin kỳ hiện tại
+	SELECT  @TenKyCanDong = TenKy, @DaDong_KyCanDong = DaDong, @NgayDauKy = NgayDauKy, @NgayCuoiKy = NgayCuoiKy
+	--,@ThangKyCanDong = Thang, @NamKyCanDong = Nam
+	FROM tbKy
+	WHERE KyID = @KyCanDongID
+
+	--SET @NgayDauKy = DATETIMEFROMPARTS (@NamKyCanDong, @ThangKyCanDong, 1, 0, 0, 0, 0)
+	--SET @NgayCuoiKy = DATEADD(month, 1, @NgayDauKy)
+	SET @NgayDauKyLienKeTruoc = DATEADD(month, -1, @NgayDauKy)
+
+	--Lấy kỳ đã đóng gần nhất
+	SELECT @KyIDDaDongGanNhat = KyID, @ThangKyDaDongGanNhat = Thang, @NamKyDaDongGanNhat = Nam, @TenKyDaDongGanNhat = TenKy 
+	FROM tbKy
+	WHERE Nam = YEAR(@NgayDauKyLienKeTruoc) and Thang = MONTH(@NgayDauKyLienKeTruoc)
+
+	-- Nếu kỳ trước chưa đóng thì không làm nữa
+	IF(EXISTS (SELECT * FROM tbKy where DaDong = 0 and TenKy < @TenKyCanDong))
+	BEGIN
+		SELECT 1 -- Có kỳ trước chưa đóng
+	END
+	-- kiểm tra đã có kỳ liền kề trước chưa
+	ELSE IF ((@KyIDDaDongGanNhat IS NULL) AND (@LaKyDauTien = 0))
+	BEGIN
+		SELECT 2 -- Không có kỳ liền kề trước
+	END
+	-- Nếu bảng công nợ có dữ liệu chưa duyệt thì không cho đóng kỳ
+	ELSE IF (EXISTS (select * from [CONGNO] where DaXoa = 0 and Status <> 1 and NgayGhiNo < @NgayCuoiKy)) --and [NgayGhiNo] > @NgayDauKy
+	BEGIN
+		SELECT 3 -- Có dữ liệu công nợ chưa duyệt
+	END
+	ELSE
+	BEGIN
+		--Lập danh sách user với các thông tin:
+			--> Tính giá trị DauKy = CuoiKy của kỳ liền kề trước
+				--> nếu kỳ gần nhất là kỳ liền kề thì không cần tính, lấy số cuối kỳ là xong
+				--> nếu kỳ gần nhất là khoảng cách nhiều kỳ hoặc không có kỳ đã đóng gần nhất thì -->Tính phát sinh từ NgayDongKyGanNhat đến NgayDauKyCanDong
+			--> Tính giá trị phát sinh thu DR, phát sinh chi CR
+		--> Lưu vào bảng tbChotKy
+
+		--Xóa dữ liệu cũ
+		delete tbChotKy where KyID = @KyCanDongID
+
+		--Thêm dữ liệu mới
+		INSERT INTO tbChotKy (KyID, UserName, DauKy, PhatSinhThuDR, PhatSinhChiCR, NguoiTao, NgayTao)
+		select 
+			@KyCanDongID as KyID
+			, U.[UserName]
+			, CASE WHEN @LaKyDauTien = 1 THEN ISNULL((select sum([CanDoi]) from [CONGNO] where DaXoa = 0 and Status = 1 and [NgayGhiNo] < @NgayDauKy and UserName = U.UserName), 0)
+										ELSE ISNULL((select top 1 CuoiKy from tbChotKy where UserName = U.UserName and KyID = @KyIDDaDongGanNhat), 0)
+			END as DauKy
+			,SUM(ISNULL([DR], 0)) as PhatSinhThuDR
+			,SUM(ISNULL([CR], 0)) as PhatSinhChiCR
+			,@NguoiTao as NguoiTao
+			,getdate() as NgayTao
+		FROM AspNetUsers U
+		LEFT JOIN [CONGNO] CN ON U.UserName = CN.UserName and DaXoa = 0 and [Status] = 1 and [NgayGhiNo] between @NgayDauKy and @NgayCuoiKy
+		group by U.[UserName]
+
+		UPDATE tbKy SET DaDong = 1 WHERE KyID = @KyCanDongID
+
+		SELECT 0;
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_DongKyMoTam]
+	@ChotKyID int
+	, @NguoiTao nvarchar(50)
+AS
+BEGIN
+	Declare @UserNameCanDong nvarchar(250);
+	Declare @NgayCuoiKyCanDong datetime;
+
+    DECLARE @CS_KyID int;
+    DECLARE @CS_NgayDauKy datetime;
+    DECLARE @CS_NgayCuoiKy datetime;
+
+	--Lấy thông tin User và ngày cuối kỳ cần đóng
+	SELECT @NgayCuoiKyCanDong = ky.NgayCuoiKy, @UserNameCanDong = CK.UserName
+	FROM tbChotKy CK
+	INNER JOIN tbKy Ky ON CK.KyID = Ky.KyID
+	WHERE ChotKyID = @ChotKyID
+
+	DECLARE RS SCROLL CURSOR FOR 
+		SELECT Ky.KyID, NgayDauKy, NgayCuoiKy
+		FROM tbKy Ky
+		INNER JOIN tbChotKy CK ON CK.KyID = Ky.KyID AND CK.UserName = @UserNameCanDong
+		WHERE ky.NgayCuoiKy >= @NgayCuoiKyCanDong
+		ORDER BY Ky.TenKy
+
+	OPEN RS
+
+	FETCH NEXT FROM RS INTO @CS_KyID, @CS_NgayDauKy, @CS_NgayCuoiKy
+	WHILE(@@FETCH_STATUS <> -1)
+	BEGIN
+		UPDATE tbChotKy
+		SET TamMoKy = 0
+		, DauKy = ISNULL((select top 1 CuoiKy from tbChotKy where UserName = @UserNameCanDong and KyID = (SELECT top 1 KyID FROM tbKy WHERE Nam = YEAR(DATEADD(month, -1, @CS_NgayDauKy)) and Thang = MONTH(DATEADD(month, -1, @CS_NgayDauKy)))), 0)
+		, PhatSinhThuDR = (Select ISNULL(SUM(ISNULL([DR], 0)),0) from [CONGNO] where UserName = @UserNameCanDong and HienTai = 1 and DaXoa = 0 and [Status] = 1 and [NgayGhiNo] between @CS_NgayDauKy and @CS_NgayCuoiKy)
+		, PhatSinhChiCR = (Select ISNULL(SUM(ISNULL([CR], 0)),0) from [CONGNO] where UserName = @UserNameCanDong and HienTai = 1 and DaXoa = 0 and [Status] = 1 and [NgayGhiNo] between @CS_NgayDauKy and @CS_NgayCuoiKy)
+		, NgayCapNhatCuoi = GETDATE()
+		, NguoiCapNhatCuoi = @NguoiTao
+		WHERE KyID = @CS_KyID and UserName = @UserNameCanDong
+
+		FETCH NEXT FROM RS INTO @CS_KyID, @CS_NgayDauKy, @CS_NgayCuoiKy
+	END
+	CLOSE RS
+	DEALLOCATE RS
+
+	SELECT 0;
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_KiemTra_DuocCapNhatCongNo]
+	@NgayGhiNo datetime
+	, @UserName nvarchar(250)
+AS
+BEGIN
+	--0: Được cập nhật
+	--1: Không được cập nhật/thêm mới (do chưa khởi tạo kỳ)
+	--2: Không được cập nhật/thêm mới (do kỳ đang đóng)
+
+	DECLARE @DaDong bit
+	DECLARE @DuocCapNhat int
+	SET @DuocCapNhat = 1 
+
+	DECLARE @KyID int
+
+	SELECT @KyID = KyID, @DaDong = DaDong
+	FROM tbKy 
+	WHERE Nam = YEAR(@NgayGhiNo)
+	and Thang = MONTH(@NgayGhiNo) 
+	--and DaDong = 1
+
+	IF (@KyID Is NULL)
+	BEGIN
+		SET @DuocCapNhat = 1 -- Không được cập nhật/thêm mới (do chưa khởi tạo kỳ)
+	END
+	ELSE -- Đã khởi tạo kỳ
+	BEGIN
+		IF(@DaDong = 0) --Kỳ đang mở
+		BEGIN
+			SET @DuocCapNhat = 0 -- Được cập nhật
+		END
+		ELSE--Kỳ đã đóng
+		BEGIN
+			IF((@UserName <> '') AND (EXISTS (SELECT * FROM tbChotKy where KyID = @KyID and UserName = @UserName and TamMoKy = 1)))
+			BEGIN
+				SET @DuocCapNhat = 0 -- Được cập nhật do tạm mở cho user
+			END
+			ELSE
+			BEGIN
+				SET @DuocCapNhat = 2 -- Không được cập nhật/thêm mới (do kỳ đang đóng)
+			END
+		END
+	END
+
+	RETURN @DuocCapNhat
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_KiemTra_DuocCapNhatCongNoByID]
+	@ID int
+	, @UserName nvarchar(250)
+AS
+BEGIN
+	DECLARE	@DuocCapNhat int
+	DECLARE @usernameOld nvarchar(50)
+	DECLARE	@NgayGhiNoOld datetime
+	DECLARE	@DuocCapNhatOld int
+	SET @DuocCapNhatOld = 0
+	
+	SELECT @usernameOld = UserName, @NgayGhiNoOld = NgayGhiNo FROM CONGNO WHERE  CongNo_ID = @ID
+	DECLARE	@DuocCapNhatOld1 int
+	DECLARE	@DuocCapNhatOld2 int
+	SET @DuocCapNhatOld1 = 0
+	SET @DuocCapNhatOld2 = 0
+	EXEC @DuocCapNhatOld1 = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @usernameOld
+	EXEC @DuocCapNhatOld2 = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @UserName
+	
+
+	IF ((@DuocCapNhatOld1 = 0) AND (@DuocCapNhatOld2 = 0))
+	BEGIN
+		SET @DuocCapNhat = 0;
+	END
+	ELSE IF((@DuocCapNhatOld1 = 0) AND (@DuocCapNhatOld2 <> 0))
+	BEGIN
+		SET @DuocCapNhat = 1;
+	END
+	ELSE IF((@DuocCapNhatOld1 <> 0) AND (@DuocCapNhatOld2 = 0))
+	BEGIN
+		SET @DuocCapNhat = 2;
+	END
+	ELSE --IF((@DuocCapNhatOld1 <> 0) AND (@DuocCapNhatOld2 <> 0))
+	BEGIN
+		SET @DuocCapNhat = 3;
+	END
+
+	RETURN @DuocCapNhat;
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_KiemTra_DuocCapNhatDonHang]
+	@ID int
+	, @UserName nvarchar(250)
+AS
+BEGIN
+	DECLARE	@DuocCapNhat int
+	DECLARE @usernameOld nvarchar(50)
+	DECLARE	@NgayGhiNoOld datetime
+	DECLARE	@DuocCapNhatOld int
+	SET @DuocCapNhatOld = 0
+	
+	SELECT @usernameOld = username FROM DON_HANG WHERE  ID = @ID
+
+	
+	IF(@UserName <> @usernameOld)--Nếu có đổi user, xem TẤT CẢ công nợ của user cũ (mua hàng, ship, cân,....) có bị khóa không
+	BEGIN
+		DECLARE @CS_NgayGhiNo datetime;
+		DECLARE	@DuocCapNhatOld1 int
+		DECLARE	@DuocCapNhatOld2 int
+		SET @DuocCapNhatOld1 = 0
+		SET @DuocCapNhatOld2 = 0
+
+		DECLARE RS SCROLL CURSOR FOR 
+		SELECT NgayGhiNo FROM CONGNO WHERE DonHang_ID = @ID AND style = 1
+
+		OPEN RS
+
+		FETCH NEXT FROM RS INTO @CS_NgayGhiNo
+		WHILE(@@FETCH_STATUS <> -1)
+		BEGIN
+			EXEC @DuocCapNhatOld1 = [SP_KiemTra_DuocCapNhatCongNo] @CS_NgayGhiNo, @usernameOld
+			EXEC @DuocCapNhatOld2 = [SP_KiemTra_DuocCapNhatCongNo] @CS_NgayGhiNo, @UserName
+			--IF(@DuocCapNhatOld1 <> 0)
+			IF ((@DuocCapNhatOld1 <> 0) OR (@DuocCapNhatOld2 <> 0))
+			BEGIN
+				SET @DuocCapNhatOld = 2
+			END
+
+			FETCH NEXT FROM RS INTO @CS_NgayGhiNo
+		END
+		CLOSE RS
+		DEALLOCATE RS
+	END
+	ELSE IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 1)) --Nếu không đổi user thì chỉ cần kiểm tra công nợ mua hàng của user đó
+	BEGIN
+		SELECT @usernameOld = username, @NgayGhiNoOld = NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @ID AND style = 1
+		EXEC @DuocCapNhatOld1 = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @usernameOld
+		EXEC @DuocCapNhatOld2 = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @UserName
+		--IF(@DuocCapNhatOld1 <> 0)
+		IF ((@DuocCapNhatOld1 <> 0) OR (@DuocCapNhatOld2 <> 0))
+		BEGIN
+			SET @DuocCapNhatOld = 2
+		END
+	END
+	
+
+	DECLARE	@NgayGhiNo datetime
+	DECLARE	@DuocCapNhat2 int
+	SET @NgayGhiNo = GETDATE()
+
+	--kiểm tra xem user mới và ngày ghi nợ mới có bị khóa không
+	EXEC @DuocCapNhat2 = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF ((@DuocCapNhat2 = 0) AND (@DuocCapNhatOld = 0))
+	BEGIN
+		SET @DuocCapNhat = 0;
+	END
+	ELSE
+	BEGIN
+		SET @DuocCapNhat = 1;
+	END
+
+	RETURN @DuocCapNhat;
+END;
+
+CREATE PROCEDURE [dbo].[SP_KiemTra_HanMucKhachHang]
+	@username nvarchar(100)
+AS
+BEGIN
+	DECLARE @TongTienDatHang float;
+	DECLARE @TongTienKhachCo float;
+	DECLARE @TongTienKhachNo float;
+	DECLARE @TongTienOrderHang float;
+	IF(NOT EXISTS (SELECT * FROM DON_HANG WHERE DaXoa = 0 AND username = @username AND trangthaiOrder = 'Completed'))
+	BEGIN
+		
+		SELECT @TongTienDatHang = SUM(CASE WHEN tongtienVND is not null THEN tongtienVND ELSE soluong*dongiaweb*tygia END) FROM DON_HANG WHERE DaXoa = 0 AND username = @username AND trangthaiOrder = 'Received';
+		SELECT @TongTienKhachCo = SUM(CanDoi) * (-1) FROM CONGNO WHERE DaXoa = 0 AND UserName = @username;
+
+		IF(@TongTienKhachCo > @TongTienDatHang * 0.8)
+		BEGIN
+			exec [SP_CapNhat_HanMucKhachHangTheoUser] @username, 0
+		END
+		ELSE
+		BEGIN
+			exec [SP_CapNhat_HanMucKhachHangTheoUser] @username, 1			
+		END
+	END
+	ELSE
+	BEGIN
+		SELECT @TongTienOrderHang = SUM(tongtienVND) FROM DON_HANG WHERE DaXoa = 0 AND username = @username AND trangthaiOrder = 'Ordered' AND ngayveVN is null;
+		SELECT @TongTienKhachNo = SUM(CanDoi) FROM CONGNO WHERE DaXoa = 0 AND UserName = @username;
+
+		IF(@TongTienKhachNo < @TongTienOrderHang * 0.3)
+		BEGIN
+			exec [SP_CapNhat_HanMucKhachHangTheoUser] @username, 0
+		END
+		ELSE
+		BEGIN
+			exec [SP_CapNhat_HanMucKhachHangTheoUser] @username, 1			
+		END
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_CauHinh]
+(	
+    @TenCauHinh nvarchar(250)	
+)	
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT GiaTriCauHinh FROM CauHinh where TenCauHinh=@TenCauHinh
+	
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Lay_ChotKyByID]
+	@KyID int
+	, @username nvarchar(100)
+	, @TamMoKy int
+	, @PageSize int
+	, @PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(ChotKyID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		 --ORDER BY UserName
+	SET @Sql = @Sql + ' SELECT ChotKyID FROM tbChotKy  WHERE KyID = ' + CAST(@KyID AS nvarchar(20))
+	
+	IF(@username <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND UserName = ''' + @username + ''''
+	END
+
+	IF(@TamMoKy <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND TamMoKy = ' + CAST(@TamMoKy AS CHAR(1))
+	END
+
+	SET @Sql = @Sql + ' ORDER BY UserName'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ChotKyID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT *
+	FROM tbChotKy CK
+	INNER JOIN #MyPage ON CK.ChotKyID = #MyPage.ChotKyID
+	ORDER BY UserName
+	
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_ChotKyPhanTrang]
+	@KyID int
+	, @username nvarchar(100)
+	, @TamMoKy int
+	, @PageSize int
+	, @PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(ChotKyID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		 --ORDER BY UserName
+	SET @Sql = @Sql + ' SELECT ChotKyID FROM tbChotKy CK LEFT JOIN tbKy Ky ON CK.KyID = Ky.KyID WHERE 1 = 1 '
+	
+	IF(@KyID <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND CK.KyID = ' + CAST(@KyID AS nvarchar(20))
+	END
+
+	IF(@username <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND UserName = ''' + @username + ''''
+	END
+
+	IF(@TamMoKy <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND TamMoKy = ' + CAST(@TamMoKy AS CHAR(1))
+	END
+
+	SET @Sql = @Sql + ' ORDER BY Ky.TenKy desc, UserName'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ChotKyID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT CK.*, Ky.TenKy, Ky.Nam, Ky.Thang, Ky.DaDong
+	FROM tbChotKy CK
+	INNER JOIN #MyPage ON CK.ChotKyID = #MyPage.ChotKyID
+	LEFT JOIN tbKy Ky ON CK.KyID = Ky.KyID
+	ORDER BY Ky.TenKy desc, UserName
+	
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Lay_CongNo]
+	@username nvarchar(100)
+	,@status int
+	,@style int
+	,@NoiDungTim nvarchar(250)
+	,@PageSize int
+	,@PageNum int
+	,@TuNgay nvarchar(15)
+	,@DenNgay nvarchar(15)
+AS
+BEGIN
+	CREATE TABLE #MyPage(CongNo_ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT CongNo_ID FROM CONGNO WHERE DaXoa = 0 '
+	
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @username + ''''
+	END
+	
+	IF(@status <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND status = ' + CAST(@status as nvarchar(2))
+	END
+
+	IF(@style <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND style = ' + CAST(@style as nvarchar(2))
+	END
+
+	IF(@NoiDungTim <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ((DonHang_ID like ''%' + @NoiDungTim + '%'') OR (NoiDung like ''%' + @NoiDungTim + '%'') OR (GhiChu like ''%' + @NoiDungTim + '%''))'
+	END
+
+	IF(@TuNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NgayGhiNo >= ''' + @TuNgay + ''''
+	END
+
+	IF(@DenNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NgayGhiNo <= ''' + @DenNgay+ ''''
+	END
+
+	SET @Sql = @Sql + ' ORDER BY CongNo_ID desc'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(CongNo_ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT CN.*, LH.TenLoHang
+	FROM CONGNO CN
+	INNER JOIN #MyPage ON CN.CongNo_ID = #MyPage.CongNo_ID
+	LEFT JOIN tbLoHang LH ON CN.LoHangID = LH.LoHangID
+	ORDER BY CN.CongNo_ID desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_CongNo1]
+	@username nvarchar(100)
+	,@status int
+	,@LoaiPhatSinh nvarchar(50)
+	,@NoiDungTim nvarchar(250)
+	,@PageSize int
+	,@PageNum int
+	,@TuNgay nvarchar(15)
+	,@DenNgay nvarchar(15)
+AS
+BEGIN
+	CREATE TABLE #MyPage(CongNo_ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT CongNo_ID FROM CONGNO WHERE DaXoa = 0 '
+	
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @username + ''''
+	END
+	
+	IF(@status <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND status = ' + CAST(@status as nvarchar(2))
+	END
+
+	IF(@LoaiPhatSinh <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND style in (' + @LoaiPhatSinh + ')'
+	END
+
+	IF(@NoiDungTim <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ((DonHang_ID like ''%' + @NoiDungTim + '%'') OR (NoiDung like ''%' + @NoiDungTim + '%'') OR (GhiChu like ''%' + @NoiDungTim + '%''))'
+	END
+
+	IF(@TuNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NgayGhiNo >= ''' + @TuNgay + ''''
+	END
+
+	IF(@DenNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NgayGhiNo <= ''' + @DenNgay+ ''''
+	END
+
+	SET @Sql = @Sql + ' ORDER BY CongNo_ID desc'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(CongNo_ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT CN.*, LH.TenLoHang
+	FROM CONGNO CN
+	INNER JOIN #MyPage ON CN.CongNo_ID = #MyPage.CongNo_ID
+	LEFT JOIN tbLoHang LH ON CN.LoHangID = LH.LoHangID
+	ORDER BY CN.CongNo_ID desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_CongShipVeVN]
+	@LoaiHangID int
+	,@LoaiTien nvarchar(50)
+	,@UserName nvarchar(250)
+AS
+BEGIN
+	DECLARE @khachbuon bit
+	SELECT @khachbuon = KhachBuon FROM AspNetUsers where UserName = @UserName
+
+	SELECT TienCongShipVeVN
+	FROM CongShipVeVN
+	WHERE LoaiHangID = @LoaiHangID and LoaiTien = @LoaiTien and KhachBuon = @khachbuon
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_CongShipVeVNByID]
+	@ID int
+AS
+BEGIN
+	SELECT *
+	FROM CongShipVeVN
+	WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachChiTietTrackingByID]
+	@TrackingID int
+AS
+BEGIN
+	SELECT CT.*
+	FROM tbChiTietTracking CT
+	WHERE TrackingID = @TrackingID
+	ORDER BY ChiTietTrackingID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachCongShipVeVN]
+AS
+BEGIN
+	SELECT CS.*, LH.TenLoaiHang
+	FROM CongShipVeVN CS
+	INNER JOIN LoaiHang LH ON CS.LoaiHangID = LH.LoaiHangID
+	ORDER BY LoaiTien, KhachBuon, LoaiHangID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachGiaTienCong]
+AS
+BEGIN
+	SELECT GTC.*
+	FROM GiaTienCong GTC
+	ORDER BY LoaiTien, KhachBuon, TuGia
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachLoHang_ChiPhiLoHangByID]
+	@TenLoHang nvarchar(50)
+AS
+BEGIN
+	SELECT CP.*, L.TenLoaiChiPhiLoHang
+	FROM tbLoHang_ChiPhiLoHang CP
+	INNER JOIN tbLoaiChiPhiLoHang L ON CP.LoaiChiPhiLoHangID = L.LoaiChiPhiLoHangID
+	WHERE TenLoHang = @TenLoHang
+	ORDER BY LoHang_ChiPhiLoHangID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachLoHang_PhiShipVeVNByID]
+	@LoHangID int
+AS
+BEGIN
+	SELECT PS.*, LHS.TenLoaiHangShip
+	FROM tbLoHang_PhiShipVeVN PS
+	INNER JOIN tbLoaiHangShip LHS ON PS.LoaiHangShipID = LHS.LoaiHangShipID
+	WHERE LoHangID = @LoHangID
+	ORDER BY LoHang_PhiShipVeVNID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachLoHang_ThueHaiQuanByID]
+	@LoHangID int
+AS
+BEGIN
+	SELECT THQ.*, LHT.TenLoaiHangThueHaiQuan
+	FROM tbLoHang_ThueHaiQuan THQ
+	INNER JOIN tbLoaiHangThueHaiQuan LHT ON THQ.LoaiHangThueHaiQuanID = LHT.LoaiHangThueHaiQuanID
+	WHERE LoHangID = @LoHangID
+	ORDER BY LoHang_ThueHaiQuanID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachLoHangTheoUser]
+	@UserName nvarchar(250)
+AS
+BEGIN
+	SELECT *
+	FROM tbLoHang LH
+	WHERE UserName = @UserName
+	ORDER BY LH.NgayLoHang desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachTenDotHang]
+	@TuNgay datetime
+AS
+BEGIN
+	SELECT distinct TenDotHang 
+	FROM DotHang 
+	WHERE NgayVeVN >= @TuNgay 
+		AND (DaComplete is null OR DaComplete = 0)
+	ORDER BY TenDotHang desc
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachTinhTrangTrackingByID]
+	@TrackingID int
+AS
+BEGIN
+	SELECT TT.*
+	, CASE TT.TinhTrang WHEN 'Received' THEN N'Nhận thông tin tại ' + KH.TenQuocGia
+						WHEN 'InTransit' THEN N'Đã chuyển lên máy bay từ '+ KH.TenQuocGia + N' về HN'
+						WHEN 'InVN' THEN N'Đã đến HN lấy hàng và đang soạn hàng [VN]'
+						WHEN 'VNTransit' THEN N'Đang ship nội địa trả hàng cho khách [VN]'
+						WHEN 'Completed' THEN N'Đã giao hàng cho khách [VN]'
+						ELSE TT.TinhTrang
+						END as MoTaTinhTrang
+	FROM tbTinhTrangTracking TT
+	LEFT JOIN tbTracking TK ON TK.TrackingID = TT.TrackingID
+	LEFT JOIN tbQuocGia KH ON TK.QuocGiaID = KH.QuocGiaID
+	WHERE TT.TrackingID = @TrackingID
+	AND TT.DaXoa = 0
+	ORDER BY NgayChuyenTinhTrang desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DanhSachTinhTrangTrackingByNumber]
+	@TrackingNumber nvarchar(250)
+AS
+BEGIN
+	DECLARE @TrackingID int
+	SET @TrackingID = (SELECT top 1 TrackingID FROM tbTracking WHERE TrackingNumber like ('%'+ @TrackingNumber + '%') and DaXoa = 0)
+
+	exec SP_Lay_DanhSachTinhTrangTrackingByID @TrackingID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DiaChiNhanHang]
+	@UserName nvarchar(100)
+	,@NoiDungTim nvarchar(250)
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT ID FROM DiaChiNhanHang WHERE 1 = 1'
+	
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND UserName = ''' + @UserName + ''''
+	END
+	
+	IF(@NoiDungTim <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ((ID like N''%' + @NoiDungTim + '%'') OR (DiaChi like N''%' + @NoiDungTim + '%''))'
+	END
+
+	SET @Sql = @Sql + ' ORDER BY UserName, DiaChi'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT *
+	FROM DiaChiNhanHang DC
+	INNER JOIN #MyPage ON DC.ID = #MyPage.ID
+	ORDER BY UserName, DiaChi
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DiaChiNhanHangTheoUser]
+	@UserName nvarchar(250)
+AS
+BEGIN
+	SELECT * 
+	FROM DiaChiNhanHang 
+	WHERE UserName = @UserName
+	ORDER BY DiaChi
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DonGiaLoaiHangShip]
+	@LoaiHangShipID int
+AS
+BEGIN
+	SELECT DonGia
+	FROM tbLoaiHangShip
+	WHERE LoaiHangShipID = @LoaiHangShipID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DonGiaLoaiHangThueHaiQuan]
+	@LoaiHangThueHaiQuanID int
+AS
+BEGIN
+	SELECT DonGia
+	FROM tbLoaiHangThueHaiQuan
+	WHERE LoaiHangThueHaiQuanID = @LoaiHangThueHaiQuanID
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Lay_DonHang]
+	@WebsiteName nvarchar(100)
+	,@username nvarchar(100)
+	,@trangthaiOrder nvarchar(500)
+	,@NoiDungTim nvarchar(250)
+	,@TimTheo int
+	,@MaDatHang nvarchar(500)
+	,@TenDotHang nvarchar(50)
+	,@HangKhoan int
+	,@QuocGiaID int
+	,@PageSize int
+	,@PageNum int
+	,@DaXoa bit
+	,@TuNgay nvarchar(15)
+	,@DenNgay nvarchar(15)
+AS
+BEGIN
+	CREATE TABLE #MyPage(ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT ID FROM DON_HANG WHERE DaXoa = ' + CAST(@DaXoa AS CHAR(1))
+	
+	IF(@WebsiteName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND WebsiteName = ''' + @WebsiteName + ''''
+	END
+
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @username + ''''
+	END
+	
+	IF(@trangthaiOrder <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND trangthaiOrder in (' + @trangthaiOrder + ')'
+	END
+	
+	IF(@NoiDungTim <> '')
+	BEGIN
+		--SET @NoiDungTim = N'"*' + @NoiDungTim + N'*"';
+		--SET @Sql = @Sql + ' AND (CONTAINS(ordernumber, ''' + @NoiDungTim + ''') OR CONTAINS(tracking_number, ''' + @NoiDungTim + ''') OR CONTAINS(linkweb, ''' + @NoiDungTim + ''') OR  CONTAINS(ghichu, ''' + @NoiDungTim + '''))'
+		IF(@TimTheo = -1)
+		BEGIN
+			SET @Sql = @Sql + ' AND ((ID like ''%' + @NoiDungTim + '%'') OR (ordernumber like ''%' + @NoiDungTim + '%'') OR (TenDotHang like ''%' + @NoiDungTim + '%'') OR (linkweb like ''%' + @NoiDungTim + '%'') OR (WebsiteName like ''%' + @NoiDungTim + '%'') OR  (ghichu like ''%' + @NoiDungTim + '%''))'
+		END
+		ELSE IF(@TimTheo = 0)
+		BEGIN
+			SET @Sql = @Sql + ' AND (ordernumber like ''%' + @NoiDungTim + '%'')'
+		END
+	END
+	
+	IF(@MaDatHang <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ID IN (' + @MaDatHang + ')'
+	END
+
+	IF(@TenDotHang <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND TenDotHang = ''' + @TenDotHang + ''''
+	END
+
+	IF(@HangKhoan <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND HangKhoan = ' + CAST(@HangKhoan as nvarchar(10))
+	END
+
+	IF(@QuocGiaID <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND QuocGiaID = ' + CAST(@QuocGiaID as nvarchar(10))
+	END
+
+	IF(@TuNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ngaysaveLink >= ''' + @TuNgay + ''''
+	END
+
+	IF(@DenNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND ngaysaveLink <= ''' + @DenNgay+ ''''
+	END
+
+	SET @Sql = @Sql + ' ORDER BY ID desc, ngaymuahang desc'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT DH.*, HM.DaQuaHanMuc, HM.LaKhachVip, LH.TenLoaiHang, QG.TenQuocGia, U.LinkTaiKhoanMang, U.VungMien
+	FROM Don_Hang DH
+	INNER JOIN #MyPage ON DH.ID = #MyPage.ID
+	LEFT JOIN HanMucKhachHang HM ON DH.username = HM.UserName
+	LEFT JOIN LoaiHang LH ON DH.LoaiHangID = LH.LoaiHangID 
+	LEFT JOIN tbQuocGia QG ON DH.QuocGiaID = QG.QuocGiaID
+	LEFT JOIN AspNetUsers U ON DH.username = U.UserName
+	ORDER BY ID desc, ngaymuahang desc
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Lay_DonHangByID]
+	@ID int
+AS
+BEGIN
+	SELECT DH.*, HM.DaQuaHanMuc, HM.LaKhachVip, LH.TenLoaiHang, QG.TenQuocGia, U.LinkTaiKhoanMang, U.VungMien
+	FROM Don_Hang DH
+	LEFT JOIN HanMucKhachHang HM ON DH.username = HM.UserName
+	LEFT JOIN LoaiHang LH ON DH.LoaiHangID = LH.LoaiHangID 
+	LEFT JOIN tbQuocGia QG ON DH.QuocGiaID = QG.QuocGiaID
+	LEFT JOIN AspNetUsers U ON DH.username = U.UserName
+	WHERE DH.ID = @ID
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DonHangUserTheoDotHang]
+	@UserName nvarchar(100)
+	,@TenDotHang nvarchar(50)
+AS
+BEGIN
+   
+	SELECT * FROM DON_HANG 
+	WHERE DaXoa = 0 AND username = @UserName AND TenDotHang = @TenDotHang
+	ORDER BY ID desc
+	
+	SELECT * FROM DotHang 
+	WHERE UserName = @UserName AND TenDotHang = @TenDotHang 
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DotHang]
+	@TenDotHang nvarchar(50)
+	,@UserName nvarchar(100)
+	--,@PageSize int
+	--,@PageNum int
+AS
+BEGIN
+
+	--CREATE TABLE #tbTemp (STT int, TenDotHang nvarchar(50), NgayVeVN date, UserName nvarchar(100), CanNang float, PhiShipVeVN_USD float, TyGia float, PhiShipVeVN_VND float)
+
+	--INSERT INTO #tbTemp
+	--	SELECT 
+	--		ROW_NUMBER() OVER(ORDER BY [UserName] desc) [STT]
+	--		 , TenDotHang
+	--		 , NgayVeVN
+	--		 , UserName
+	--		 , CanNang
+	--		 , PhiShipVeVN_USD
+	--		 , TyGia
+	--		 , PhiShipVeVN_VND
+	--	FROM DotHang
+	--	WHERE TenDotHang = @TenDotHang 
+	--	AND username = CASE WHEN @UserName = '' THEN username ELSE @UserName END
+	--	ORDER BY TenDotHang desc
+
+	--select MAX(#tbTemp.STT) from #tbTemp ;
+
+	--SELECT T.*
+	--		, DH2.MaDatHang, DH2.TienHangUSD, DH2.TienHangVND 
+	--FROM #tbTemp T
+	--INNER JOIN (
+	--			SELECT username, SUM(tongtienUSD) as TienHangUSD, SUM(tongtienVND) as TienHangVND
+	--			, STUFF((
+	--					SELECT ',' + ID
+	--					FROM DON_HANG 
+	--					WHERE (TenDotHang = @TenDotHang AND username = DH.username) 
+	--					FOR XML PATH(''),TYPE).value('(./text())[1]','VARCHAR(MAX)')
+	--					,1,2,'') AS MaDatHang
+	--			FROM DON_HANG DH
+	--			WHERE TenDotHang = @TenDotHang
+	--			GROUP BY username
+	--			) DH2 ON T.UserName = DH2.username
+	--WHERE STT between (@PageNum-1)*@PageSize+1 and (@PageNum-1)*@PageSize + @PageSize
+	--ORDER BY STT
+		
+	--DROP TABLE #tbTemp;
+
+	SELECT T.*
+			, DH2.MaDatHang, DH2.TienHangUSD, DH2.TienHangVND 
+	FROM DotHang T
+	INNER JOIN (
+				SELECT username, SUM(tongtienUSD) as TienHangUSD, SUM(tongtienVND) as TienHangVND
+				, STUFF((
+						SELECT ',' + CAST(ID as nvarchar(10))
+						FROM DON_HANG 
+						WHERE (TenDotHang = @TenDotHang AND username = DH.username) 
+						FOR XML PATH(''),TYPE).value('(./text())[1]','VARCHAR(MAX)')
+						,1,1,'') AS MaDatHang
+				FROM DON_HANG DH
+				WHERE TenDotHang = @TenDotHang
+				GROUP BY username
+				) DH2 ON T.UserName = DH2.username
+	WHERE T.TenDotHang = @TenDotHang 
+	AND T.username = CASE WHEN @UserName = '' THEN T.username ELSE @UserName END
+	ORDER BY T.TenDotHang desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DotHangDaYeuCau]
+AS
+BEGIN
+	
+	SELECT T.*
+			, DH2.MaDatHang, DH2.TienHangUSD, DH2.TienHangVND 
+	FROM DotHang T
+	INNER JOIN (
+				SELECT username, TenDotHang, SUM(tongtienUSD) as TienHangUSD, SUM(tongtienVND) as TienHangVND
+				, STUFF((
+						SELECT ',' + CAST(ID as nvarchar(10))
+						FROM DON_HANG DH3
+						INNER JOIN (SELECT TenDotHang, UserName FROM DotHang WHERE ShipperID is null AND YeuCauGuiHang = 1) T3 ON T3.TenDotHang = DH3.TenDotHang AND T3.UserName = DH3.username
+						FOR XML PATH(''),TYPE).value('(./text())[1]','VARCHAR(MAX)')
+						,1,1,'') AS MaDatHang
+				FROM DON_HANG DH
+				GROUP BY username, TenDotHang 
+				) DH2 ON T.UserName = DH2.username AND T.TenDotHang = DH2.TenDotHang
+	WHERE ShipperID is null AND YeuCauGuiHang = 1
+	ORDER BY T.TenDotHang desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DotHangGui]
+	@UserName nvarchar(100)
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #tbTemp (STT int, SoLuongHang int, username nvarchar(100), ShipperID int, TenDotHang nvarchar(100), SoVanDon nvarchar(100), PhiShipTrongNuoc float)
+
+	INSERT INTO #tbTemp
+		SELECT 
+			ROW_NUMBER() OVER(ORDER BY DH.[TenDotHang] desc) [STT]
+			 , COUNT(*) as SoLuongHang
+			 , DH.username
+			 , GH.ShipperID
+			 , DH.TenDotHang
+			 , GH.SoVanDon
+			 , GH.PhiShipTrongNuoc
+		From DON_HANG DH
+		INNER JOIN DotHang GH ON DH.username = GH.UserName and DH.TenDotHang = GH.TenDotHang and GH.ShipperID is not null
+		where DaXoa = 0 
+		and trangthaiOrder = 'Shipped' 
+		and DH.username = CASE WHEN @UserName = '' THEN DH.username ELSE @UserName END
+		group by DH.username, GH.ShipperID, DH.TenDotHang, GH.SoVanDon, GH.PhiShipTrongNuoc
+		order by DH.TenDotHang, DH.username desc
+
+	select MAX(#tbTemp.STT) from #tbTemp ;
+
+	SELECT T.*, S.ShipperName 
+	FROM #tbTemp T
+	INNER JOIN SHIPPER_MAN S ON T.ShipperID = S.ID
+	WHERE STT between (@PageNum-1)*@PageSize+1 and (@PageNum-1)*@PageSize + @PageSize
+	ORDER BY STT
+		
+	DROP TABLE #tbTemp;
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_DotHangShip]
+	@username nvarchar(100)
+	,@YeuCauGuiHang int
+	--,@PageSize int
+	--,@PageNum int
+AS
+BEGIN
+	SELECT T.*
+			, DH2.MaDatHang, DH2.TienHangUSD, DH2.TienHangVND 
+	FROM DotHang T
+	INNER JOIN (
+				SELECT TenDotHang, SUM(tongtienUSD) as TienHangUSD, SUM(tongtienVND) as TienHangVND
+				, STUFF((
+						SELECT ',' + CAST(ID as nvarchar(10))
+						FROM DON_HANG 
+						WHERE (TenDotHang = DH.TenDotHang AND username = @username) 
+						FOR XML PATH(''),TYPE).value('(./text())[1]','VARCHAR(MAX)')
+						,1,1,'') AS MaDatHang
+				FROM DON_HANG DH
+				WHERE trangthaiOrder = 'Ordered' AND ngayveVN is not null AND username = @username
+				GROUP BY TenDotHang
+				) DH2 ON T.TenDotHang = DH2.TenDotHang
+	WHERE 1 = 1 
+	AND T.username = @UserName
+	AND T.YeuCauGuiHang = @YeuCauGuiHang
+	ORDER BY T.TenDotHang desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_GiaTienCong]
+	@LoaiTien nvarchar(50)
+	,@SoTien1Mon float
+	,@KhachBuon bit
+AS
+BEGIN
+	SELECT GTC.*
+	FROM GiaTienCong GTC
+	WHERE ((@SoTien1Mon  > TuGia) and (@SoTien1Mon  <= DenGia)) and LoaiTien = @LoaiTien and KhachBuon = @KhachBuon
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_GiaTienCongByID]
+	@ID int
+AS
+BEGIN
+	SELECT GTC.*
+	FROM GiaTienCong GTC
+	WHERE GTC.ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_HangCoSan]
+AS
+BEGIN
+	SELECT * FROM HangCoSan ORDER BY ThuTu
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_HangCoSanByID]
+	@ID int
+AS
+BEGIN
+	SELECT * FROM HangCoSan WHERE ID = @ID ORDER BY ThuTu
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_HangCoSanPhanTrang]
+	@NoiDungTim nvarchar(250)
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT ID FROM HangCoSan WHERE 1 = 1 '
+	
+	IF(@NoiDungTim <> '')
+	BEGIN
+		--SET @NoiDungTim = N'"*' + @NoiDungTim + N'*"';
+		--SET @Sql = @Sql + ' AND (CONTAINS(TenHang, ''' + @NoiDungTim + ''') OR CONTAINS(MoTa, ''' + @NoiDungTim + '''))'
+		SET @Sql = @Sql + ' AND ((TenHang like N''%' + @NoiDungTim + '%'') OR  (MaSoHang like N''%' + @NoiDungTim + '%'') OR (MoTa like N''%' + @NoiDungTim + '%'') OR  (NoiDungTimKiem like N''%' + @NoiDungTim + '%''))'
+
+	END
+	SET @Sql = @Sql + ' ORDER BY ThuTu'
+	--select @Sql
+
+	EXEC sp_executesql @Sql;
+
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT HCS.*
+	FROM HangCoSan HCS
+	INNER JOIN #MyPage ON HCS.ID = #MyPage.ID
+	ORDER BY HCS.ThuTu
+
+	--SELECT * FROM HangCoSan ORDER BY ThuTu
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_HangShip]
+	@username nvarchar(100)
+	,@NoiDungTim nvarchar(250)
+	,@TimTheo int
+	,@YeuCauGuiHang int
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+   DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT ID FROM DON_HANG WHERE DaXoa = 0 '
+	
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @username + ''''
+	END
+	
+	SET @Sql = @Sql + ' AND trangthaiOrder = ''Ordered'''
+
+	IF(@YeuCauGuiHang <> -1)
+	BEGIN
+		IF(@YeuCauGuiHang = 0)
+		BEGIN
+			SET @Sql = @Sql + ' AND (YeuCauGuiHang = 0 OR YeuCauGuiHang is null)'
+		END
+		ELSe
+		BEGIN
+			SET @Sql = @Sql + ' AND YeuCauGuiHang = ' +  CAST(@YeuCauGuiHang as nvarchar(2))
+		END
+	END
+
+	SET @Sql = @Sql + ' AND ngayveVN is not null'
+	
+	IF(@NoiDungTim <> '')
+	BEGIN
+		IF(@TimTheo = -1)
+		BEGIN
+			SET @Sql = @Sql + ' AND ((ID like ''%' + @NoiDungTim + '%'') OR (ordernumber like ''%' + @NoiDungTim + '%'') OR (tracking_number like ''%' + @NoiDungTim + '%'') OR (WebsiteName like ''%' + @NoiDungTim + '%'') OR  (ghichu like ''%' + @NoiDungTim + '%''))'
+		END
+		ELSE IF(@TimTheo = 0)
+		BEGIN
+			SET @Sql = @Sql + ' AND (ordernumber like ''%' + @NoiDungTim + '%'')'
+		END
+	END
+	SET @Sql = @Sql + ' ORDER BY ID desc'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT DH.*, HM.DaQuaHanMuc, HM.LaKhachVip
+	FROM Don_Hang DH
+	INNER JOIN #MyPage ON DH.ID = #MyPage.ID
+	LEFT JOIN HanMucKhachHang HM ON DH.username = HM.UserName
+	ORDER BY DH.ID desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_HanMucKhachHang]
+	@UserName nvarchar(100)
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT ID FROM HanMucKhachHang WHERE 1 = 1 '
+
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND UserName like ''%' + @UserName + '%'''
+	END
+	
+	SET @Sql = @Sql + ' ORDER BY UserName'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT *
+	FROM HanMucKhachHang HM
+	INNER JOIN #MyPage ON HM.ID = #MyPage.ID
+	ORDER BY HM.UserName
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Lay_Ky]
+AS
+BEGIN
+	SELECT * FROM tbKy ORDER BY TenKy desc
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Lay_KyByID]
+	@KyID int
+AS
+BEGIN
+	SELECT * FROM tbKy WHERE KyID = @KyID ORDER BY TenKy desc
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Lay_KyByTinhTrang]
+	@DaDong bit
+AS
+BEGIN
+	SELECT * 
+	FROM tbKy 
+	WHERE DaDong = @DaDong
+	ORDER BY TenKy desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_ListOrder]
+	@OrderNumber nvarchar(100)
+	,@TrackingNumber nvarchar(100)
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+   DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT ID FROM LIST_ORDER WHERE 1 = 1 '
+	
+	IF(@OrderNumber <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND OrderNumber like ''%' + @OrderNumber + '%'''
+	END
+
+	IF(@TrackingNumber <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND tracking_number like ''%' + @TrackingNumber + '%'''
+	END
+	
+	SET @Sql = @Sql + ' ORDER BY ID desc'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT L.*
+	FROM LIST_ORDER L
+	INNER JOIN #MyPage ON L.ID = #MyPage.ID
+	ORDER BY L.ID desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_LoaiChiPhiLoHang]
+AS
+BEGIN
+	SELECT * FROM tbLoaiChiPhiLoHang ORDER BY LoaiChiPhiLoHangID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_LoaiHangShip]
+AS
+BEGIN
+	SELECT *, TenLoaiHangShip + ' - ' + CAST(DonGia as nvarchar(50)) as TenVaDonGia FROM tbLoaiHangShip ORDER BY LoaiHangShipID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_LoaiHangThueHaiQuan]
+AS
+BEGIN
+	SELECT *
+	, TenLoaiHangThueHaiQuan + ' - ' + CAST(DonGia as nvarchar(50)) as TenVaDonGia 
+	FROM tbLoaiHangThueHaiQuan ORDER BY LoaiHangThueHaiQuanID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_LoHang]
+	@UserName nvarchar(250)
+	,@TuNgay datetime
+	,@DenNgay datetime
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(LoHangID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT LohangID FROM tbLoHang WHERE DaXoa = 0 '
+	
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND UserName = ''' + @UserName + ''''
+	END
+
+	IF(@TuNgay is not null AND @DenNgay is not null)
+		SET @Sql = @Sql + ' AND NgayLoHang between ''' + convert(nvarchar(MAX), @TuNgay, 20) + ''' and ''' + convert(nvarchar(MAX), @DenNgay, 20) + ''''
+
+	SET @Sql = @Sql + ' ORDER BY NgayLoHang desc, LoHangID desc'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(LoHangID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT LH.*
+	, (select sum(TongTienShipVeVN_VND) from tbLoHang_PhiShipVeVN where LoHangID = LH.LoHangID) as TienLoHangA
+	, (select sum(TongTienThueHaiQuan_VND) from tbLoHang_ThueHaiQuan where LoHangID = LH.LoHangID) as TienPhiHaiQuanB
+	FROM tbLoHang LH
+	INNER JOIN #MyPage ON LH.LoHangID = #MyPage.LoHangID
+	ORDER BY LH.NgayLoHang desc, LH.LoHangID desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_LoHangByID]
+	@LoHangID int
+AS
+BEGIN
+	SELECT LH.*
+	, (select sum(TongTienShipVeVN_VND) from tbLoHang_PhiShipVeVN where LoHangID = LH.LoHangID) as TienLoHangA
+	, (select sum(TongTienThueHaiQuan_VND) from tbLoHang_ThueHaiQuan where LoHangID = LH.LoHangID) as TienPhiHaiQuanB
+	FROM tbLoHang LH
+	WHERE LH.LoHangID = @LoHangID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_NhaVanChuyen]
+AS
+BEGIN
+	SELECT * FROM tbNhaVanChuyen ORDER BY NhaVanChuyenID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_NoConThieu]
+	@UserName nvarchar(100)
+AS
+BEGIN
+	SELECT SUM(CanDoi)
+	FROM CONGNO
+	WHERE DaXoa = 0 AND UserName = @UserName AND [Status] = 1
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_QuocGia]
+AS
+BEGIN
+	SELECT * FROM tbQuocGia ORDER BY QuocGiaID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_Shipper]
+AS
+BEGIN
+	SELECT * FROM SHIPPER_MAN ORDER BY ShipperName
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_ShipperByID]
+	@ID int
+AS
+BEGIN
+	SELECT * FROM SHIPPER_MAN WHERE ID = @ID ORDER BY ShipperName
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_SoLuongDonHang]
+	@username nvarchar(100)
+	,@HangKhoan int
+	,@DaXoa bit
+AS
+BEGIN
+	DECLARE @Sql nvarchar(MAX);
+
+	SET @Sql = 'SELECT trangthaiOrder, count(ID) as SL FROM [DON_HANG] WHERE DaXoa = ' + CAST(@DaXoa AS CHAR(1))
+
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @username + ''''
+	END
+
+	IF(@HangKhoan <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND HangKhoan = ' + CAST(@HangKhoan as nvarchar(10))
+	END
+
+	SET @Sql = @Sql + ' GROUP BY trangthaiOrder'
+
+	--select @Sql
+	EXEC sp_executesql @Sql;
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_SoLuongLoHang]
+	@UserName nvarchar(250)
+AS
+BEGIN
+	DECLARE @Sql nvarchar(MAX);
+
+	SET @Sql = 'SELECT TinhTrang, count(LoHangID) as SL FROM [tbLoHang] WHERE DaXoa = 0 '
+
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @username + ''''
+	END
+
+	SET @Sql = @Sql + ' GROUP BY TinhTrang'
+
+	--select @Sql
+	EXEC sp_executesql @Sql;
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_SoLuongTracking]
+	@UserName nvarchar(250)
+AS
+BEGIN
+	DECLARE @Sql nvarchar(MAX);
+
+	SET @Sql = 'SELECT TinhTrang, count(TrackingID) as SL FROM [tbTracking] WHERE DaXoa = 0 '
+
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @username + ''''
+	END
+
+	SET @Sql = @Sql + ' GROUP BY TinhTrang'
+
+	--select @Sql
+	EXEC sp_executesql @Sql;
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_SystemLogsLienQuan]
+    @DoiTuong nvarchar(50)
+AS
+BEGIN
+	SET @DoiTuong = '''%' + @DoiTuong + '%'''
+	SELECT * FROM tbSystemLogs WHERE DoiTuong like @DoiTuong
+	ORDER BY NgayTao desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_TenDotHangByUserName]
+	@UserName nvarchar(50)
+AS
+BEGIN
+	SELECT distinct TenDotHang 
+	FROM DotHang 
+	WHERE UserName = @UserName
+		--AND (DaComplete is null OR DaComplete = 0)
+	ORDER BY TenDotHang desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_ThacMac]
+	@username nvarchar(100)
+	,@DaTraLoi int
+	,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(ID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT ID FROM THACMAC WHERE 1 = 1 '
+	
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND username = ''' + @username + ''''
+	END
+	
+	IF(@DaTraLoi = 0)
+	BEGIN
+		SET @Sql = @Sql + ' AND (TraLoi IS NULL OR TraLoi = '''')'
+	END
+	ELSE IF(@DaTraLoi = 1)
+	BEGIN
+		SET @Sql = @Sql + ' AND (TraLoi IS NOT NULL AND TraLoi <> '''')'
+	END
+
+	SET @Sql = @Sql + ' ORDER BY NgayTao desc'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(ID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT *
+	FROM THACMAC TM
+	INNER JOIN #MyPage ON TM.ID = #MyPage.ID
+	ORDER BY NgayTao desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_ThongTinShipByID]
+	@ID int
+AS
+BEGIN
+	SELECT DH.NgayGuiHang, DH.TenDotHang, S.* 
+	FROM DON_HANG DH 
+	INNER JOIN SHIPPER_MAN S ON DH.ShipperID = S.ID
+	WHERE DH.ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_ThongTinWeb]
+AS
+BEGIN
+	SELECT * FROM THONGTIN_WEB
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_ThongTinWebByID]
+	@ID int
+AS
+BEGIN
+	SELECT * FROM THONGTIN_WEB WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_Tracking]
+	@UserName nvarchar(250)
+	,@TinhTrang nvarchar(100)
+	,@NoiDungTim nvarchar(250)
+	,@TimTheo int
+	,@TrackingNumber nvarchar(500)
+	,@TenLoHang nvarchar(50)
+	,@PageSize int
+	,@PageNum int
+	,@QuocGiaID int
+	,@DaXoa bit
+	,@TuNgay nvarchar(15)
+	,@DenNgay nvarchar(15)
+AS
+BEGIN
+	CREATE TABLE #MyPage(TrackingID int);
+    DECLARE @selectitem int;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+   
+	DECLARE @Sql nvarchar(MAX);
+    SET @Sql = 'DECLARE RS SCROLL CURSOR FOR ';
+		
+	SET @Sql = @Sql + ' SELECT TrackingID FROM tbTracking TK LEFT JOIN tbQuocGia QG ON TK.QuocGiaID = QG.QuocGiaID WHERE DaXoa = ' + CAST(@DaXoa AS CHAR(1))
+	
+	IF(@UserName <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND UserName = ''' + @UserName + ''''
+	END
+	
+	IF(@TinhTrang <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND TinhTrang in (' + @TinhTrang + ')'
+	END
+	
+	IF(@NoiDungTim <> '')
+	BEGIN
+		IF(@TimTheo = -1)
+		BEGIN
+			SET @Sql = @Sql + ' AND ((TrackingID like N''%' + @NoiDungTim + '%'') OR (OrderNumber like N''%' + @NoiDungTim + '%'') OR (TenLoHang like N''%' + @NoiDungTim + '%'') OR (TrackingNumber like N''%' + @NoiDungTim + '%'') OR (GhiChu like N''%' + @NoiDungTim + '%'') OR (Kien like N''%' + @NoiDungTim + '%'') OR (Mawb like N''%' + @NoiDungTim + '%'') OR (Hawb like N''%' + @NoiDungTim + '%'') OR (TenQuocGia like N''%' + @NoiDungTim + '%''))'
+		END
+		ELSE IF(@TimTheo = 0)
+		BEGIN
+			SET @Sql = @Sql + ' AND (OrderNumber like N''%' + @NoiDungTim + '%'')'
+		END
+	END
+	
+	IF(@TrackingNumber <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND TrackingNumber like ''%' + @TrackingNumber + '%'''
+	END
+
+	IF(@TenLoHang <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND TenLoHang = ''' + @TenLoHang + ''''
+	END
+
+	IF(@QuocGiaID <> -1)
+	BEGIN
+		SET @Sql = @Sql + ' AND TK.QuocGiaID = ' + CAST(@QuocGiaID as nvarchar(10))
+	END
+
+	IF(@TuNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NgayDatHang >= ''' + @TuNgay + ''''
+	END
+
+	IF(@DenNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NgayDatHang <= ''' + @DenNgay+ ''''
+	END
+
+	SET @Sql = @Sql + ' ORDER BY NgayDatHang desc, TrackingID desc'
+	
+	--select @Sql
+	
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+	--return total record
+	SELECT @@CURSOR_ROWS AS TOTALROW;
+	---------
+	FETCH ABSOLUTE @start FROM RS INTO @selectitem
+	WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+	BEGIN
+		INSERT INTO #MyPage(TrackingID) VALUES(@selectitem)
+		SET @run=@run+1;
+		FETCH NEXT FROM RS INTO @selectitem
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	SELECT TK.*, VC.TenNhaVanChuyen, QG.TenQuocGia, (select count(*) from tbChiTietTracking where TrackingID = #MyPage.TrackingID) as SoLuongChiTiet, U.LinkTaiKhoanMang
+	FROM tbTracking TK
+	INNER JOIN #MyPage ON TK.TrackingID = #MyPage.TrackingID
+	LEFT JOIN tbNhaVanChuyen VC ON TK.NhaVanChuyenID = VC.NhaVanChuyenID
+	LEFT JOIN tbQuocGia QG ON TK.QuocGiaID = QG.QuocGiaID
+	LEFT JOIN AspNetUsers U ON TK.username = U.UserName
+	ORDER BY TK.NgayDatHang desc, TK.TrackingID desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_TrackingByID]
+	@TrackingID int
+AS
+BEGIN
+	SELECT TK.*, VC.TenNhaVanChuyen, QG.TenQuocGia, U.LinkTaiKhoanMang
+	FROM tbTracking TK
+	LEFT JOIN tbNhaVanChuyen VC ON TK.NhaVanChuyenID = VC.NhaVanChuyenID
+	LEFT JOIN tbQuocGia QG ON TK.QuocGiaID = QG.QuocGiaID
+	LEFT JOIN AspNetUsers U ON TK.username = U.UserName
+	WHERE TK.TrackingID = @TrackingID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_TrackingIDByTrackingNumber]
+	@TrackingNumber nvarchar(250)
+AS
+BEGIN
+	SELECT TrackingID FROM tbTracking WHERE TrackingNumber = @TrackingNumber AND DaXoa = 0
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_TyGiaHienTaiTuDanhSachDonHang]
+	@id nvarchar(500)
+AS
+BEGIN
+	SELECT TyGiaVND 
+	FROM TY_GIA 
+	WHERE Name = (SELECT TOP 1 loaitien FROM DON_HANG WHERE ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ',')))
+	
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_WebLogo]
+AS
+BEGIN
+	SELECT * FROM WebLogo ORDER BY ThuTu
+END;
+
+CREATE PROCEDURE [dbo].[SP_Lay_WebLogoByID]
+	@ID int
+AS
+BEGIN
+	SELECT * FROM WebLogo WHERE ID = @ID ORDER BY ThuTu
+END;
+
+CREATE PROCEDURE [dbo].[SP_LayLoaiHang]
+AS
+BEGIN
+	SELECT * FROM LoaiHang ORDER BY LoaiHangID
+END;
+
+CREATE PROCEDURE [dbo].[SP_LayTaiKhoanNganHang]
+AS
+BEGIN
+	SELECT * FROM TaiKhoanNganHang
+END;
+
+CREATE PROCEDURE [dbo].[SP_LayTyGia]
+AS
+BEGIN
+	SELECT * FROM TY_GIA ORDER BY Name
+END;
+
+CREATE PROCEDURE [dbo].[SP_LayUserByReceived]
+AS
+BEGIN
+	SELECT distinct username FROM DON_HANG where trangthaiOrder = 'Received' ORDER BY username
+END;
+
+CREATE PROCEDURE [dbo].[SP_LayUserByWebsiteReceived]
+	@WebsiteName nvarchar(50)
+AS
+BEGIN
+	IF(@WebsiteName = '')
+	BEGIN
+		SELECT distinct username FROM DON_HANG where trangthaiOrder = 'Received' ORDER BY username
+	END
+	ELSE
+	BEGIN
+		SELECT distinct username FROM DON_HANG where trangthaiOrder = 'Received' and WebsiteName = @WebsiteName ORDER BY username
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_LayWebsite]
+AS
+BEGIN
+	SELECT * FROM WEBSITE ORDER BY WebsiteName
+END;
+
+CREATE PROCEDURE [dbo].[SP_LayWebsiteByReceived]
+AS
+BEGIN
+	SELECT distinct WebsiteName FROM DON_HANG where DaXoa = 0 and trangthaiOrder = 'Received' ORDER BY WebsiteName
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_ShareOrders]
+	@id nvarchar(4000)
+	,@ordernumber nvarchar(50)
+	,@saleoff float
+	,@phuthu float
+	,@shipUSA float
+	,@tax float
+	,@cong float
+	,@TotalCharged float
+	,@TotalItem int
+	,@HeThongTuTinhCong bit
+	,@tygia float
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, ''
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DECLARE @Thue float
+		SELECT @Thue = CAST(GiaTriCauHinh as float) FROM CauHinh WHERE TenCauHinh = 'Thue'
+
+		DECLARE @id_item nvarchar(50)
+		DECLARE @soluong int
+		DECLARE @dongiaweb float
+		--DECLARE @tygia float
+		DECLARE @loaitien nvarchar(50)
+		DECLARE @tien float
+		DECLARE @username nvarchar(50)
+		DECLARE @tiencong float
+
+		DECLARE id_cursor CURSOR FOR  SELECT s FROM dbo.SplitString(@id, ',')
+		OPEN id_cursor
+		FETCH NEXT FROM id_cursor INTO @id_item
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+			SELECT @soluong= soluong, @dongiaweb = dongiaweb, @username = username, @loaitien = loaitien
+			FROM DON_HANG
+			WHERE ID = CAST(@id_item as int)
+
+			SET @tien = ((100 - @saleoff) / 100) * @dongiaweb * @soluong;
+
+			SET @tiencong = @tien * @cong / 100;
+
+
+			DECLARE @tiencongVND float
+			DECLARE @tiencong1mon float
+			DECLARE @tinhtheophantram float
+			DECLARE @khachbuon bit
+			SET @tiencongVND = 0;
+
+			SELECT @khachbuon = KhachBuon FROM AspNetUsers where UserName = @username
+			SELECT @tiencong1mon=TienCong1Mon, @tinhtheophantram = TinhTheoPhanTram FROM GiaTienCong WHERE ((@dongiaweb  > TuGia) and (@dongiaweb  <= DenGia)) and LoaiTien = @loaitien and KhachBuon = @khachbuon
+        
+			IF(@HeThongTuTinhCong=1)
+			BEGIN
+				IF (@tinhtheophantram=1)
+				BEGIN
+					SET @cong = @tiencong1mon;
+					SET @tiencong = @tien * @cong / 100;
+					SET @tiencongVND = @tiencong * @tygia;
+				END
+				ELSE
+				BEGIN
+					SET @tiencong = 0;
+					SET @tiencongVND = @tiencong1mon * @soluong;
+				END
+			END
+			ELSE
+			BEGIN
+					SET @tiencong = @tien * @cong / 100;
+					SET @tiencongVND = @tiencong * @tygia;
+			END
+		
+			SET @tien = @tien + @tien * 0.01 * @tax;
+
+			SET @tien = @tien + @shipUSA * @soluong;
+
+			SET @tien = @tien + @phuthu * @soluong;
+
+			UPDATE DON_HANG
+			SET saleoff = @saleoff
+			, tygia = @tygia
+			, phuthu = @phuthu
+			, shipUSA = @shipUSA
+			, tax = @tax
+			, cong = @cong
+			, giasauoffUSD =  @tien
+			, giasauoffVND = @tien * tygia
+			, tiencongUSD = @tiencong
+			--, tiencongVND = @tiencong * tygia
+			, tiencongVND = @tiencongVND
+			, tongtienUSD = @tien + @tiencong
+			, tongtienVND = CAST((CEILING(((@tien * @tygia) + @tiencongVND) * 1) / 1) as int)
+			, ordernumber = @ordernumber
+			, trangthaiOrder = 'Ordered'
+			WHERE ID = CAST(@id_item as int)
+		
+			IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @id_item AND style = 1))
+			BEGIN
+				-- update CONGNO
+				UPDATE CONGNO
+				SET DR = CAST((CEILING(((@tien * @tygia) + @tiencongVND) * 1) / 1) as int)
+				, UserName = @username
+				, DaXoa = 0
+				, NguoiCapNhatCuoi = @NguoiTao
+				, NgayCapNhatCuoi = GETDATE()
+				WHERE HienTai = 1 AND DonHang_ID = @id_item AND style = 1
+			END
+			ELSE
+			BEGIN
+			-- insert CONGNO
+				INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, HienTai, NguoiTao)
+				VALUES (@id_item, N'Phí mua ' + @id_item, GETDATE(), CAST((CEILING(((@tien * @tygia) + @tiencongVND) * 1) / 1) as int), 0, @username, 1, 1, 1, @NguoiTao)
+			END
+	
+			FETCH NEXT FROM id_cursor INTO @id_item
+		END 
+		CLOSE id_cursor;
+		DEALLOCATE id_cursor;
+
+		IF(EXISTS(SELECT * FROM LIST_ORDER WHERE OrderNumber = @ordernumber))
+		BEGIN
+			-- update LIST_ORDER
+			UPDATE LIST_ORDER
+			SET TongSoLink = @TotalItem
+			, TongTienOrder = @TotalCharged
+			, TongTienOrderVND = CAST((CEILING(((@TotalCharged * @tygia)) * 1) / 1) as int)
+			WHERE OrderNumber = @ordernumber
+		END
+		ELSE
+		BEGIN
+			-- insert LIST_ORDER
+			INSERT INTO LIST_ORDER (OrderNumber, TongSoLink, TongTienOrder, TongTienOrderVND)
+			VALUES (@ordernumber, @TotalItem, @TotalCharged, CAST((CEILING(((@TotalCharged * @tygia)) * 1) / 1) as int))
+		END
+	END
+
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_ShareOrdersHangKhoan]
+	@id nvarchar(4000)
+	,@ordernumber nvarchar(50)
+	,@TotalCharged float
+	,@TotalItem int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, ''
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DECLARE @id_item nvarchar(50)
+		DECLARE @soluong int
+		DECLARE @dongiaweb float
+		DECLARE @tygia float
+		DECLARE @loaitien nvarchar(50)
+		DECLARE @tien float
+		DECLARE @username nvarchar(50)
+
+		DECLARE id_cursor CURSOR FOR  SELECT s FROM dbo.SplitString(@id, ',')
+		OPEN id_cursor
+		FETCH NEXT FROM id_cursor INTO @id_item
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+			SELECT @soluong= soluong, @dongiaweb = dongiaweb, @tygia = tygia, @username = username, @loaitien = loaitien
+			FROM DON_HANG
+			WHERE ID = CAST(@id_item as int)
+
+			SET @tien = @dongiaweb * @soluong;
+
+			UPDATE DON_HANG
+			SET  saleoff = 0
+			, phuthu = 0
+			, shipUSA = 0
+			, tax = 0
+			, cong = 0
+			, giasauoffUSD =  @tien
+			, giasauoffVND = @tien * tygia
+			, tiencongUSD = 0
+			, tiencongVND = 0
+			, tongtienUSD = @tien
+			, tongtienVND = CAST((CEILING(((@tien * @tygia)) * 1) / 1) as int)
+			, ordernumber = @ordernumber
+			, trangthaiOrder = 'Ordered'
+			WHERE ID = CAST(@id_item as int)
+		
+			IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND DonHang_ID = @id_item AND style = 1))
+			BEGIN
+				-- update CONGNO
+				UPDATE CONGNO
+				SET DR = CAST((CEILING((@tien) * @tygia * 1) /1) as int)
+				, UserName = @username
+				, DaXoa = 0
+				, NguoiCapNhatCuoi = @NguoiTao
+				, NgayCapNhatCuoi = GETDATE()
+				WHERE HienTai = 1 AND DonHang_ID = @id_item AND style = 1
+			END
+			ELSE
+			BEGIN
+			-- insert CONGNO
+				INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, HienTai, NguoiTao)
+				VALUES (@id_item, N'Phí mua ' + @id_item, GETDATE(), CAST((CEILING(((@tien * @tygia)) * 1) / 1) as int), 0, @username, 1, 1, 1, @NguoiTao)
+			END
+	
+			FETCH NEXT FROM id_cursor INTO @id_item
+		END 
+		CLOSE id_cursor;
+		DEALLOCATE id_cursor;
+
+		IF(EXISTS(SELECT * FROM LIST_ORDER WHERE OrderNumber = @ordernumber))
+		BEGIN
+			-- update LIST_ORDER
+			UPDATE LIST_ORDER
+			SET TongSoLink = @TotalItem
+			, TongTienOrder = @TotalCharged
+			, TongTienOrderVND = CAST((CEILING(((@TotalCharged)) * 1) / 1) as int)
+			WHERE OrderNumber = @ordernumber
+		END
+		ELSE
+		BEGIN
+			-- insert LIST_ORDER
+			INSERT INTO LIST_ORDER (OrderNumber, TongSoLink, TongTienOrder, TongTienOrderVND)
+			VALUES (@ordernumber, @TotalItem, @TotalCharged, CAST((CEILING(((@TotalCharged)) * 1) / 1) as int))
+		END
+	END
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Sua_Ky]
+	@KyID int
+	, @Thang int
+	, @Nam int
+AS
+BEGIN
+	Declare @NgayDauKy datetime;
+	Declare @NgayCuoiKy datetime;
+
+	--Lấy thông tin kỳ hiện tại
+	SELECT @NgayDauKy = NgayDauKy, @NgayCuoiKy = NgayCuoiKy
+	FROM tbKy
+	WHERE KyID = @KyID
+
+	IF(EXISTS (SELECT * FROM tbKy where Nam = @Nam and Thang = @Thang))
+	BEGIN
+		SELECT 1 -- Đã có kỳ rồi
+	END
+	ELSE IF(EXISTS (SELECT *  FROM CONGNO WHERE NgayGhiNo between @NgayDauKy and @NgayCuoiKy))
+	BEGIN
+		SELECT 2 -- Kỳ đã phát sinh dữ liệu
+	END
+	ELSE
+	BEGIN
+		UPDATE tbKy
+		SET Thang = @Thang
+		, Nam = @Nam
+		WHERE KyID = @KyID
+
+		SELECT 0;
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_TamMoKy]
+	@ChotKyID int
+AS
+BEGIN
+	Declare @DaDong_KyCanMo bit;
+	Declare @TenKyCanMo int;
+	Declare @NgayDauKy datetime;
+	Declare @NgayCuoiKy datetime;
+
+	--Lấy thông tin kỳ cần mở
+	SELECT  @TenKyCanMo = ky.TenKy, @DaDong_KyCanMo = ky.DaDong, @NgayDauKy = ky.NgayDauKy, @NgayCuoiKy = ky.NgayCuoiKy
+	FROM tbChotKy CK
+	INNER JOIN tbKy Ky ON CK.KyID = Ky.KyID
+	WHERE ChotKyID = @ChotKyID
+
+	IF(@NgayCuoiKy < DATEADD(month,-2, GETDATE()))
+	BEGIN
+		SELECT 1 -- Không được tạm mở kỳ quá xa
+	END
+	ELSE
+	BEGIN
+		UPDATE tbChotKy SET TamMoKy = 1 WHERE ChotKyID = @ChotKyID
+		SELECT 0;
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_ChiTietTracking]
+	@TrackingID int
+	,@LinkHinhDaiDien nvarchar(max)
+	,@SoLuong int
+	,@Gia float
+	,@GhiChu nvarchar(max)
+AS
+BEGIN
+	INSERT INTO tbChiTietTracking(TrackingID, LinkHinhDaiDien, SoLuong, Gia, GhiChu)
+	VALUES(@TrackingID, @LinkHinhDaiDien, @SoLuong, @Gia, @GhiChu)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_CongShipVeVN]
+	@LoaiHangID int
+	,@LoaiTien nvarchar(50)
+	,@TienCongShipVeVN float
+	,@KhachBuon bit
+AS
+BEGIN
+	INSERT INTO CongShipVeVN (LoaiHangID, LoaiTien, TienCongShipVeVN, KhachBuon)
+	VALUES (@LoaiHangID, @LoaiTien, @TienCongShipVeVN, @KhachBuon)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_DiaChiNhanHang]
+	@UserName nvarchar(250)
+	,@DiaChi nvarchar(max)
+AS
+BEGIN
+		INSERT INTO DiaChiNhanHang(UserName, DiaChi)
+		VALUES(@UserName, @DiaChi)
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Them_DonHang_Simple]
+	@WebsiteName nvarchar(100)
+	,@username nvarchar(100)
+	,@usernamesave nvarchar(100)
+	,@linkweb nvarchar(500)
+	,@linkhinh nvarchar(500)
+	,@corlor nvarchar(50)
+	,@size nvarchar(50)
+	,@soluong int
+	,@dongiaweb float
+	,@loaitien nvarchar(10)
+	,@ghichu nvarchar(max)
+	,@tygia float
+	,@saleoff float
+	,@HangKhoan bit
+	,@LoaiHangID int
+	,@MaSoHang nvarchar(50)
+	,@QuocGiaID int
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, ''
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DECLARE @trangthaiOrder nvarchar(50)
+		SET @trangthaiOrder = 'Received'
+		IF (@HangKhoan = 1)
+		BEGIN
+			SET @trangthaiOrder = 'Ordered'
+		END
+
+		INSERT INTO [dbo].[DON_HANG] ([WebsiteName],[username], [usernamesave], [linkweb], [linkhinh], [corlor]
+			,[size],[soluong],[dongiaweb],[tax],[loaitien],[ghichu]
+			,[tygia], [saleoff] ,[trangthaiOrder],[ngaysaveLink],[ngaymuahang]
+			,[HangKhoan], [LoaiHangID], [MaSoHang], [QuocGiaID])
+		values(@WebsiteName, @username,@usernamesave,@linkweb,@linkhinh,@corlor
+			,@size,@soluong ,@dongiaweb,0,@loaitien,@ghichu
+			,@tygia, @saleoff,@trangthaiOrder,getdate(),getdate()
+			,@HangKhoan, @LoaiHangID, @MaSoHang, @QuocGiaID)
+
+		DECLARE @ID int;
+		SET @ID = @@IDENTITY;
+
+		IF (@HangKhoan = 1)
+		BEGIN
+			DECLARE @tien float
+			SET @tien = ((100 - @saleoff) / 100) * @dongiaweb * @soluong;
+
+			INSERT INTO CONGNO(DonHang_ID, NoiDung, NgayGhiNo, DR, CR, UserName, [Status], style, HienTai, NguoiTao)
+				VALUES (@ID, N'Phí mua ' + CAST(@ID as nvarchar(50)), GETDATE(), CAST((CEILING(((@tien * @tygia)) * 1) / 1) as int), 0, @username, 1, 1, 1, @usernamesave)
+
+			DECLARE @NgayVeVN date
+			SET @NgayVeVN = getdate()
+			DECLARE @TenDotHang nvarchar(100)
+			SET @TenDotHang = CONVERT(nvarchar(100), @NgayVeVN, 112);
+
+			UPDATE DON_HANG
+			SET ngayveVN = @NgayVeVN 
+			, TenDotHang = @TenDotHang
+			, cong = 0
+			, giasauoffUSD =  @tien
+			, giasauoffVND = @tien * tygia
+			, tiencongUSD = 0
+			, tiencongVND = 0
+			, tongtienUSD = @tien
+			, tongtienVND = CAST((CEILING(((@tien * @tygia)) * 1) / 1) as int)
+			WHERE ID = @ID
+
+			IF(EXISTS (SELECT * FROM DotHang WHERE TenDotHang = @TenDotHang AND UserName = @UserName))
+			BEGIN
+				UPDATE DotHang SET NgayVeVN = @NgayVeVN WHERE TenDotHang = @TenDotHang AND UserName = @UserName
+			END
+			ELSE
+			BEGIN
+				INSERT INTO DotHang(TenDotHang, NgayVeVN, UserName, TyGia) VALUES(@TenDotHang, @NgayVeVN, @UserName, @tygia)
+			END
+		END
+	END
+		
+COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+	 IF @@TRANCOUNT > 0
+	 ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+	 DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+	 SELECT @ErrMsg = ERROR_MESSAGE(),
+	 @ErrSeverity = ERROR_SEVERITY()
+
+	 RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_Them_DonHang_Simple_CoTamTinh]
+	@WebsiteName nvarchar(100)
+	,@username nvarchar(100)
+	,@usernamesave nvarchar(100)
+	,@linkweb nvarchar(500)
+	,@linkhinh nvarchar(500)
+	,@corlor nvarchar(50)
+	,@size nvarchar(50)
+	,@soluong int
+	,@dongiaweb float
+	,@loaitien nvarchar(10)
+	,@ghichu nvarchar(max)
+	,@tygia float
+	,@saleoff float
+	,@HangKhoan bit
+	,@cong float
+	,@shipUSA float
+	,@tax float
+	,@phuthu float
+	,@QuocGiaID int
+AS
+BEGIN
+
+	DECLARE @tiencong float
+	DECLARE @tiencongVND float
+	DECLARE @tien float
+	DECLARE @tiencong1mon float
+	
+	SET @tien = ((100 - @saleoff) / 100) * @dongiaweb * @soluong;
+	
+	SET @tiencong = @tien * @cong / 100;
+	DECLARE @TinhCongTheoCongThuc bit
+	DECLARE @tinhtheophantram float
+	DECLARE @khachbuon bit
+	SET @tiencongVND = 0;	
+
+	
+	SELECT @khachbuon = KhachBuon FROM AspNetUsers where UserName = @username
+	SELECT @tiencong1mon=TienCong1Mon, @tinhtheophantram = TinhTheoPhanTram FROM GiaTienCong WHERE ((@dongiaweb  > TuGia) and (@dongiaweb  <= DenGia)) and LoaiTien = @loaitien and KhachBuon = @khachbuon
+        
+	IF (@tinhtheophantram=1)
+	BEGIN
+        --SET @cong = @tiencong1mon;
+        SET @tiencong = @tien * @cong / 100;
+		SET @tiencongVND = @tiencong * @tygia;
+    END
+    ELSE
+    BEGIN
+        SET @tiencong = 0;
+		SET @tiencongVND = @tiencong1mon * @soluong;
+    END
+	
+	
+	SET @tien = @tien + @tien * 0.01 * @tax;
+    SET @tien = @tien + @shipUSA * @soluong;
+    SET @tien = @tien + @phuthu * @soluong;
+
+	INSERT INTO [dbo].[DON_HANG] ([WebsiteName],[username], [usernamesave], [linkweb], [linkhinh], [corlor]
+        ,[size],[soluong],[dongiaweb],[loaitien],[ghichu]
+        ,[tygia], [saleoff] ,[trangthaiOrder],[ngaysaveLink],[ngaymuahang]
+		,[HangKhoan], shipUSA, tax, phuthu, cong
+		, giasauoffUSD, giasauoffVND, tiencongUSD, tiencongVND, tongtienUSD
+		, tongtienVND, QuocGiaID)
+	values(@WebsiteName, @username,@usernamesave,@linkweb,@linkhinh,@corlor
+		,@size,@soluong ,@dongiaweb,@loaitien,@ghichu
+		,@tygia, @saleoff,'Received',getdate(),getdate()
+		,@HangKhoan, @shipUSA, @tax, @phuthu, @cong
+		, @tien, @tien * @tygia, @tiencong, @tiencongVND, @tien + @tiencong
+		, CAST((CEILING(((@tien * @tygia) + @tiencongVND) * 1) / 1) as int), @QuocGiaID)
+END
+
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------;
+
+CREATE PROCEDURE [dbo].[SP_Them_GiaTienCong]
+	@LoaiTien nvarchar(50)
+	,@TuGia float
+	,@DenGia float
+	,@TienCong1Mon float
+	,@TinhTheoPhanTram bit
+	,@KhachBuon bit
+AS
+BEGIN
+	INSERT INTO GiaTienCong (LoaiTien, TuGia, DenGia, TienCong1Mon, TinhTheoPhanTram, KhachBuon)
+	VALUES (@LoaiTien, @TuGia, @DenGia, @TienCong1Mon, @TinhTheoPhanTram, @KhachBuon)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_HangCoSan]
+	@TenHinh nvarchar(250)
+	,@TenHang nvarchar(500)
+	,@LinkHang nvarchar(500)
+	,@GiaTien int
+	,@MoTa nvarchar(2500)
+	,@SoSao int
+	,@ThuTu int
+	,@NoiDungTimKiem nvarchar(max)
+	,@MaSoHang nvarchar(250)
+AS
+BEGIN
+		INSERT INTO HangCoSan(TenHinh, TenHang, LinkHang, GiaTien, MoTa, SoSao, ThuTu, NoiDungTimKiem, MaSoHang)
+		VALUES(@TenHinh, @TenHang, @LinkHang, @GiaTien, @MoTa, @SoSao, @ThuTu, @NoiDungTimKiem, @MaSoHang)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_HanMucKhachHang]
+	@UserName nvarchar(100)
+	,@DaQuaHanMuc bit
+	,@LaKhachVip bit
+AS
+	
+BEGIN
+	IF(EXISTS (SELECT * FROM HanMucKhachHang WHERE UserName = @username))
+	BEGIN
+		UPDATE HanMucKhachHang SET DaQuaHanMuc = @DaQuaHanMuc, LaKhachVip = @LaKhachVip WHERE UserName = @username
+	END
+	ELSE
+	BEGIN
+		INSERT INTO HanMucKhachHang(UserName, DaQuaHanMuc, LaKhachVip) VALUES(@UserName, @DaQuaHanMuc, @LaKhachVip)
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Them_Ky]
+	@Thang int
+	, @Nam int
+AS
+BEGIN
+	IF(EXISTS (SELECT * FROM tbKy where Nam = @Nam and Thang = @Thang))
+	BEGIN
+		SELECT 1 -- Đã có kỳ rồi
+	END
+	ELSE
+	BEGIN
+		INSERT INTO tbKy([Thang], [Nam], [DaDong])
+		VALUES(@Thang, @Nam, 0)
+
+		SELECT 0;
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_LinkHang]
+	@WebsiteName nvarchar(100)
+	,@username nvarchar(100)
+	,@usernamesave nvarchar(100)
+	,@linkweb nvarchar(500)
+AS
+BEGIN
+		INSERT INTO [dbo].[DON_HANG] ([WebsiteName], [username], [usernamesave], [linkweb], [tax]
+									, [trangthaiOrder], [ngaysaveLink],[ngaymuahang])
+		values(@WebsiteName, @username, @usernamesave, @linkweb, 8
+									, 'Received', getdate(), getdate())
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_LoHang_ChiPhiLoHang]
+	@TenLoHang nvarchar(50)
+	,@LoaiChiPhiLoHangID int
+	,@TienVND float
+AS
+BEGIN
+
+	INSERT INTO tbLoHang_ChiPhiLoHang(TenLoHang, LoaiChiPhiLoHangID, TienVND)
+	VALUES(@TenLoHang, @LoaiChiPhiLoHangID, @TienVND)
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Them_LoHang_PhiShipVeVN]
+	@LoHangID int
+	,@LoaiHangShipID int
+	,@CanNang float
+	,@DonGia int
+	,@TongTienShipVeVN_VND int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		INSERT INTO tbLoHang_PhiShipVeVN(LoHangID, LoaiHangShipID, CanNang, DonGia, TongTienShipVeVN_VND)
+		VALUES(@LoHangID, @LoaiHangShipID, @CanNang, @DonGia, @TongTienShipVeVN_VND)
+
+		EXEC SP_CapNhat_CongNo_LoHang_PhiShipVeVN @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Them_LoHang_PhiShipVeVN_ThanhTien]
+	@LoHangID int
+	,@LoaiHangShipID int
+	,@TongTienShipVeVN_VND int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		INSERT INTO tbLoHang_PhiShipVeVN(LoHangID, LoaiHangShipID, TongTienShipVeVN_VND)
+		VALUES(@LoHangID, @LoaiHangShipID, CAST(CEILING(@TongTienShipVeVN_VND * 1) / 1 as int))
+
+		EXEC SP_CapNhat_CongNo_LoHang_PhiShipVeVN @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Them_LoHang_ThueHaiQuan]
+	@LoHangID int
+	,@LoaiHangThueHaiQuanID int
+	,@CanNangSoLuongGiaTri float
+	,@DonGia float
+	,@TongTienThueHaiQuan_VND int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		INSERT INTO tbLoHang_ThueHaiQuan(LoHangID, LoaiHangThueHaiQuanID, CanNangSoLuongGiaTri, DonGia, TongTienThueHaiQuan_VND)
+		VALUES(@LoHangID, @LoaiHangThueHaiQuanID, @CanNangSoLuongGiaTri, @DonGia, @TongTienThueHaiQuan_VND)
+
+		EXEC SP_CapNhat_CongNo_LoHang_ThueHaiQuan @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Them_LoHang_ThueHaiQuan_ThanhTien]
+	@LoHangID int
+	,@LoaiHangThueHaiQuanID int
+	,@TongTienThueHaiQuan_VND int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @UserName as nvarchar(250);
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		INSERT INTO tbLoHang_ThueHaiQuan(LoHangID, LoaiHangThueHaiQuanID, TongTienThueHaiQuan_VND)
+		VALUES(@LoHangID, @LoaiHangThueHaiQuanID, CAST(CEILING(@TongTienThueHaiQuan_VND * 1 ) / 1 as int))
+
+		EXEC SP_CapNhat_CongNo_LoHang_ThueHaiQuan @LoHangID, @NguoiTao
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_Shipper]
+	@ShipperName nvarchar(50)
+	,@ShipperPhone nvarchar(20)
+	,@ShipperAddress nvarchar(250)
+AS
+BEGIN
+		INSERT INTO SHIPPER_MAN(ShipperName, ShipperPhone, ShipperAddress)
+		VALUES(@ShipperName, @ShipperPhone, @ShipperAddress)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_SystemLogs]
+    @NguoiTao nvarchar(50)
+    ,@Nguon nvarchar(50)
+    ,@HanhDong nvarchar(250)
+    ,@DoiTuong nvarchar(50)
+    ,@NoiDung nvarchar(max)
+AS
+BEGIN
+	INSERT INTO tbSystemLogs(NguoiTao, Nguon, HanhDong, DoiTuong, NoiDung)
+	VALUES(@NguoiTao, @Nguon, @HanhDong, @DoiTuong, @NoiDung)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_TaiKhoanNganHang]
+	@TenTaiKhoanNganHang nvarchar(250)
+	,@GhiChu nvarchar(500)
+AS
+BEGIN
+		INSERT INTO TaiKhoanNganHang(TenTaiKhoanNganHang, GhiChu)
+		VALUES(@TenTaiKhoanNganHang, @GhiChu)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_ThacMac]
+	@username nvarchar(100)
+	,@CauHoi nvarchar(500)
+AS
+BEGIN
+		INSERT INTO THACMAC(username, CauHoi)
+		VALUES(@username, @CauHoi)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_ThongTinWeb]
+	@TenThongTin nvarchar(250)
+	,@NoiDungThongTin nvarchar(MAX)
+AS
+BEGIN
+		INSERT INTO THONGTIN_WEB(TenThongTin, NoiDungThongTin)
+		VALUES(@TenThongTin, @NoiDungThongTin)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_Tracking]
+	@UserName nvarchar(250)
+	,@TrackingNumber nvarchar(250)
+	,@OrderNumber nvarchar(250)
+	,@NgayDatHang datetime
+	,@NhaVanChuyenID int
+	,@QuocGiaID int
+	,@TinhTrang nvarchar(50)
+	,@GhiChu nvarchar(max)
+	,@NguoiTao nvarchar(250)
+	,@Kien nvarchar(250)
+	,@Mawb nvarchar(250)
+	,@Hawb nvarchar(250)
+	,@CoTaoLoHang bit
+	,@GhiChuLoHang nvarchar(500)
+AS
+BEGIN
+	INSERT INTO [dbo].[tbTracking](
+		[UserName],[TrackingNumber],[OrderNumber],[NgayDatHang],[NhaVanChuyenID]
+		,[QuocGiaID],[TinhTrang],[GhiChu],[NguoiTao],[Kien]
+		,[Mawb],[Hawb]
+	)
+	VALUES(
+		@UserName,@TrackingNumber,@OrderNumber,@NgayDatHang,@NhaVanChuyenID
+		,@QuocGiaID,@TinhTrang,@GhiChu,@NguoiTao,@Kien
+		,@Mawb,@Hawb
+	)
+
+	DECLARE @ID int;
+	SET @ID = @@IDENTITY;
+	
+	INSERT INTO tbTinhTrangTracking (TrackingID, TinhTrang, NgayChuyenTinhTrang, NgayTao, NguoiTao)
+	VALUES(@ID, @TinhTrang, getdate(), getdate(), @NguoiTao)
+
+	IF(@CoTaoLoHang = 1)
+	BEGIN
+		declare @sID nvarchar(50)
+		set @sID = CAST(@ID as nvarchar)
+
+		declare @ngayhientai datetime
+		set @ngayhientai = getdate()
+
+		exec SP_CapNhat_NgayLoHang @sID, @ngayhientai, @GhiChuLoHang
+	END
+
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_WebLogo]
+	@TenHinh nvarchar(250)
+	,@NoiDung nvarchar(500)
+	,@LinkWeb nvarchar(500)
+	,@ThuTu int
+AS
+BEGIN
+		INSERT INTO WebLogo(TenHinh, NoiDung, LinkWeb, ThuTu)
+		VALUES(@TenHinh, @NoiDung, @LinkWeb, @ThuTu)
+END;
+
+CREATE PROCEDURE [dbo].[SP_Them_Website]
+	@WebsiteName nvarchar(250)
+	,@GhiChu nvarchar(500)
+AS
+BEGIN
+		INSERT INTO WEBSITE(WebsiteName, GhiChu)
+		VALUES(@WebsiteName, @GhiChu)
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_TimKiemSystemLogs]
+    @NguoiTao nvarchar(50)
+    ,@Nguon nvarchar(50)
+    ,@HanhDong nvarchar(250)
+    ,@DoiTuong nvarchar(50)
+    ,@TuNgay nvarchar(50)
+    ,@DenNgay nvarchar(50)
+    ,@NoiDung nvarchar(500)
+    ,@PageSize int
+	,@PageNum int
+AS
+BEGIN
+	CREATE TABLE #MyPage(SystemLogsID uniqueidentifier);
+    DECLARE @selectitem uniqueidentifier;
+    DECLARE @start int;
+    DECLARE @run int;
+    SET @start=(@PageNum - 1)*@PageSize+1;
+    SET @run=0;
+    
+    
+    DECLARE @Sql nvarchar(MAX);
+	SET @Sql = 'DECLARE RS SCROLL CURSOR FOR SELECT SystemLogsID FROM tbSystemLogs WHERE 1 = 1'
+	
+	IF(@NguoiTao <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NguoiTao like ''%' + @NguoiTao + '%'''
+	END
+	
+	IF(@Nguon <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND Nguon like N''%' + @Nguon + '%'''
+	END
+	
+	IF(@HanhDong <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND HanhDong like N''%' + @HanhDong + '%'''
+	END
+	
+	IF(@DoiTuong <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND DoiTuong like N''%' + @DoiTuong + '%'''
+	END
+	
+	IF(@TuNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NgayTao > ''' + @TuNgay + ''''
+	END
+	
+	IF(@DenNgay <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NgayTao < ''' + @DenNgay + ''''
+	END
+	
+	IF(@NoiDung <> '')
+	BEGIN
+		SET @Sql = @Sql + ' AND NoiDung like N''%' + @NoiDung + '%'''
+	END
+
+	SET @Sql = @Sql + ' ORDER BY NgayTao desc'
+		
+	EXEC sp_executesql @Sql;
+	
+	OPEN RS
+    --return total record
+    SELECT @@CURSOR_ROWS AS TOTALROW;
+    ---------
+    FETCH ABSOLUTE @start FROM RS INTO @selectitem
+    WHILE(@@FETCH_STATUS <> -1 and @run < @PageSize)
+    BEGIN
+        INSERT INTO #MyPage(SystemLogsID) VALUES(@selectitem)
+        SET @run=@run+1;
+        FETCH NEXT FROM RS INTO @selectitem
+    END
+    CLOSE RS
+    DEALLOCATE RS
+    
+    SELECT SL.*
+	FROM tbSystemLogs SL
+	INNER JOIN #MyPage ON SL.SystemLogsID = #MyPage.SystemLogsID
+	ORDER BY  NgayTao desc
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_ChiTietTracking]
+	@ChiTietTrackingID int
+AS
+BEGIN
+	DELETE tbChiTietTracking WHERE ChiTietTrackingID = @ChiTietTrackingID
+	
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Xoa_CongNo]
+	@CongNo_ID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+
+	DECLARE @usernameOld nvarchar(50)
+	DECLARE	@NgayGhiNoOld datetime
+	SELECT @usernameOld = username, @NgayGhiNoOld = NgayGhiNo FROM CONGNO WHERE CongNo_ID = @CongNo_ID
+
+	DECLARE	@DuocCapNhatOld int
+	EXEC @DuocCapNhatOld = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNoOld, @usernameOld
+
+	IF (@DuocCapNhatOld = 0)
+	BEGIN
+		UPDATE CONGNO 
+		SET DaXoa = 1, HienTai = 0 
+		, NguoiCapNhatCuoi = @NguoiTao
+		, NgayCapNhatCuoi = GETDATE()
+		WHERE CongNo_ID = @CongNo_ID
+
+		IF(EXISTS (SELECT * FROM CONGNO WHERE CongNo_ID = @CongNo_ID AND style = 4))
+		BEGIN
+			DECLARE @TenDotHang nvarchar(100)
+			DECLARE @UserName nvarchar(100)
+
+			SELECT @TenDotHang = TenDotHang, @UserName = UserName FROM CONGNO WHERE CongNo_ID = @CongNo_ID AND style = 4 
+		
+			UPDATE dothang set PhiShipTrongNuoc = 0 where username = @UserName and tendothang = @TenDotHang		
+		END
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_CongShipVeVN]
+	@ID int
+AS
+BEGIN
+	DELETE CongShipVeVN WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_DiaChiNhanHang]
+	@ID int
+AS
+BEGIN
+		DELETE WEBSITE WHERE ID = @ID
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Xoa_DonHang]
+	@ID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+	DECLARE @usernameOld nvarchar(50)
+	DECLARE	@NgayGhiNoOld datetime
+	DECLARE	@DuocCapNhatOld int
+	SET @DuocCapNhatOld = 0
+	
+	SELECT @usernameOld = username FROM DON_HANG WHERE  ID = @ID
+
+	DECLARE @CS_NgayGhiNo datetime;
+	DECLARE	@DuocCapNhatOld1 int
+	SET @DuocCapNhatOld1 = 0
+
+	DECLARE RS SCROLL CURSOR FOR 
+	SELECT NgayGhiNo FROM CONGNO WHERE DonHang_ID = @ID AND style = 1
+
+	OPEN RS
+
+	FETCH NEXT FROM RS INTO @CS_NgayGhiNo
+	WHILE(@@FETCH_STATUS <> -1)
+	BEGIN
+		EXEC @DuocCapNhatOld1 = [SP_KiemTra_DuocCapNhatCongNo] @CS_NgayGhiNo, @usernameOld
+		IF(@DuocCapNhatOld1 <> 0)
+		BEGIN
+			SET @DuocCapNhatOld = 2
+		END
+
+		FETCH NEXT FROM RS INTO @CS_NgayGhiNo
+	END
+	CLOSE RS
+	DEALLOCATE RS
+	
+	IF (@DuocCapNhatOld = 0)
+	BEGIN
+		UPDATE DON_HANG SET DaXoa = 1 WHERE ID = @ID
+		UPDATE CONGNO 
+		SET DaXoa = 1, HienTai = 0 
+		, NguoiCapNhatCuoi = @NguoiTao
+		, NgayCapNhatCuoi = GETDATE()
+		WHERE DonHang_ID = @ID
+	END
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_GiaTienCong]
+	@ID int
+AS
+BEGIN
+	DELETE GiaTienCong WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_HangCoSan]
+	@ID int
+AS
+BEGIN
+		DELETE HangCoSan WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_HanMucKhachHang]
+	@ID int
+AS
+BEGIN
+		DELETE HanMucKhachHang WHERE ID = @ID
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Xoa_Ky]
+	@KyID int
+AS
+BEGIN
+	-- Kiểm tra đã phát sinh dữ liệu trong kỳ thì không được xóa
+	Declare @NgayDauKy datetime;
+	Declare @NgayCuoiKy datetime;
+
+	--Lấy thông tin kỳ hiện tại
+	SELECT @NgayDauKy = NgayDauKy, @NgayCuoiKy = NgayCuoiKy
+	FROM tbKy
+	WHERE KyID = @KyID
+
+	IF(EXISTS (SELECT *  FROM CONGNO WHERE NgayGhiNo between @NgayDauKy and @NgayCuoiKy))
+	BEGIN
+		SELECT 1 -- Kỳ đã phát sinh dữ liệu
+	END
+	ELSE
+	BEGIN
+		DELETE tbKy WHERE KyID = @KyID
+		SELECT 0 -- Đã thực hiện
+	END
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_LoHang_ChiPhiLoHang]
+	@LoHang_ChiPhiLoHangID int
+AS
+BEGIN
+	DELETE tbLoHang_ChiPhiLoHang	WHERE LoHang_ChiPhiLoHangID = @LoHang_ChiPhiLoHangID
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Xoa_LoHang_PhiShipVeVN]
+	@LoHang_PhiShipVeVNID int
+	, @NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @LoHangID int
+	SELECT @LoHangID = LoHangID FROM tbLoHang_PhiShipVeVN WHERE LoHang_PhiShipVeVNID = @LoHang_PhiShipVeVNID
+
+	DECLARE @UserName as nvarchar(250);
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+	
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 6)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DELETE tbLoHang_PhiShipVeVN	WHERE LoHang_PhiShipVeVNID = @LoHang_PhiShipVeVNID
+		EXEC SP_CapNhat_CongNo_LoHang_PhiShipVeVN @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Xoa_LoHang_ThueHaiQuan]
+	@LoHang_ThueHaiQuanID int
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN
+	DECLARE @LoHangID int
+	SELECT @LoHangID = LoHangID FROM tbLoHang_ThueHaiQuan WHERE LoHang_ThueHaiQuanID = @LoHang_ThueHaiQuanID
+
+	DECLARE @UserName as nvarchar(250);
+
+	SELECT @UserName = UserName FROM tbLoHang where LoHangID = @LoHangID
+
+	DECLARE	@NgayGhiNo datetime
+	SET @NgayGhiNo = GETDATE();
+	IF(EXISTS(SELECT * FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7))
+	BEGIN
+		SET @NgayGhiNo = (SELECT top 1 NgayGhiNo FROM CONGNO WHERE HienTai = 1 AND LoHangID = @LoHangID AND style = 7)
+	END
+
+	DECLARE	@DuocCapNhat int
+	EXEC @DuocCapNhat = [SP_KiemTra_DuocCapNhatCongNo] @NgayGhiNo, @username
+
+	IF (@DuocCapNhat = 0)
+	BEGIN
+		DELETE tbLoHang_ThueHaiQuan	WHERE LoHang_ThueHaiQuanID = @LoHang_ThueHaiQuanID
+		EXEC SP_CapNhat_CongNo_LoHang_ThueHaiQuan @LoHangID, @NguoiTao
+	END
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE PROCEDURE [dbo].[SP_Xoa_MassDelete]
+	@id nvarchar(4000)
+	,@NguoiTao nvarchar(250)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	DECLARE @usernameOld nvarchar(50)
+	DECLARE	@NgayGhiNoOld datetime
+	DECLARE	@DuocCapNhatOld int
+	SET @DuocCapNhatOld = 0
+	DECLARE @CS_DonHangID datetime;
+	
+	DECLARE RS_DonHang SCROLL CURSOR FOR  SELECT CAST(s as int) FROM dbo.SplitString(@id, ',')
+	OPEN RS_DonHang
+
+	FETCH NEXT FROM RS_DonHang INTO @CS_DonHangID
+	WHILE(@@FETCH_STATUS <> -1)
+	BEGIN
+
+		SELECT @usernameOld = username FROM DON_HANG WHERE  ID = @CS_DonHangID
+
+		DECLARE @CS_NgayGhiNo datetime;
+		DECLARE	@DuocCapNhatOld1 int
+		SET @DuocCapNhatOld1 = 0
+
+		DECLARE RS SCROLL CURSOR FOR 
+		SELECT NgayGhiNo FROM CONGNO WHERE DonHang_ID = @ID
+
+		OPEN RS
+
+		FETCH NEXT FROM RS INTO @CS_NgayGhiNo
+		WHILE(@@FETCH_STATUS <> -1)
+		BEGIN
+			EXEC @DuocCapNhatOld1 = [SP_KiemTra_DuocCapNhatCongNo] @CS_NgayGhiNo, @usernameOld
+			IF(@DuocCapNhatOld1 <> 0)
+			BEGIN
+				SET @DuocCapNhatOld = 2
+			END
+
+			FETCH NEXT FROM RS INTO @CS_NgayGhiNo
+		END
+		CLOSE RS
+		DEALLOCATE RS
+
+		FETCH NEXT FROM RS_DonHang INTO @CS_DonHangID
+	END
+	CLOSE RS_DonHang
+	DEALLOCATE RS_DonHang
+
+	IF (@DuocCapNhatOld = 0)
+	BEGIN
+		UPDATE DON_HANG SET DaXoa = 1 WHERE ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+		UPDATE CONGNO
+		SET DaXoa = 1
+		, HienTai = 0
+		, NguoiCapNhatCuoi = @NguoiTao
+		, NgayCapNhatCuoi = GETDATE()
+		WHERE DonHang_ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+	END
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_MassDeleteTracking]
+	@id nvarchar(4000)
+AS
+BEGIN TRY
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION
+
+	UPDATE tbTracking SET DaXoa = 1 WHERE TrackingID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ','))
+
+	COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+	-- Whoops, there was an error
+		IF @@TRANCOUNT > 0
+		ROLLBACK TRANSACTION
+	-- Raise an error with the details of the exception
+		DECLARE @ErrMsg nvarchar(4000), @ErrSeverity int
+
+		SELECT @ErrMsg = ERROR_MESSAGE(),
+		@ErrSeverity = ERROR_SEVERITY()
+
+		RAISERROR(@ErrMsg, @ErrSeverity, 1)
+END CATCH;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_Shipper]
+	@ID int
+AS
+BEGIN
+		--DELETE SHIPPER_MAN WHERE ID = @ID
+		UPDATE SHIPPER_MAN SET DaXoa = 1 WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_ThacMac]
+	@ID int
+AS
+BEGIN
+		DELETE THACMAC WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_TinhTrangTracking]
+	@TinhTrangTrackingID int
+AS
+BEGIN
+	UPDATE tbTinhTrangTracking
+	SET DaXoa = 1
+	WHERE TinhTrangTrackingID = @TinhTrangTrackingID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_Tracking]
+	@TrackingID int
+AS
+BEGIN
+
+	UPDATE tbTracking SET DaXoa = 1 WHERE TrackingID = @TrackingID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_WebLogo]
+	@ID int
+AS
+BEGIN
+		DELETE WebLogo WHERE ID = @ID
+END;
+
+CREATE PROCEDURE [dbo].[SP_Xoa_Website]
+	@ID int
+AS
+BEGIN
+		DELETE WEBSITE WHERE ID = @ID
+END;
+
+CREATE function [dbo].[SplitString] 
+(
+    @str nvarchar(4000), 
+    @separator char(1)
+)
+RETURNS  
+@ReturnVal TABLE 
+(
+    zeroBasedOccurance int
+	,s nvarchar(4000)
+)
+AS
+BEGIN
+	
+	with tokens(p, a, b) AS (
+		select 
+			1, 
+			1, 
+			charindex(@separator, @str)
+		union all
+		select
+			p + 1, 
+			b + 1, 
+			charindex(@separator, @str, b + 1)
+		from tokens
+		where b > 0
+	)
+	insert into @ReturnVal(zeroBasedOccurance,s)
+	select
+		p-1 zeroBasedOccurance,
+		substring(
+			@str, 
+			a, 
+			case when b > 0 then b-a ELSE 4000 end) 
+		AS s
+	from tokens
+	OPTION (MAXRECURSION 0)
+
+	RETURN
+END;
+
+CREATE function [dbo].[SplitString1] 
+(
+    @str nvarchar(4000), 
+    @separator char(1)
+)
+returns table
+AS
+return (
+    with tokens(p, a, b) AS (
+        select 
+            1, 
+            1, 
+            charindex(@separator, @str)
+        union all
+        select
+            p + 1, 
+            b + 1, 
+            charindex(@separator, @str, b + 1)
+        from tokens
+        where b > 0
+    )
+    select
+        p-1 zeroBasedOccurance,
+        substring(
+            @str, 
+            a, 
+            case when b > 0 then b-a ELSE 4000 end) 
+        AS s
+    from tokens
+  );
+
+CREATE PROCEDURE [dbo].[TyGia_Inserts]
+	@Name nvarchar(50)
+	,@TyGiaVND float
+	,@TuNgay date
+	,@DenNgay date
+AS
+BEGIN
+		INSERT INTO [dbo].[TY_GIA]
+           (
+			[Name]
+			,[TyGiaVND]
+			,[TuNgay]
+			,[DenNgay]
+           )
+		VALUES
+		(
+		@Name
+		,@TyGiaVND
+		,@TuNgay
+		,@DenNgay
+		)
+		
+END;

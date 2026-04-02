@@ -1,0 +1,38 @@
+# Node.js
+node_modules/
+
+# Build output
+/dist
+/.next
+
+# Logs
+*.log
+
+# Dependency directories
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs and text editors
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm/
+
+# dotenv environment variable files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Tệp cấu hình của NestJS
+nestjs-debug.log
