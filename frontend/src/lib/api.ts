@@ -1151,7 +1151,7 @@ export const getUsernames = async (): Promise<{ username: string }[]> => {
  * Get exchange rates
  */
 export const getExchangeRates = async () => {
-  const response = await apiClient.get<{ data: { name: string; rate: number }[] }>('/exchange-rates');
+  const response = await apiClient.get<{ data: { Name: string; TyGiaVND: number }[] }>('/exchange-rates');
   return response.data.data;
 };
 

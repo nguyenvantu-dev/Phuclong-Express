@@ -27,7 +27,7 @@ export class ExchangeRatesService {
       host: process.env.DB_HOST || 'localhost',
       username: process.env.DB_USERNAME || 'sa',
       password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'PhucLong',
+      database: process.env.DB_DATABASE || 'PLELOGISTICS_OrderMan_1ST_01Jun2023',
       logging: false,
       dialectOptions: {
         encrypt: true,
@@ -45,7 +45,7 @@ export class ExchangeRatesService {
       const sequelize = this.getSequelize();
       const [data]: any[] = await sequelize.query(`
         SELECT Name, TyGiaVND, CongShipVeVN
-        FROM dbo.TyGia
+        FROM dbo.TY_GIA
         ORDER BY Name
       `);
       await sequelize.close();
@@ -64,7 +64,7 @@ export class ExchangeRatesService {
       const sequelize = this.getSequelize();
       const [data]: any[] = await sequelize.query(`
         SELECT Name, TyGiaVND, CongShipVeVN
-        FROM dbo.TyGia
+        FROM dbo.TY_GIA
         WHERE Name = '${name}'
       `);
       await sequelize.close();

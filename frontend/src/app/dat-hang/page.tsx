@@ -20,8 +20,8 @@ interface OrderItem {
 }
 
 interface ExchangeRate {
-  name: string;
-  rate: number;
+  Name: string;
+  TyGiaVND: number;
 }
 
 interface Country {
@@ -54,9 +54,9 @@ export default function DatHangMPage() {
       setExchangeRates(rates);
       setCountries(countryList);
 
-      const usdRate = rates.find((r) => r.name === 'USD');
+      const usdRate = rates.find((r) => r.Name === 'USD');
       if (usdRate) {
-        setDefaultTyGia(usdRate.rate);
+        setDefaultTyGia(usdRate.TyGiaVND);
       }
 
       addOrderForm(true);
@@ -65,7 +65,7 @@ export default function DatHangMPage() {
     }
   };
 
-  const generateId = () => Math.random().toString(36).substr(2, 9);
+  const generateId = () => Math.random().toString(36).substring(2, 11);
 
   const addOrderForm = (isFirst = false) => {
     const newOrder: OrderItem = {
@@ -99,8 +99,8 @@ export default function DatHangMPage() {
         const updated = { ...o, [field]: value, error: '' };
 
         if (field === 'loaiTien') {
-          const rate = exchangeRates.find((r) => r.name === value);
-          updated.tyGia = rate ? rate.rate : defaultTyGia;
+          const rate = exchangeRates.find((r) => r.Name === value);
+          updated.tyGia = rate ? rate.TyGiaVND : defaultTyGia;
         }
 
         return updated;
@@ -127,6 +127,10 @@ export default function DatHangMPage() {
         if (!o.donGiaWeb && o.donGiaWeb !== 0) {
           isValid = false;
           return { ...o, error: 'Vui lòng nhập giá website' };
+        }
+        if (o.saleOff && isNaN(o.saleOff)) {
+          isValid = false;
+          return { ...o, error: 'Sale Off phải là kiểu số' };
         }
         return { ...o, error: '' };
       })
@@ -335,8 +339,8 @@ export default function DatHangMPage() {
                     className="flex-1 border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
                   >
                     {exchangeRates.map((r) => (
-                      <option key={r.name} value={r.name}>
-                        {r.name}
+                      <option key={r.Name} value={r.Name}>
+                        {r.Name}
                       </option>
                     ))}
                   </select>
