@@ -33,7 +33,7 @@ export class WebsitesService {
       port: parseInt(process.env.DB_PORT || '1433'),
       username: process.env.DB_USERNAME || 'sa',
       password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_DATABASE || process.env.DB_NAME || 'PhucLong',
+      database: process.env.DB_DATABASE || process.env.DB_DATABASE || 'PhucLong',
       logging: false,
       dialectOptions: {
         encrypt: true,

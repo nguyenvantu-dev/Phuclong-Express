@@ -39,7 +39,7 @@ export class DeliveryAddressesService {
       host: process.env.DB_HOST || 'localhost',
       username: process.env.DB_USERNAME || 'sa',
       password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'PhucLong',
+      database: process.env.DB_DATABASE || 'PhucLong',
       logging: false,
       dialectOptions: {
         encrypt: true,

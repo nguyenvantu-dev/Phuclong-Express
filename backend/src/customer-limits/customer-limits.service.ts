@@ -41,7 +41,7 @@ export class CustomerLimitsService {
       host: process.env.DB_HOST || 'localhost',
       username: process.env.DB_USERNAME || 'sa',
       password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'PhucLong',
+      database: process.env.DB_DATABASE || 'PhucLong',
       logging: false,
       dialectOptions: {
         encrypt: true,
@@ -52,36 +52,38 @@ export class CustomerLimitsService {
   }
 
   /**
-   * Get paginated customer limits
+   * Get paginated customer limits (USP: SP_Lay_HanMucKhachHang)
    */
   async findAll(query: QueryCustomerLimitDto): Promise<{ data: CustomerLimit[]; total: number; page: number; limit: number }> {
     const { username, page = 1, limit = 20 } = query;
 
+    let sequelize: Sequelize | null = null;
     try {
-      const sequelize = this.getSequelize();
+      sequelize = this.getSequelize();
 
-      let whereClause = 'WHERE 1=1';
+      // Use stored procedure: SP_Lay_HanMucKhachHang with parameterized query
+      const [data]: any[] = await sequelize.query(
+        `EXEC SP_Lay_HanMucKhachHang @UserName=:username, @PageSize=:pageSize, @PageNum=:pageNum`,
+        {
+          replacements: {
+            username: username || '',
+            pageSize: limit,
+            pageNum: page,
+          },
+          raw: true,
+        }
+      );
 
-      if (username) {
-        whereClause += ` AND UserName LIKE '%${username}%'`;
-      }
-
-      // Get total count
-      const [countResult]: any[] = await sequelize.query(`
-        SELECT COUNT(*) as total
-        FROM dbo.HanMucKhachHang ${whereClause}
-      `);
+      // Get total count with parameterized query
+      const searchPattern = username ? `%${username}%` : '%';
+      const [countResult]: any[] = await sequelize.query(
+        `SELECT COUNT(*) as total FROM dbo.HanMucKhachHang WHERE UserName LIKE :searchPattern`,
+        {
+          replacements: { searchPattern },
+          raw: true,
+        }
+      );
       const total = Number(countResult[0]?.total) || 0;
-
-      // Get paginated data
-      const offset = (page - 1) * limit;
-      const [data]: any[] = await sequelize.query(`
-        SELECT ID, UserName, DaQuaHanMuc, LaKhachVip
-        FROM dbo.HanMucKhachHang
-        ${whereClause}
-        ORDER BY ID DESC
-        OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY
-      `);
 
       await sequelize.close();
 
@@ -92,7 +94,8 @@ export class CustomerLimitsService {
         limit,
       };
     } catch (error) {
-      console.error('Error getting customer limits:', error.message);
+      console.error('Error getting customer limits:', error.message, error.stack);
+      if (sequelize) await sequelize.close();
       return {
         data: [],
         total: 0,
@@ -103,35 +106,56 @@ export class CustomerLimitsService {
   }
 
   /**
-   * Get customer limit by ID
+   * Get customer limit by ID (USP: SP_Lay_HanMucKhachHang_ID)
    */
   async findOne(id: number): Promise<CustomerLimit | null> {
+    let sequelize: Sequelize | null = null;
     try {
-      const sequelize = this.getSequelize();
-      const [data]: any[] = await sequelize.query(`
-        SELECT ID, UserName, DaQuaHanMuc, LaKhachVip
-        FROM dbo.HanMucKhachHang
-        WHERE ID = ${id}
-      `);
+      sequelize = this.getSequelize();
+      const [data]: any[] = await sequelize.query(
+        `SELECT ID, UserName, DaQuaHanMuc, LaKhachVip FROM dbo.HanMucKhachHang WHERE ID = :id`,
+        {
+          replacements: { id },
+          raw: true,
+        }
+      );
       await sequelize.close();
       return data[0] || null;
     } catch (error) {
-      console.error('Error getting customer limit:', error.message);
+      console.error('Error getting customer limit:', error.message, error.stack);
+      if (sequelize) await sequelize.close();
       return null;
     }
   }
 
   /**
-   * Create new customer limit
+   * Create new customer limit (USP: SP_Them_HanMucKhachHang)
    */
   async create(createDto: CreateCustomerLimitDto, nguoiTao: string): Promise<{ success: boolean; id?: number; error?: string }> {
+    let sequelize: Sequelize | null = null;
     try {
-      const sequelize = this.getSequelize();
-      const [result]: any[] = await sequelize.query(`
-        INSERT INTO dbo.HanMucKhachHang (UserName, DaQuaHanMuc, LaKhachVip)
-        VALUES ('${createDto.username}', ${createDto.daQuaHanMuc ? 1 : 0}, ${createDto.laKhachVip ? 1 : 0});
-        SELECT SCOPE_IDENTITY() as ID;
-      `);
+      sequelize = this.getSequelize();
+
+      // Use stored procedure: SP_Them_HanMucKhachHang with parameterized query
+      await sequelize.query(
+        `EXEC SP_Them_HanMucKhachHang @UserName=:username, @DaQuaHanMuc=:daQuaHanMuc, @LaKhachVip=:laKhachVip`,
+        {
+          replacements: {
+            username: createDto.username,
+            daQuaHanMuc: createDto.daQuaHanMuc ? 1 : 0,
+            laKhachVip: createDto.laKhachVip ? 1 : 0,
+          },
+        }
+      );
+
+      // Get the ID just created
+      const [result]: any[] = await sequelize.query(
+        `SELECT TOP 1 ID FROM dbo.HanMucKhachHang WHERE UserName = :username ORDER BY ID DESC`,
+        {
+          replacements: { username: createDto.username },
+          raw: true,
+        }
+      );
       const id = result[0]?.ID;
 
       // Log system
@@ -140,23 +164,31 @@ export class CustomerLimitsService {
       await sequelize.close();
       return { success: true, id };
     } catch (error) {
-      console.error('Error creating customer limit:', error.message);
+      console.error('Error creating customer limit:', error.message, error.stack);
+      if (sequelize) await sequelize.close();
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Update customer limit
+   * Update customer limit (USP: SP_CapNhat_HanMucKhachHang)
    */
   async update(updateDto: UpdateCustomerLimitDto, nguoiCapNhat: string): Promise<{ success: boolean; error?: string }> {
+    let sequelize: Sequelize | null = null;
     try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        UPDATE dbo.HanMucKhachHang
-        SET DaQuaHanMuc = ${updateDto.daQuaHanMuc ? 1 : 0},
-            LaKhachVip = ${updateDto.laKhachVip ? 1 : 0}
-        WHERE ID = ${updateDto.id}
-      `);
+      sequelize = this.getSequelize();
+
+      // Use stored procedure: SP_CapNhat_HanMucKhachHang with parameterized query
+      await sequelize.query(
+        `EXEC SP_CapNhat_HanMucKhachHang @ID=:id, @DaQuaHanMuc=:daQuaHanMuc, @LaKhachVip=:laKhachVip`,
+        {
+          replacements: {
+            id: updateDto.id,
+            daQuaHanMuc: updateDto.daQuaHanMuc ? 1 : 0,
+            laKhachVip: updateDto.laKhachVip ? 1 : 0,
+          },
+        }
+      );
 
       // Log system
       await this.logAction(nguoiCapNhat, 'ChinhSua', 'HanMucKhachHang', updateDto.id, `DaQuaHanMuc: ${updateDto.daQuaHanMuc}; LaKhachVip: ${updateDto.laKhachVip}`);
@@ -164,20 +196,27 @@ export class CustomerLimitsService {
       await sequelize.close();
       return { success: true };
     } catch (error) {
-      console.error('Error updating customer limit:', error.message);
+      console.error('Error updating customer limit:', error.message, error.stack);
+      if (sequelize) await sequelize.close();
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Delete customer limit
+   * Delete customer limit (USP: SP_Xoa_HanMucKhachHang)
    */
   async remove(id: number, nguoiXoa: string): Promise<{ success: boolean; error?: string }> {
+    let sequelize: Sequelize | null = null;
     try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        DELETE FROM dbo.HanMucKhachHang WHERE ID = ${id}
-      `);
+      sequelize = this.getSequelize();
+
+      // Use stored procedure: SP_Xoa_HanMucKhachHang with parameterized query
+      await sequelize.query(
+        `EXEC SP_Xoa_HanMucKhachHang @ID=:id`,
+        {
+          replacements: { id },
+        }
+      );
 
       // Log system
       await this.logAction(nguoiXoa, 'Xoa', 'HanMucKhachHang', id, `ID: ${id}`);
@@ -185,7 +224,8 @@ export class CustomerLimitsService {
       await sequelize.close();
       return { success: true };
     } catch (error) {
-      console.error('Error deleting customer limit:', error.message);
+      console.error('Error deleting customer limit:', error.message, error.stack);
+      if (sequelize) await sequelize.close();
       return { success: false, error: error.message };
     }
   }
@@ -194,15 +234,25 @@ export class CustomerLimitsService {
    * Log system action
    */
   private async logAction(nguoiTao: string, hanhDong: string, nguon: string, doiTuong: number | string, noiDung: string): Promise<void> {
+    let sequelize: Sequelize | null = null;
     try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        INSERT INTO dbo.SystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
-        VALUES ('${nguoiTao}', GETDATE(), '${nguon}', '${hanhDong}', '${doiTuong}', '${noiDung}')
-      `);
+      sequelize = this.getSequelize();
+      await sequelize.query(
+        `INSERT INTO dbo.SystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung) VALUES (:nguoiTao, GETDATE(), :nguon, :hanhDong, :doiTuong, :noiDung)`,
+        {
+          replacements: {
+            nguoiTao,
+            nguon,
+            hanhDong,
+            doiTuong: String(doiTuong),
+            noiDung,
+          },
+        }
+      );
       await sequelize.close();
     } catch (error) {
-      console.error('Error logging action:', error.message);
+      console.error('Error logging action:', error.message, error.stack);
+      if (sequelize) await sequelize.close();
     }
   }
 }

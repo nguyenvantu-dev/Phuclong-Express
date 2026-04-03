@@ -46,13 +46,13 @@ export default function QuickOrderPage() {
         getExchangeRates(),
         getCountries(),
       ]);
-      setExchangeRates(rates);
+      setExchangeRates(rates.map((r) => ({ name: r.Name, rate: r.TyGiaVND })));
       setCountries(countryList);
 
       // Set default USD rate
-      const usdRate = rates.find((r) => r.name === 'USD');
+      const usdRate = rates.find((r) => r.Name === 'USD');
       if (usdRate) {
-        setDefaultTyGia(usdRate.rate);
+        setDefaultTyGia(usdRate.TyGiaVND);
       }
 
       // Add first order form

@@ -1,6 +1,21 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import apiClient, { getUsernames } from '@/lib/api';
+
+// Theme colors
+const THEME = {
+  primary: '#5cc6ee',
+  primaryDark: '#3eb5d9',
+  primaryLight: '#7dd3f3',
+  bg: '#f8fafc',
+  card: '#ffffff',
+  text: '#1e293b',
+  textMuted: '#64748b',
+  border: '#e2e8f0',
+  danger: '#ef4444',
+  success: '#22c55e',
+};
 
 interface CustomerLimit {
   ID: number;
@@ -35,11 +50,10 @@ export default function CustomerLimitsPage() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch('/api/users');
-      const data = await res.json();
-      if (data.users) {
-        setUsers(data.users);
-      }
+      const usersList = await getUsernames();
+      // Map { username: string }[] to { UserName: string }[]
+      const mappedUsers = (usersList || []).map(u => ({ UserName: u.username }));
+      setUsers(mappedUsers);
     } catch (err) {
       console.error('Failed to fetch users:', err);
     }
@@ -47,15 +61,14 @@ export default function CustomerLimitsPage() {
 
   const fetchLimits = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      params.append('page', page.toString());
-      params.append('limit', limit.toString());
-      if (usernameFilter) params.append('username', usernameFilter);
-
-      const res = await fetch(`/api/customer-limits?${params.toString()}`);
-      const data = await res.json();
-      setLimits(data.data || []);
-      setTotal(data.total || 0);
+      const params = {
+        page,
+        limit,
+        ...(usernameFilter && { username: usernameFilter }),
+      };
+      const res = await apiClient.get<{ data: CustomerLimit[]; total: number }>('/customer-limits', { params });
+      setLimits(res.data.data || []);
+      setTotal(res.data.total || 0);
     } catch (err) {
       console.error('Failed to fetch limits:', err);
       setError('Failed to load limits');
@@ -87,28 +100,23 @@ export default function CustomerLimitsPage() {
     }
 
     try {
-      const method = editingId ? 'PUT' : 'POST';
-      const url = editingId ? `/api/customer-limits/${editingId}` : '/api/customer-limits';
+      const payload = {
+        username,
+        daQuaHanMuc,
+        laKhachVip,
+      };
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username,
-          daQuaHanMuc,
-          laKhachVip,
-        }),
-      });
-
-      if (res.ok) {
-        setUsername('');
-        setDaQuaHanMuc(false);
-        setLaKhachVip(false);
-        setEditingId(null);
-        fetchLimits();
+      if (editingId) {
+        await apiClient.put(`/customer-limits/${editingId}`, payload);
       } else {
-        setError('Có lỗi trong quá trình thực hiện');
+        await apiClient.post('/customer-limits', payload);
       }
+
+      setUsername('');
+      setDaQuaHanMuc(false);
+      setLaKhachVip(false);
+      setEditingId(null);
+      fetchLimits();
     } catch (err) {
       console.error('Failed to save limit:', err);
       setError('Có lỗi trong quá trình thực hiện');
@@ -126,12 +134,8 @@ export default function CustomerLimitsPage() {
     if (!confirm('Bạn có chắc muốn xóa không?')) return;
 
     try {
-      const res = await fetch(`/api/customer-limits/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchLimits();
-      } else {
-        alert('Có lỗi trong quá trình thực hiện');
-      }
+      await apiClient.delete(`/customer-limits/${id}`);
+      fetchLimits();
     } catch (err) {
       console.error('Failed to delete limit:', err);
       alert('Có lỗi trong quá trình thực hiện');
@@ -147,152 +151,326 @@ export default function CustomerLimitsPage() {
 
   const totalPages = Math.ceil(total / limit);
 
+  // Custom styles
+  const styles = {
+    container: {
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '24px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    },
+    header: {
+      fontSize: '28px',
+      fontWeight: 600,
+      color: THEME.text,
+      marginBottom: '24px',
+      borderBottom: `3px solid ${THEME.primary}`,
+      paddingBottom: '8px',
+    },
+    card: {
+      background: THEME.card,
+      borderRadius: '12px',
+      padding: '24px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      marginBottom: '24px',
+    },
+    cardTitle: {
+      fontSize: '16px',
+      fontWeight: 600,
+      color: THEME.primary,
+      marginBottom: '16px',
+    },
+    form: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '16px',
+    },
+    formGroup: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '6px',
+    },
+    label: {
+      fontSize: '14px',
+      fontWeight: 500,
+      color: THEME.text,
+    },
+    labelRequired: {
+      color: THEME.danger,
+    },
+    input: {
+      padding: '10px 14px',
+      fontSize: '14px',
+      border: `1px solid ${THEME.border}`,
+      borderRadius: '8px',
+      outline: 'none',
+      transition: 'border-color 0.2s, box-shadow 0.2s',
+    },
+    select: {
+      padding: '10px 14px',
+      fontSize: '14px',
+      border: `1px solid ${THEME.border}`,
+      borderRadius: '8px',
+      outline: 'none',
+      background: 'white',
+      cursor: 'pointer',
+      transition: 'border-color 0.2s, box-shadow 0.2s',
+    },
+    checkbox: {
+      width: '20px',
+      height: '20px',
+      accentColor: THEME.primary,
+      cursor: 'pointer',
+    },
+    button: {
+      padding: '10px 20px',
+      fontSize: '14px',
+      fontWeight: 500,
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+    },
+    buttonPrimary: {
+      background: THEME.primary,
+      color: 'white',
+    },
+    buttonSecondary: {
+      background: '#f1f5f9',
+      color: THEME.text,
+      marginLeft: '8px',
+    },
+    linkButton: {
+      background: 'none',
+      border: 'none',
+      color: THEME.primary,
+      padding: '4px 8px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      textDecoration: 'underline',
+    },
+    linkButtonDanger: {
+      color: THEME.danger,
+    },
+    error: {
+      color: THEME.danger,
+      fontSize: '14px',
+      marginBottom: '16px',
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse' as const,
+      fontSize: '14px',
+    },
+    th: {
+      background: THEME.primary,
+      color: 'white',
+      padding: '12px',
+      textAlign: 'left' as const,
+      fontWeight: 500,
+    },
+    td: {
+      padding: '12px',
+      borderBottom: `1px solid ${THEME.border}`,
+      color: THEME.text,
+    },
+    trHover: {
+      background: '#f8fafc',
+    },
+    pagination: {
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '8px',
+      marginTop: '24px',
+    },
+    pageButton: {
+      padding: '8px 14px',
+      border: `1px solid ${THEME.border}`,
+      background: 'white',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      transition: 'all 0.2s',
+    },
+    pageButtonActive: {
+      background: THEME.primary,
+      color: 'white',
+      borderColor: THEME.primary,
+    },
+    pageButtonDisabled: {
+      opacity: 0.5,
+      cursor: 'not-allowed',
+    },
+  };
+
   if (loading) {
-    return <div>Đang tải...</div>;
+    return (
+      <div style={{ ...styles.container, textAlign: 'center', padding: '100px 24px 24px' }}>
+        <div style={{ color: THEME.primary, fontSize: '18px' }}>Đang tải...</div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1 className="titlead">Khai báo hạn mức khách hàng</h1>
+    <div style={styles.container}>
+      <h1 style={styles.header}>Khai báo hạn mức khách hàng</h1>
 
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+      {error && <div style={styles.error}>{error}</div>}
 
       {/* Add/Edit Form */}
-      <form onSubmit={handleSubmit}>
-        <table>
-          <tbody>
-            <tr>
-              <td>Chọn Username:</td>
-              <td>
-                <select
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={editingId !== null}
-                >
-                  <option value="">--Chọn--</option>
-                  {users.map((user) => (
-                    <option key={user.UserName} value={user.UserName}>
-                      {user.UserName}
-                    </option>
-                  ))}
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>Đã quá hạn mức (<span style={{ color: 'red' }}>*</span>)</td>
-              <td>
+      <div style={styles.card}>
+        <div style={styles.cardTitle}>
+          {editingId ? 'Chỉnh sửa hạn mức' : 'Thêm hạn mức mới'}
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div style={styles.form}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
+                Chọn Username<span style={styles.labelRequired}> *</span>
+              </label>
+              <select
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={editingId !== null}
+                style={styles.select}
+              >
+                <option value="">--Chọn--</option>
+                {users.map((user) => (
+                  <option key={user.UserName} value={user.UserName}>
+                    {user.UserName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
                 <input
                   type="checkbox"
                   checked={daQuaHanMuc}
                   onChange={(e) => setDaQuaHanMuc(e.target.checked)}
+                  style={styles.checkbox}
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Là khách VIP (<span style={{ color: 'red' }}>*</span>)</td>
-              <td>
+                <span style={{ marginLeft: '8px' }}>
+                  Đã quá hạn mức<span style={styles.labelRequired}> *</span>
+                </span>
+              </label>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>
                 <input
                   type="checkbox"
                   checked={laKhachVip}
                   onChange={(e) => setLaKhachVip(e.target.checked)}
+                  style={styles.checkbox}
                 />
-              </td>
-            </tr>
-            <tr>
-              <td></td>
-              <td style={{ textAlign: 'right' }}>
-                <button type="submit" className="btn btn-default">
+                <span style={{ marginLeft: '8px' }}>
+                  Là khách VIP<span style={styles.labelRequired}> *</span>
+                </span>
+              </label>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>&nbsp;</label>
+              <div>
+                <button
+                  type="submit"
+                  style={{ ...styles.button, ...styles.buttonPrimary }}
+                >
                   {editingId ? 'Cập nhật' : 'Lưu'}
                 </button>
                 {editingId && (
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="btn btn-default"
-                    style={{ marginLeft: '5px' }}
+                    style={{ ...styles.button, ...styles.buttonSecondary }}
                   >
                     Hủy
                   </button>
                 )}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
 
       {/* Filter */}
-      <div style={{ marginTop: '20px' }}>
-        <h1 style={{ fontSize: '16px', color: 'red' }}>Danh sách khách hàng</h1>
-        <table>
-          <tbody>
-            <tr>
-              <td>Username</td>
-              <td>
-                <input
-                  type="text"
-                  value={usernameFilter}
-                  onChange={(e) => setUsernameFilter(e.target.value)}
-                  style={{ fontWeight: 'bold' }}
-                />
-              </td>
-              <td>
-                <button onClick={handleSearch} className="btn btn-default">
-                  Tìm
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div style={styles.card}>
+        <div style={styles.cardTitle}>Danh sách khách hàng</div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Username</label>
+            <input
+              type="text"
+              value={usernameFilter}
+              onChange={(e) => setUsernameFilter(e.target.value)}
+              placeholder="Tìm kiếm..."
+              style={styles.input}
+            />
+          </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>&nbsp;</label>
+            <button
+              onClick={handleSearch}
+              style={{ ...styles.button, ...styles.buttonPrimary }}
+            >
+              Tìm kiếm
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Table */}
-      <div>
-        <table className="table table-bordered table-hover">
+      <div style={styles.card}>
+        <table style={styles.table}>
           <thead>
-            <tr className="myGridHeader">
-              <th style={{ width: '120px' }}>Thao tác</th>
-              <th>User Name</th>
-              <th>Đã quá hạn mức</th>
-              <th>Là khách VIP</th>
+            <tr>
+              <th style={{ ...styles.th, width: '140px' }}>Thao tác</th>
+              <th style={styles.th}>User Name</th>
+              <th style={styles.th}>Đã quá hạn mức</th>
+              <th style={styles.th}>Là khách VIP</th>
             </tr>
           </thead>
           <tbody>
             {limits.length === 0 ? (
               <tr>
-                <td colSpan={4} className="text-center">Không có dữ liệu</td>
+                <td colSpan={4} style={{ ...styles.td, textAlign: 'center', color: THEME.textMuted }}>
+                  Không có dữ liệu
+                </td>
               </tr>
             ) : (
-              limits.map((limit) => (
-                <tr key={limit.ID}>
-                  <td>
+              limits.map((limit, idx) => (
+                <tr key={limit.ID ?? idx} style={idx % 2 === 1 ? styles.trHover : {}}>
+                  <td style={styles.td}>
                     <button
                       onClick={() => handleEdit(limit)}
-                      className="btn-link"
-                      style={{ marginRight: '5px' }}
+                      style={styles.linkButton}
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(limit.ID)}
-                      className="btn-link"
-                      style={{ color: 'red' }}
+                      style={{ ...styles.linkButton, ...styles.linkButtonDanger }}
                     >
                       Xóa
                     </button>
                   </td>
-                  <td>{limit.UserName}</td>
-                  <td>
+                  <td style={styles.td}>{limit.UserName}</td>
+                  <td style={styles.td}>
                     <input
                       type="checkbox"
                       checked={limit.DaQuaHanMuc}
                       disabled
+                      style={styles.checkbox}
                     />
                   </td>
-                  <td>
+                  <td style={styles.td}>
                     <input
                       type="checkbox"
                       checked={limit.LaKhachVip}
                       disabled
+                      style={styles.checkbox}
                     />
                   </td>
                 </tr>
@@ -300,43 +478,68 @@ export default function CustomerLimitsPage() {
             )}
           </tbody>
         </table>
-      </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="text-center">
-          <ul className="pagination">
-            <li className={page === 1 ? 'disabled' : ''}>
-              <button onClick={() => setPage(1)} disabled={page === 1}>
-                First
-              </button>
-            </li>
-            <li className={page === 1 ? 'disabled' : ''}>
-              <button onClick={() => setPage(page - 1)} disabled={page === 1}>
-                Prev
-              </button>
-            </li>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={styles.pagination}>
+            <button
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+              style={{
+                ...styles.pageButton,
+                ...(page === 1 ? styles.pageButtonDisabled : {}),
+              }}
+            >
+              First
+            </button>
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page === 1}
+              style={{
+                ...styles.pageButton,
+                ...(page === 1 ? styles.pageButtonDisabled : {}),
+              }}
+            >
+              Prev
+            </button>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               const pageNum = i + 1;
               return (
-                <li key={pageNum} className={page === pageNum ? 'active' : ''}>
-                  <button onClick={() => setPage(pageNum)}>{pageNum}</button>
-                </li>
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  style={{
+                    ...styles.pageButton,
+                    ...(page === pageNum ? styles.pageButtonActive : {}),
+                  }}
+                >
+                  {pageNum}
+                </button>
               );
             })}
-            <li className={page === totalPages ? 'disabled' : ''}>
-              <button onClick={() => setPage(page + 1)} disabled={page === totalPages}>
-                Next
-              </button>
-            </li>
-            <li className={page === totalPages ? 'disabled' : ''}>
-              <button onClick={() => setPage(totalPages)} disabled={page === totalPages}>
-                Last
-              </button>
-            </li>
-          </ul>
-        </div>
-      )}
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages}
+              style={{
+                ...styles.pageButton,
+                ...(page === totalPages ? styles.pageButtonDisabled : {}),
+              }}
+            >
+              Next
+            </button>
+            <button
+              onClick={() => setPage(totalPages)}
+              disabled={page === totalPages}
+              style={{
+                ...styles.pageButton,
+                ...(page === totalPages ? styles.pageButtonDisabled : {}),
+              }}
+            >
+              Last
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
