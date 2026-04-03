@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
+import { QueryTypes } from 'sequelize';
 import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { QueryTrackingDto } from './dto/query-tracking.dto';
@@ -16,57 +17,55 @@ export class TrackingService {
 
   /**
    * Find all tracking with filters and pagination
+   * Uses: SP_Lay_Tracking
    */
   async findAll(query: QueryTrackingDto): Promise<{ data: any[]; total: number; page: number; limit: number }> {
     const { username, statuses, search, trackingNumber, tenLoHang, quocGiaId, startDate, endDate, page = 1, limit = 20 } = query;
 
     try {
-      const offset = (page - 1) * limit;
-      let whereClause = 'WHERE DaXoa = 0';
+      // Build comma-separated status list for SP
+      const tinhTrang = statuses ? statuses.replace(/,/g, "','") : '';
 
-      if (username) {
-        whereClause += ` AND UserName LIKE '%${username}%'`;
-      }
-      if (statuses) {
-        const statusList = statuses.split(',').map(s => `'${s.trim()}'`).join(',');
-        whereClause += ` AND TinhTrang IN (${statusList})`;
-      }
-      if (search) {
-        whereClause += ` AND (TrackingNumber LIKE '%${search}%' OR OrderNumber LIKE '%${search}%' OR UserName LIKE '%${search}%')`;
-      }
-      if (trackingNumber) {
-        whereClause += ` AND TrackingNumber LIKE '%${trackingNumber}%'`;
-      }
-      if (tenLoHang) {
-        whereClause += ` AND TenLoHang LIKE '%${tenLoHang}%'`;
-      }
-      if (quocGiaId && quocGiaId > 0) {
-        whereClause += ` AND QuocGiaID = ${quocGiaId}`;
-      }
-      if (startDate) {
-        whereClause += ` AND NgayDatHang >= '${startDate}'`;
-      }
-      if (endDate) {
-        whereClause += ` AND NgayDatHang <= '${endDate}'`;
-      }
-
-      // Get total count
-      const [countResult]: any[] = await this.sequelize.query(
-        `SELECT COUNT(*) as total FROM dbo.tbTracking ${whereClause}`
+      // Use SP_Lay_Tracking
+      const results = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_Tracking
+          @UserName = :username,
+          @TinhTrang = :tinhTrang,
+          @NoiDungTim = :search,
+          @TimTheo = -1,
+          @TrackingNumber = :trackingNumber,
+          @TenLoHang = :tenLoHang,
+          @PageSize = :limit,
+          @PageNum = :page,
+          @QuocGiaID = :quocGiaId,
+          @DaXoa = 0,
+          @TuNgay = :startDate,
+          @DenNgay = :endDate`,
+        {
+          replacements: {
+            username: username || '',
+            tinhTrang,
+            search: search || '',
+            trackingNumber: trackingNumber || '',
+            tenLoHang: tenLoHang || '',
+            quocGiaId: quocGiaId && quocGiaId > 0 ? quocGiaId : -1,
+            startDate: startDate || '',
+            endDate: endDate || '',
+            limit,
+            page,
+          },
+          type: QueryTypes.SELECT,
+        }
       );
-      const total = Number(countResult[0]?.total) || 0;
 
-      // Get paginated data
-      const [data] = await this.sequelize.query(`
-        SELECT * FROM (
-          SELECT ROW_NUMBER() OVER (ORDER BY ID DESC) as RowNum, * FROM dbo.tbTracking ${whereClause}
-        ) AS Paginated
-        WHERE RowNum BETWEEN ${offset + 1} AND ${offset + limit}
-      `);
+      // SP_Lay_Tracking returns: [ { TOTALROW: 50 }, {row1}, {row2}, ... ]
+      const resultsAny = results as any;
+      const totalItem = resultsAny[0]?.TOTALROW || 0;
+      const data = resultsAny.slice(1) || [];
 
       return {
-        data: data || [],
-        total,
+        data,
+        total: totalItem,
         page,
         limit,
       };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getBatches } from '@/lib/api';
+import { getBatches, getBatchByTenLoHang } from '@/lib/api';
 
 interface BatchItem {
   tenDotHang: string;
@@ -72,19 +72,24 @@ export default function ThongTinLoHangPage() {
   const loadBatchInfo = async (batchTen: string) => {
     setIsLoading(true);
     try {
-      // Call API to get batch info (mock for now - would need backend endpoint)
-      // For now just set placeholder data
-      setTyGia(24500);
-      setLoaiTien('USD');
-      setNgayDenDuKien('');
-      setNgayDenThucTe('');
+      const data = await getBatchByTenLoHang(batchTen);
 
-      // Clear related data
+      // Set batch info
+      setTyGia(data.tyGia || data.TyGia || 0);
+      setLoaiTien(data.loaiTien || data.LoaiTien || 'USD');
+      setNgayDenDuKien(data.ngayDenDuKien || data.NgayDenDuKien || '');
+      setNgayDenThucTe(data.ngayDenThucTe || data.NgayDenThucTe || '');
+
+      // Set related data
+      setShipFees(data.shipCosts || data.shipFees || []);
+      setTaxes(data.customs || []);
+      setTrackings(data.trackings || []);
+    } catch (error) {
+      console.error('Error loading batch info:', error);
+      // Clear data on error
       setShipFees([]);
       setTaxes([]);
       setTrackings([]);
-    } catch (error) {
-      console.error('Error loading batch info:', error);
     } finally {
       setIsLoading(false);
     }

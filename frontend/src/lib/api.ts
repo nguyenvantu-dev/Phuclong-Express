@@ -1172,6 +1172,15 @@ export const getBatches = async (): Promise<{ tenDotHang: string }[]> => {
 };
 
 /**
+ * Get batch details by TenLoHang (for public lot info page)
+ * Returns batch info, ship costs, customs, and tracking list
+ */
+export const getBatchByTenLoHang = async (tenLoHang: string): Promise<any> => {
+  const response = await apiClient.get(`/batches/ten/${tenLoHang}`);
+  return response.data;
+};
+
+/**
  * Get product types (LoaiHang) for can hang dropdown
  */
 export const getProductTypes = async (): Promise<{ LoaiHangID: number; TenLoaiHang: string }[]> => {
@@ -1492,6 +1501,14 @@ export const updateTracking = async (
 ): Promise<any> => {
   const response = await apiClient.put(`/tracking/${id}`, data);
   return response.data;
+};
+
+/**
+ * Delete tracking (soft delete)
+ * DELETE /tracking/:id
+ */
+export const deleteTracking = async (id: number): Promise<void> => {
+  await apiClient.delete(`/tracking/${id}`);
 };
 
 /**

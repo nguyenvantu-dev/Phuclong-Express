@@ -89,6 +89,15 @@ export class BatchesController {
   }
 
   /**
+   * GET /batches/ten/:tenLoHang
+   * Get batch details by TenLoHang (for public lot info page)
+   */
+  @Get('ten/:tenLoHang')
+  async findByTenLoHang(@Param('tenLoHang') tenLoHang: string): Promise<any> {
+    return this.batchesService.findByTenLoHang(tenLoHang);
+  }
+
+  /**
    * GET /batches/:id/details
    * Get batch details (ship costs, customs, tracking)
    */

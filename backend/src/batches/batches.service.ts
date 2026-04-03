@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
-import { Sequelize } from 'sequelize-typescript';
+import { Sequelize } from 'sequelize';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateBatchDto } from './dto/update-batch.dto';
 import { QueryBatchDto } from './dto/query-batch.dto';
@@ -84,6 +84,80 @@ export class BatchesService {
       }
       console.error('Error in findOne batch:', error.message);
       throw new NotFoundException(`Batch with ID ${id} not found`);
+    }
+  }
+
+  /**
+   * Find batch by TenLoHang
+   * Used by public thong-tin-lo-hang page
+   * Uses: SP_Lay_LoHangByID, SP_Lay_DanhSachLoHang_PhiShipVeVNByID, SP_Lay_DanhSachLoHang_ThueHaiQuanByID, SP_Lay_Tracking
+   */
+  async findByTenLoHang(tenLoHang: string): Promise<any> {
+    try {
+      // First get LoHang ID by TenLoHang
+      const [loHangResult]: any[] = await this.sequelize.query(
+        `SELECT ID FROM dbo.LoHang WHERE TenLoHang = N'${tenLoHang.replace(/'/g, "''")}' AND DaXoa = 0`
+      );
+
+      if (!loHangResult || loHangResult.length === 0) {
+        throw new NotFoundException(`Batch with TenLoHang ${tenLoHang} not found`);
+      }
+
+      const loHangId = loHangResult[0].ID;
+
+      // Get batch details using SP_Lay_LoHangByID
+      const [batchResult] = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_LoHangByID @ID = ${loHangId}`
+      );
+      const batch = batchResult?.[0];
+
+      if (!batch) {
+        throw new NotFoundException(`Batch with TenLoHang ${tenLoHang} not found`);
+      }
+
+      // Get ship costs using SP_Lay_DanhSachLoHang_PhiShipVeVNByID
+      const [shipCostsResult] = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_DanhSachLoHang_PhiShipVeVNByID @LoHangID = ${loHangId}`
+      );
+
+      // Get customs using SP_Lay_DanhSachLoHang_ThueHaiQuanByID
+      const [customsResult] = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_DanhSachLoHang_ThueHaiQuanByID @LoHangID = ${loHangId}`
+      );
+
+      // Get tracking list using SP_Lay_Tracking (filter by TenLoHang)
+      const [trackingResult] = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_Tracking
+          @UserName = '',
+          @TinhTrang = '',
+          @NoiDungTim = '',
+          @TimTheo = -1,
+          @TrackingNumber = '',
+          @TenLoHang = N'${tenLoHang.replace(/'/g, "''")}',
+          @PageSize = 1000,
+          @PageNum = 1,
+          @QuocGiaID = -1,
+          @DaXoa = 0,
+          @TuNgay = '',
+          @DenNgay = ''`
+      );
+
+      // SP_Lay_Tracking returns: [ { TOTALROW: 50 }, {row1}, {row2}, ... ]
+      const trackingData = trackingResult as any[];
+      const trackings = trackingData.slice(1) || [];
+
+      return {
+        ...batch,
+        shipCosts: shipCostsResult || [],
+        customs: customsResult || [],
+        trackings: trackings,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error in findByTenLoHang:', error.message);
+      throw new NotFoundException(`Batch with TenLoHang ${tenLoHang} not found`);
     }
   }
 

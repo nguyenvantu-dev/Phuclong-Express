@@ -37,8 +37,8 @@ interface Summary {
  */
 export default function BaoCaoCongNoPage() {
   const [debtItems, setDebtItems] = useState<DebtItem[]>([]);
-  const [periods, setPeriods] = useState<PeriodItem[]>([]);
-  const [users, setUsers] = useState<UserItem[]>([]);
+  const [, setPeriods] = useState<PeriodItem[]>([]);
+  const [, setUsers] = useState<UserItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Summary
@@ -79,19 +79,14 @@ export default function BaoCaoCongNoPage() {
       setDebtItems(response.data || []);
       setTotal(response.total || 0);
 
-      // Calculate summary from data
-      let drTotal = 0;
-      let crTotal = 0;
-      (response.data || []).forEach((item: DebtItem) => {
-        drTotal += item.DR || 0;
-        crTotal += item.CR || 0;
-      });
-
-      setTienMuaHangA(drTotal);
-      setTienDaTraB(crTotal);
-      setTienCompletedC(0); // Need separate query
-      setTienNoE(drTotal - crTotal);
-      setTienHangChuaVeF(0); // Need separate query
+      // Use summary from backend
+      if (response.summary) {
+        setTienMuaHangA(response.summary.tongPhatSinh || 0);
+        setTienDaTraB(response.summary.tongThanhToan || 0);
+        setTienCompletedC(0); // Need separate query
+        setTienNoE(response.summary.cuoiKy || 0);
+        setTienHangChuaVeF(0); // Need separate query
+      }
     } catch (error) {
       console.error('Error loading debt data:', error);
     } finally {

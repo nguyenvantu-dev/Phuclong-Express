@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { FiChevronDown, FiMenu, FiX, FiTruck } from 'react-icons/fi';
+import { FiChevronDown, FiMenu, FiX, FiTruck, FiUser, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '@/hooks/use-auth-context';
 
 /**
  * Public Layout Component
@@ -13,6 +14,8 @@ import { FiChevronDown, FiMenu, FiX, FiTruck } from 'react-icons/fi';
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
 
   // Custom colors based on #5cc6ee
   const colors = {
@@ -135,14 +138,56 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               </ul>
             </nav>
 
-            {/* Admin Link */}
-            <Link
-              href="/admin"
-              className="hidden lg:flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-xl transition-all cursor-pointer hover:shadow-lg hover:shadow-cyan-500/30 hover:-translate-y-0.5"
-              style={{ backgroundColor: colors.primary }}
-            >
-              Quản trị
-            </Link>
+            {/* User Info or Admin Link */}
+            {isAuthenticated && user ? (
+              <div className="relative hidden lg:block">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-xl transition-all cursor-pointer hover:shadow-lg hover:shadow-cyan-500/30"
+                  style={{ backgroundColor: colors.primary }}
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                >
+                  <FiUser className="w-4 h-4" />
+                  <span>{user.username}</span>
+                  <FiChevronDown className={`w-3 h-3 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {userMenuOpen && (
+                  <div
+                    className="absolute right-0 top-full mt-2 shadow-xl rounded-xl min-w-[180px] py-2 z-[9999]"
+                    style={{ backgroundColor: 'white', border: `1px solid ${colors.primaryLight}` }}
+                  >
+                    <div className="px-4 py-2 border-b" style={{ borderColor: colors.primaryLight }}>
+                      <p className="text-sm font-medium" style={{ color: colors.text }}>
+                        {user.username}
+                      </p>
+                      <p className="text-xs" style={{ color: colors.textMuted }}>
+                        {user.email}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer hover:bg-gray-50"
+                      style={{ color: colors.textMuted }}
+                      onClick={() => {
+                        logout();
+                        setUserMenuOpen(false);
+                      }}
+                    >
+                      <FiLogOut className="w-4 h-4" />
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/admin"
+                className="hidden lg:flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-xl transition-all cursor-pointer hover:shadow-lg hover:shadow-cyan-500/30 hover:-translate-y-0.5"
+                style={{ backgroundColor: colors.primary }}
+              >
+                Quản trị
+              </Link>
+            )}
 
             {/* Mobile menu button */}
             <button
@@ -208,6 +253,33 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                   Quản trị
                 </Link>
               </div>
+              {/* Mobile User Section */}
+              {isAuthenticated && user && (
+                <div className="mt-4 px-4 py-3 rounded-xl" style={{ backgroundColor: colors.primaryLight }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: colors.text }}>
+                        {user.username}
+                      </p>
+                      <p className="text-xs" style={{ color: colors.textMuted }}>
+                        {user.email}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors cursor-pointer"
+                      style={{ color: colors.primaryDark }}
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <FiLogOut className="w-4 h-4" />
+                      Đăng xuất
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

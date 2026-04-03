@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getTrackingList, getTrackingDetails } from '@/lib/api';
+import { getTrackingList, getTrackingDetails, deleteTracking } from '@/lib/api';
 
 const TRACKING_STATUSES = ['Received', 'InTransit', 'InVN', 'VNTransit', 'Completed', 'Cancelled'];
 
@@ -58,6 +58,21 @@ export default function DanhSachTrackingPage() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('vi-VN');
+  };
+
+  const handleDelete = async (trackingId: number) => {
+    if (!confirm('Bạn có chắc muốn xóa không?')) {
+      return;
+    }
+
+    try {
+      await deleteTracking(trackingId);
+      // Reload the list after delete
+      loadTrackings();
+    } catch (error) {
+      console.error('Error deleting tracking:', error);
+      alert('Có lỗi khi xóa tracking');
+    }
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -172,12 +187,7 @@ export default function DanhSachTrackingPage() {
                         {(tracking.tinhTrang || tracking.TinhTrang) === 'Received' && (
                           <button
                             className="text-red-500 hover:underline"
-                            onClick={() => {
-                              if (confirm('Bạn có chắc muốn xóa không?')) {
-                                // Delete logic would go here
-                                console.log('Delete tracking:', tracking.id || tracking.TrackingID);
-                              }
-                            }}
+                            onClick={() => handleDelete(tracking.id || tracking.TrackingID)}
                           >
                             Xóa
                           </button>
