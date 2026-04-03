@@ -159,26 +159,26 @@ export default function SuaTrackingPage() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">THÊM/SỬA TRACKING</h2>
+    <div className="max-w-6xl mx-auto p-4 md:p-6">
+      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-cyan-700">THÊM/SỬA TRACKING</h2>
 
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      {success && <div className="text-green-500 mb-4">{success}</div>}
+      {error && <div className="text-red-500 mb-4 bg-red-50 px-4 py-3 rounded-lg">{error}</div>}
+      {success && <div className="text-emerald-500 mb-4 bg-emerald-50 px-4 py-3 rounded-lg">{success}</div>}
 
       {/* Search */}
-      <div className="mb-4">
-        <label className="mr-2">Tìm tracking:</label>
+      <div className="mb-6 p-4 bg-cyan-50 rounded-xl">
+        <label className="mr-2 text-slate-700 font-medium">Tìm tracking:</label>
         <input
           type="text"
           value={trackingNumber}
           onChange={(e) => setTrackingNumber(e.target.value)}
-          className="border rounded px-3 py-2"
+          className="border border-slate-300 rounded-lg px-3 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
           placeholder="Nhập mã tracking..."
         />
         <button
           onClick={handleSearch}
           disabled={isLoading}
-          className="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
+          className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
         >
           Tìm
         </button>
@@ -187,176 +187,155 @@ export default function SuaTrackingPage() {
       {tracking && (
         <>
           {/* Form */}
-          <table className="mb-4">
-            <tbody>
-              <tr>
-                <td className="py-1">Tracking number</td>
-                <td className="py-1">
-                  <input
-                    type="text"
-                    value={trackingNumber}
-                    onChange={(e) => setTrackingNumber(e.target.value)}
-                    className="border rounded px-3 py-1"
-                  />
-                </td>
-                <td className="py-1"></td>
-                <td className="py-1">Order number</td>
-                <td className="py-1">
-                  <input
-                    type="text"
-                    value={orderNumber}
-                    onChange={(e) => setOrderNumber(e.target.value)}
-                    className="border rounded px-3 py-1"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-1">Ngày đặt hàng</td>
-                <td className="py-1">
-                  <input
-                    type="date"
-                    value={ngayDatHang}
-                    onChange={(e) => setNgayDatHang(e.target.value)}
-                    className="border rounded px-3 py-1"
-                  />
-                </td>
-                <td className="py-1"></td>
-                <td className="py-1">Nhà vận chuyển</td>
-                <td className="py-1">
-                  <select
-                    value={nhaVanChuyenId}
-                    onChange={(e) => setNhaVanChuyenId(Number(e.target.value))}
-                    className="border rounded px-3 py-1"
-                  >
-                    <option value={0}>Chọn...</option>
-                    {shippers.map((s) => (
-                      <option key={s.ID} value={s.ID}>
-                        {s.ShipperName}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-1">Quốc gia</td>
-                <td className="py-1">
-                  <select
-                    value={quocGiaId}
-                    onChange={(e) => setQuocGiaId(Number(e.target.value))}
-                    className="border rounded px-3 py-1"
-                  >
-                    <option value={0}>Chọn...</option>
-                    {countries.map((c) => (
-                      <option key={c.QuocGiaID} value={c.QuocGiaID}>
-                        {c.TenQuocGia}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="py-1"></td>
-                <td className="py-1">Kiện</td>
-                <td className="py-1">
-                  <input
-                    type="text"
-                    value={kien}
-                    onChange={(e) => setKien(e.target.value)}
-                    className="border rounded px-3 py-1"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-1">Mawb</td>
-                <td className="py-1">
-                  <input
-                    type="text"
-                    value={mawb}
-                    onChange={(e) => setMawb(e.target.value)}
-                    className="border rounded px-3 py-1"
-                  />
-                </td>
-                <td className="py-1"></td>
-                <td className="py-1">Hawb</td>
-                <td className="py-1">
-                  <input
-                    type="text"
-                    value={hawb}
-                    onChange={(e) => setHawb(e.target.value)}
-                    className="border rounded px-3 py-1"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-1">Tình trạng</td>
-                <td className="py-1">
-                  <select
-                    value={tinhTrang}
-                    onChange={(e) => setTinhTrang(e.target.value)}
-                    className="border rounded px-3 py-1"
-                    disabled
-                  >
-                    {TRACKING_STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="py-1"></td>
-                <td className="py-1"></td>
-                <td className="py-1"></td>
-              </tr>
-              <tr>
-                <td className="py-1">Ghi chú:</td>
-                <td className="py-1" colSpan={4}>
-                  <textarea
-                    value={ghiChu}
-                    onChange={(e) => setGhiChu(e.target.value)}
-                    className="border rounded px-3 py-1 w-full"
-                    rows={4}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td colSpan={5} className="text-center py-2">
-                  <button
-                    onClick={handleUpdate}
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-blue-500 text-white rounded"
-                  >
-                    Cập nhật
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-4 md:p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Tracking number</label>
+                <input
+                  type="text"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Order number</label>
+                <input
+                  type="text"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Ngày đặt hàng</label>
+                <input
+                  type="date"
+                  value={ngayDatHang}
+                  onChange={(e) => setNgayDatHang(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Nhà vận chuyển</label>
+                <select
+                  value={nhaVanChuyenId}
+                  onChange={(e) => setNhaVanChuyenId(Number(e.target.value))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                >
+                  <option value={0}>Chọn...</option>
+                  {shippers.map((s) => (
+                    <option key={s.ID} value={s.ID}>
+                      {s.ShipperName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Quốc gia</label>
+                <select
+                  value={quocGiaId}
+                  onChange={(e) => setQuocGiaId(Number(e.target.value))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                >
+                  <option value={0}>Chọn...</option>
+                  {countries.map((c) => (
+                    <option key={c.QuocGiaID} value={c.QuocGiaID}>
+                      {c.TenQuocGia}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Kiện</label>
+                <input
+                  type="text"
+                  value={kien}
+                  onChange={(e) => setKien(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Mawb</label>
+                <input
+                  type="text"
+                  value={mawb}
+                  onChange={(e) => setMawb(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Hawb</label>
+                <input
+                  type="text"
+                  value={hawb}
+                  onChange={(e) => setHawb(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Tình trạng</label>
+                <select
+                  value={tinhTrang}
+                  onChange={(e) => setTinhTrang(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  disabled
+                >
+                  {TRACKING_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-1.5 text-slate-700">Ghi chú:</label>
+              <textarea
+                value={ghiChu}
+                onChange={(e) => setGhiChu(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                rows={3}
+              />
+            </div>
+            <div className="mt-4 text-center">
+              <button
+                onClick={handleUpdate}
+                disabled={isLoading}
+                className="px-6 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
+              >
+                Cập nhật
+              </button>
+            </div>
+          </div>
 
           {/* Chi tiết tracking */}
-          <h3 className="text-xl font-bold mb-2">Chi tiết</h3>
-          <div className="overflow-x-auto mb-4">
-            <table className="w-full border-collapse border border-gray-300 text-sm">
+          <h3 className="text-xl font-bold mb-3 text-cyan-700">Chi tiết</h3>
+          <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm mb-6">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-2 py-1">Hình đại diện</th>
-                  <th className="border border-gray-300 px-2 py-1">Số lượng</th>
-                  <th className="border border-gray-300 px-2 py-1">Giá</th>
-                  <th className="border border-gray-300 px-2 py-1">Ghi chú</th>
+                <tr className="bg-cyan-100">
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Hình đại diện</th>
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Số lượng</th>
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Giá</th>
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
                 </tr>
               </thead>
               <tbody>
                 {(tracking.chiTietTracking || []).map((item) => (
-                  <tr key={item.ID}>
-                    <td className="border border-gray-300 px-2 py-1">
+                  <tr key={item.ID} className="bg-white">
+                    <td className="border-b border-cyan-100 px-3 py-2.5">
                       {item.linkHinhDaiDien && (
-                        <img src={item.linkHinhDaiDien} alt="" height="30" />
+                        <img src={item.linkHinhDaiDien} alt="" height="30" className="rounded-lg" />
                       )}
                     </td>
-                    <td className="border border-gray-300 px-2 py-1 text-right">
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-right font-medium text-slate-700">
                       {item.soLuong}
                     </td>
-                    <td className="border border-gray-300 px-2 py-1 text-right">
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-right text-slate-700">
                       {item.gia?.toLocaleString('vi-VN')}
                     </td>
-                    <td className="border border-gray-300 px-2 py-1">{item.ghiChu}</td>
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">{item.ghiChu}</td>
                   </tr>
                 ))}
               </tbody>
@@ -364,30 +343,34 @@ export default function SuaTrackingPage() {
           </div>
 
           {/* Lịch sử tình trạng */}
-          <h3 className="text-xl font-bold mb-2">LỊCH SỬ TÌNH TRẠNG</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300 text-sm">
+          <h3 className="text-xl font-bold mb-3 text-cyan-700">LỊCH SỬ TÌNH TRẠNG</h3>
+          <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-2 py-1">Người thao tác</th>
-                  <th className="border border-gray-300 px-2 py-1">Thời gian</th>
-                  <th className="border border-gray-300 px-2 py-1">Tình trạng</th>
-                  <th className="border border-gray-300 px-2 py-1">Mô tả</th>
-                  <th className="border border-gray-300 px-2 py-1">Ghi chú</th>
+                <tr className="bg-cyan-100">
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Người thao tác</th>
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Thời gian</th>
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Tình trạng</th>
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Mô tả</th>
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
                 </tr>
               </thead>
               <tbody>
                 {(tracking.lichSuTracking || []).map((item) => (
-                  <tr key={item.ID}>
-                    <td className="border border-gray-300 px-2 py-1">{item.nguoiTao}</td>
-                    <td className="border border-gray-300 px-2 py-1">
+                  <tr key={item.ID} className="bg-white">
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">{item.nguoiTao}</td>
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
                       {item.ngayChuyenTinhTrang
                         ? new Date(item.ngayChuyenTinhTrang).toLocaleString('vi-VN')
                         : ''}
                     </td>
-                    <td className="border border-gray-300 px-2 py-1">{item.tinhTrang}</td>
-                    <td className="border border-gray-300 px-2 py-1">{item.moTaTinhTrang}</td>
-                    <td className="border border-gray-300 px-2 py-1">{item.ghiChu}</td>
+                    <td className="border-b border-cyan-100 px-3 py-2.5">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700">
+                        {item.tinhTrang}
+                      </span>
+                    </td>
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">{item.moTaTinhTrang}</td>
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-500">{item.ghiChu}</td>
                   </tr>
                 ))}
               </tbody>
