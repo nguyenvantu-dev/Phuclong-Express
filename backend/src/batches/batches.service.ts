@@ -35,14 +35,14 @@ export class BatchesService {
 
       // Get total count
       const [countResult]: any[] = await this.sequelize.query(
-        `SELECT COUNT(*) as total FROM dbo.LoHang ${whereClause}`
+        `SELECT COUNT(*) as total FROM dbo.tbLoHang ${whereClause}`
       );
       const total = Number(countResult[0]?.total) || 0;
 
       // Get paginated data
       const [data] = await this.sequelize.query(`
         SELECT * FROM (
-          SELECT ROW_NUMBER() OVER (ORDER BY ID DESC) as RowNum, * FROM dbo.LoHang ${whereClause}
+          SELECT ROW_NUMBER() OVER (ORDER BY ID DESC) as RowNum, * FROM dbo.tbLoHang ${whereClause}
         ) AS Paginated
         WHERE RowNum BETWEEN ${offset + 1} AND ${offset + limit}
       `);
@@ -70,7 +70,7 @@ export class BatchesService {
   async findOne(id: number): Promise<any> {
     try {
       const [result]: any[] = await this.sequelize.query(
-        `SELECT * FROM dbo.LoHang WHERE ID = ${id}`
+        `SELECT * FROM dbo.tbLoHang WHERE ID = ${id}`
       );
 
       if (!result || result.length === 0) {
@@ -96,7 +96,7 @@ export class BatchesService {
     try {
       // First get LoHang ID by TenLoHang
       const [loHangResult]: any[] = await this.sequelize.query(
-        `SELECT ID FROM dbo.LoHang WHERE TenLoHang = N'${tenLoHang.replace(/'/g, "''")}' AND DaXoa = 0`
+        `SELECT ID FROM dbo.tbLoHang WHERE TenLoHang = N'${tenLoHang.replace(/'/g, "''")}' AND DaXoa = 0`
       );
 
       if (!loHangResult || loHangResult.length === 0) {
@@ -173,7 +173,7 @@ export class BatchesService {
 
     try {
       const [result]: any[] = await this.sequelize.query(`
-        INSERT INTO dbo.LoHang (UserName, TrackingNumber, OrderNumber, NgayDatHang, NhaVanChuyenID, TenLoHang, TinhTrang, GhiChu, LoaiTien, TyGia, NgayDenDuKien, NgayDenThucTe, NguoiTao, DaXoa, NgayTao)
+        INSERT INTO dbo.tbLoHang (UserName, TrackingNumber, OrderNumber, NgayDatHang, NhaVanChuyenID, TenLoHang, TinhTrang, GhiChu, LoaiTien, TyGia, NgayDenDuKien, NgayDenThucTe, NguoiTao, DaXoa, NgayTao)
         VALUES (N'${username || ''}', N'${trackingNumber || ''}', N'${orderNumber || ''}', ${ngayDatHang ? `'${ngayDatHang}'` : 'GETDATE()'}, ${nhaVanChuyenId || 'NULL'}, N'${generatedTenLoHang}', N'${tinhTrang || 'Mới tạo'}', N'${ghiChu || ''}', N'${loaiTien || 'USD'}', ${tyGia || 1}, ${ngayDenDuKien ? `'${ngayDenDuKien}'` : 'NULL'}, ${ngayDenThucTe ? `'${ngayDenThucTe}'` : 'NULL'}, N'${nguoiTao || ''}', 0, GETDATE());
         SELECT SCOPE_IDENTITY() as ID;
       `);
@@ -233,7 +233,7 @@ export class BatchesService {
 
     if (updates.length > 0) {
       await this.sequelize.query(`
-        UPDATE dbo.LoHang SET ${updates.join(', ')} WHERE ID = ${id}
+        UPDATE dbo.tbLoHang SET ${updates.join(', ')} WHERE ID = ${id}
       `);
     }
 
@@ -247,7 +247,7 @@ export class BatchesService {
     await this.findOne(id); // Verify exists
 
     await this.sequelize.query(`
-      UPDATE dbo.LoHang SET DaXoa = 1 WHERE ID = ${id}
+      UPDATE dbo.tbLoHang SET DaXoa = 1 WHERE ID = ${id}
     `);
   }
 
@@ -273,9 +273,9 @@ export class BatchesService {
     try {
       const [data] = await this.sequelize.query(`
         SELECT lhcl.*, lcl.TenLoaiChiPhiLoHang
-        FROM dbo.LoHang_ChiPhiLoHang lhcl
+        FROM dbo.tbLoHang_ChiPhiLoHang lhcl
         LEFT JOIN dbo.LoaiChiPhiLoHang lcl ON lhcl.LoaiChiPhiLoHangID = lcl.ID
-        WHERE lhcl.LoHangID = (SELECT ID FROM dbo.LoHang WHERE TenLoHang = '${batchId}')
+        WHERE lhcl.LoHangID = (SELECT ID FROM dbo.tbLoHang WHERE TenLoHang = '${batchId}')
         ORDER BY lhcl.ID DESC
       `);
       return data || [];
@@ -292,7 +292,7 @@ export class BatchesService {
     const batch = await this.findOne(batchId);
 
     await this.sequelize.query(`
-      INSERT INTO dbo.LoHang_ChiPhiLoHang (LoHangID, LoaiChiPhiLoHangID, TienVND, NgayTao)
+      INSERT INTO dbo.tbLoHang_ChiPhiLoHang (LoHangID, LoaiChiPhiLoHangID, TienVND, NgayTao)
       VALUES (${batchId}, ${loaiChiPhiLoHangId}, ${tienVnd}, GETDATE())
     `);
 
@@ -304,7 +304,7 @@ export class BatchesService {
    */
   async updateCost(costId: number, loaiChiPhiLoHangId: number, tienVnd: number): Promise<any> {
     await this.sequelize.query(`
-      UPDATE dbo.LoHang_ChiPhiLoHang
+      UPDATE dbo.tbLoHang_ChiPhiLoHang
       SET LoaiChiPhiLoHangID = ${loaiChiPhiLoHangId}, TienVND = ${tienVnd}
       WHERE ID = ${costId}
     `);
@@ -317,7 +317,7 @@ export class BatchesService {
    */
   async deleteCost(costId: number): Promise<void> {
     await this.sequelize.query(`
-      DELETE FROM dbo.LoHang_ChiPhiLoHang WHERE ID = ${costId}
+      DELETE FROM dbo.tbLoHang_ChiPhiLoHang WHERE ID = ${costId}
     `);
   }
 
@@ -328,7 +328,7 @@ export class BatchesService {
     try {
       const [data] = await this.sequelize.query(`
         SELECT lhsv.*, lhs.TenLoaiHangShip
-        FROM dbo.LoHang_PhiShipVeVN lhsv
+        FROM dbo.tbLoHang_PhiShipVeVN lhsv
         LEFT JOIN dbo.LoaiHangShip lhs ON lhsv.LoaiHangShipID = lhs.ID
         WHERE lhsv.LoHangID = ${batchId}
         ORDER BY lhsv.ID DESC
@@ -345,7 +345,7 @@ export class BatchesService {
    */
   async addShipCost(batchId: number, loaiHangShipId: number, canNang: number, donGia: number, tongTienShipVnd: number): Promise<any> {
     await this.sequelize.query(`
-      INSERT INTO dbo.LoHang_PhiShipVeVN (LoHangID, LoaiHangShipID, CanNang, DonGia, TongTienShipVeVN_VND, NgayTao)
+      INSERT INTO dbo.tbLoHang_PhiShipVeVN (LoHangID, LoaiHangShipID, CanNang, DonGia, TongTienShipVeVN_VND, NgayTao)
       VALUES (${batchId}, ${loaiHangShipId}, ${canNang}, ${donGia}, ${tongTienShipVnd}, GETDATE())
     `);
 
@@ -357,7 +357,7 @@ export class BatchesService {
    */
   async updateShipCost(shipCostId: number, loaiHangShipId: number, canNang: number, donGia: number, tongTienShipVnd: number): Promise<any> {
     await this.sequelize.query(`
-      UPDATE dbo.LoHang_PhiShipVeVN
+      UPDATE dbo.tbLoHang_PhiShipVeVN
       SET LoaiHangShipID = ${loaiHangShipId}, CanNang = ${canNang}, DonGia = ${donGia}, TongTienShipVeVN_VND = ${tongTienShipVnd}
       WHERE ID = ${shipCostId}
     `);
@@ -370,7 +370,7 @@ export class BatchesService {
    */
   async deleteShipCost(shipCostId: number): Promise<void> {
     await this.sequelize.query(`
-      DELETE FROM dbo.LoHang_PhiShipVeVN WHERE ID = ${shipCostId}
+      DELETE FROM dbo.tbLoHang_PhiShipVeVN WHERE ID = ${shipCostId}
     `);
   }
 
@@ -381,7 +381,7 @@ export class BatchesService {
     try {
       const [data] = await this.sequelize.query(`
         SELECT lhthq.*, lhthq.TenLoaiHangThueHaiQuan
-        FROM dbo.LoHang_ThueHaiQuan lhthq
+        FROM dbo.tbLoHang_ThueHaiQuan lhthq
         LEFT JOIN dbo.LoaiHangThueHaiQuan lhthq2 ON lhthq.LoaiHangThueHaiQuanID = lhthq2.ID
         WHERE lhthq.LoHangID = ${batchId}
         ORDER BY lhthq.ID DESC
@@ -398,7 +398,7 @@ export class BatchesService {
    */
   async addCustoms(batchId: number, loaiHangThueHaiQuanId: number, canNangSoLuongGiaTri: number, donGia: number, tongTienThueHaiQuanVnd: number): Promise<any> {
     await this.sequelize.query(`
-      INSERT INTO dbo.LoHang_ThueHaiQuan (LoHangID, LoaiHangThueHaiQuanID, CanNangSoLuongGiaTri, DonGia, TongTienThueHaiQuan_VND, NgayTao)
+      INSERT INTO dbo.tbLoHang_ThueHaiQuan (LoHangID, LoaiHangThueHaiQuanID, CanNangSoLuongGiaTri, DonGia, TongTienThueHaiQuan_VND, NgayTao)
       VALUES (${batchId}, ${loaiHangThueHaiQuanId}, ${canNangSoLuongGiaTri}, ${donGia}, ${tongTienThueHaiQuanVnd}, GETDATE())
     `);
 
@@ -410,7 +410,7 @@ export class BatchesService {
    */
   async updateCustoms(customsId: number, loaiHangThueHaiQuanId: number, canNangSoLuongGiaTri: number, donGia: number, tongTienThueHaiQuanVnd: number): Promise<any> {
     await this.sequelize.query(`
-      UPDATE dbo.LoHang_ThueHaiQuan
+      UPDATE dbo.tbLoHang_ThueHaiQuan
       SET LoaiHangThueHaiQuanID = ${loaiHangThueHaiQuanId}, CanNangSoLuongGiaTri = ${canNangSoLuongGiaTri}, DonGia = ${donGia}, TongTienThueHaiQuan_VND = ${tongTienThueHaiQuanVnd}
       WHERE ID = ${customsId}
     `);
@@ -423,7 +423,7 @@ export class BatchesService {
    */
   async deleteCustoms(customsId: number): Promise<void> {
     await this.sequelize.query(`
-      DELETE FROM dbo.LoHang_ThueHaiQuan WHERE ID = ${customsId}
+      DELETE FROM dbo.tbLoHang_ThueHaiQuan WHERE ID = ${customsId}
     `);
   }
 }

@@ -618,12 +618,6 @@ export default function QLDatHangLietKePage() {
         >
           Thêm mới item bằng excel
         </Link>
-        <Link
-          href="/admin/orders/deleted"
-          className="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
-        >
-          Đơn hàng đã xóa
-        </Link>
       </div>
 
       {/* <h3 className="text-lg font-bold text-gray-900">QUẢN LÝ ĐẶT HÀNG</h3> */}

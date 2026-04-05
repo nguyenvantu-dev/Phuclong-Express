@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { getBankAccounts, createDebt, getDebtManagementList, DebtManagementItem } from '@/lib/api';
+import { useAuth } from '@/hooks/use-auth-context';
 
 interface BankAccount {
   ID: number;
-  TenNganHang: string;
-  SoTaiKhoan: string;
-  ChuTaiKhoan: string;
+  TenTaiKhoanNganHang: string;
+  GhiChu?: string;
 }
 
 /**
@@ -16,6 +16,7 @@ interface BankAccount {
  * Uses backend: debt-reports (CongNo)
  */
 export default function ChuyenKhoanPage() {
+  const { user } = useAuth();
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [pendingTransfers, setPendingTransfers] = useState<DebtManagementItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,8 +44,12 @@ export default function ChuyenKhoanPage() {
   };
 
   const loadPendingTransfers = async () => {
+    if (!user?.username) return;
+
     try {
       const response = await getDebtManagementList({
+        username: user.username,
+        loaiPhatSinh: '2', // style=2 for bank transfer
         status: 0, // pending
         page: 1,
         limit: 100,
@@ -61,17 +66,22 @@ export default function ChuyenKhoanPage() {
       return;
     }
 
+    if (!user?.username) {
+      setError('Vui lòng đăng nhập để thực hiện chức năng này');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setSuccess('');
     try {
-      // Create debt record (transfer request)
+      // Create debt record (transfer request) - style=2 for bank transfer
       await createDebt({
-        username: '', // Will be filled by backend from auth
+        username: user.username,
         noiDung: noiDung || `Chuyển khoản ${selectedBank}`,
         ngay: ngayChuyenKhoan,
         cr: soTienChuyenKhoan,
-        loaiPhatSinh: 1, // payment
+        loaiPhatSinh: 2, // bank transfer style
       });
       setSuccess('Báo chuyển khoản thành công');
       // Reset form
@@ -114,8 +124,8 @@ export default function ChuyenKhoanPage() {
             >
               <option value="">Chọn...</option>
               {bankAccounts.map((bank) => (
-                <option key={bank.ID} value={bank.TenNganHang}>
-                  {bank.TenNganHang} - {bank.SoTaiKhoan}
+                <option key={bank.ID} value={bank.TenTaiKhoanNganHang}>
+                  {bank.TenTaiKhoanNganHang}
                 </option>
               ))}
             </select>

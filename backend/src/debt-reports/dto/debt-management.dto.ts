@@ -81,6 +81,10 @@ export class CreateDebtDto {
   @IsNumber()
   @Type(() => Number)
   loaiPhatSinh?: number;
+
+  @IsOptional()
+  @IsString()
+  bankAccount?: string;
 }
 
 /**
@@ -119,6 +123,10 @@ export class UpdateDebtManagementDto {
   @IsNumber()
   @Type(() => Number)
   loHangId?: number;
+
+  @IsOptional()
+  @IsString()
+  updatedBy?: string;
 }
 
 /**

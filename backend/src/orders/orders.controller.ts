@@ -457,4 +457,37 @@ export class OrdersController {
   ): Promise<{ success: boolean; error?: string }> {
     return this.ordersService.updateOrderDetail(id, body);
   }
+
+  /**
+   * PUT /orders/tracking-number
+   * Update tracking number for LIST_ORDER (TrackingNumber.aspx)
+   * Uses orderNumber (string) as param, matching C# capNhatTrackingNumber
+   */
+  @Put('tracking-number')
+  async updateTrackingNumber(
+    @Body() body: { orderNumber: string; trackingNumber: string; ngayNhanTaiNuocNgoai: string; trackingLink: string },
+  ): Promise<{ success: boolean; message: string }> {
+    return this.ordersService.updateTrackingNumber(body.orderNumber, body.trackingNumber, body.ngayNhanTaiNuocNgoai, body.trackingLink);
+  }
+
+  /**
+   * POST /orders/search-by-tracking
+   * Search orders by order number OR tracking number (TrackingNumber.aspx)
+   * Calls BLL.LayDanhSachListOrder with both parameters
+   */
+  @Post('search-by-tracking')
+  async searchByOrderOrTracking(
+    @Body() body: { orderNumber?: string; trackingNumber?: string; page?: number; limit?: number },
+  ): Promise<{ data: any[]; total: number }> {
+    return this.ordersService.searchByOrderOrTracking(body.orderNumber || '', body.trackingNumber || '', body.page, body.limit);
+  }
+
+  /**
+   * GET /orders/totals
+   * Get totals for QLDatHang_LietKe page (Total count, Total price, Total VND)
+   */
+  @Get('totals')
+  async getTotals(@Query() query: QueryOrderDto): Promise<{ totalCount: number; totalPrice: number; totalVnd: number }> {
+    return this.ordersService.getTotals(query);
+  }
 }

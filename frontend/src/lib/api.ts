@@ -935,7 +935,7 @@ export const getShippingSlip = async (
 export interface DebtManagementQuery {
   username?: string;
   status?: number;
-  loaiPhatSinh?: string;
+  loaiPhatSinh?: string | null;
   bankAccount?: string;
   fromDate?: string;
   toDate?: string;
@@ -995,6 +995,7 @@ export interface UpdateDebtParams {
   ghiChu?: string;
   status?: number;
   loHangId?: number;
+  updatedBy?: string;
 }
 
 export const updateDebt = async (
@@ -1017,9 +1018,8 @@ export const approveDebt = async (id: number): Promise<{ success: boolean; messa
 
 export interface BankAccount {
   ID: number;
-  TenNganHang: string;
-  SoTaiKhoan: string;
-  ChuTaiKhoan: string;
+  TenTaiKhoanNganHang: string;
+  GhiChu?: string;
 }
 
 export const getBankAccounts = async (): Promise<BankAccount[]> => {
@@ -1054,6 +1054,101 @@ export const getShippers = async (): Promise<Shipper[]> => {
 
 export const getShipper = async (id: number): Promise<Shipper> => {
   const response = await apiClient.get(`/shippers/${id}`);
+  return response.data;
+};
+
+// Alias for getShipper
+export const getShipperById = getShipper;
+
+// ========== Shipment Groups (DotHang) ==========
+
+export interface ShipmentGroupQuery {
+  username?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface ShipmentGroupItem {
+  tenDotHang: string;
+  username: string;
+  shipperName?: string;
+  shipperID?: number;
+  soVanDon?: string;
+  phiShipTrongNuoc?: number;
+  soLuongHang?: number;
+  ngayVeVN?: string;
+  ngayGuiHang?: string;
+  trangThai?: string;
+}
+
+export const getShipmentGroups = async (params: ShipmentGroupQuery): Promise<{ data: ShipmentGroupItem[]; total: number }> => {
+  const response = await apiClient.get('/shipment-groups', { params });
+  return response.data;
+};
+
+export const getShipmentGroupByUsernameAndTenDotHang = async (username: string, tenDotHang: string): Promise<any> => {
+  const response = await apiClient.get(`/shipment-groups/${username}/${tenDotHang}`);
+  return response.data;
+};
+
+export interface BatchInfo {
+  tenDotHang: string;
+  username: string;
+  shipperName?: string;
+  shipperID?: number;
+  shipperPhone?: string;
+  shipperAddress?: string;
+  soVanDon?: string;
+  phiShipTrongNuoc?: number;
+  soLuongHang?: number;
+  ngayVeVN?: string;
+  ngayGuiHang?: string;
+  trangThai?: string;
+  orders?: any[];
+}
+
+export const getBatchInfo = async (tenDotHang: string, username: string): Promise<BatchInfo> => {
+  const response = await apiClient.get(`/shipment-groups/${username}/${tenDotHang}`);
+  return response.data;
+};
+
+// ========== Shipping Requests (YeuCauShipHang) ==========
+
+export interface ShippingRequestItem {
+  TenDotHang: string;
+  MaDatHang: number;
+  CanNang: number;
+  PhiShipVeVN_USD: number;
+  TyGia: number;
+  PhiShipVeVN_VND: number;
+  TienHangUSD: number;
+  TienHangVND: number;
+}
+
+export interface ShippingRequestQuery {
+  username: string;
+  status?: number; // 0 = chua yeu cau, 1 = dang yeu cau
+}
+
+export const getShippingRequests = async (params: ShippingRequestQuery): Promise<ShippingRequestItem[]> => {
+  const response = await apiClient.get('/shipping-requests', { params });
+  return response.data;
+};
+
+export const createShippingRequest = async (params: {
+  tenDotHang: string;
+  username: string;
+  ghiChu?: string;
+}): Promise<{ success: boolean; message?: string }> => {
+  const response = await apiClient.post('/shipping-requests', params);
+  return response.data;
+};
+
+// ========== Orders (for edit order) ==========
+
+export const getOrderById = async (id: number): Promise<any> => {
+  const response = await apiClient.get(`/orders/${id}`);
   return response.data;
 };
 
@@ -1283,6 +1378,10 @@ export const updateOrderDetail = async (
     `/orders/${id}/detail`,
     data
   );
+  // Throw error if API returns success: false
+  if (response.data.success === false && response.data.error) {
+    throw new Error(response.data.error);
+  }
   return response.data;
 };
 

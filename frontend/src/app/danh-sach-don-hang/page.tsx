@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getOrdersQLDatHang } from '@/lib/api';
+import { getOrdersQLDatHang, getStatusCounts } from '@/lib/api';
 import { Order } from '@/types/order';
 
 const ORDER_STATUSES = ['Received', 'Ordered', 'Shipped', 'Completed', 'Cancelled'];
@@ -19,12 +19,23 @@ export default function DanhSachDonHangPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Received']);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
   const limit = 50;
 
   useEffect(() => {
     loadOrders();
+    loadStatusCounts();
   }, [page, selectedStatuses]);
+
+  const loadStatusCounts = async () => {
+    try {
+      const counts = await getStatusCounts();
+      setStatusCounts(counts || {});
+    } catch (error) {
+      console.error('Error loading status counts:', error);
+    }
+  };
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -56,6 +67,45 @@ export default function DanhSachDonHangPage() {
     loadOrders();
   };
 
+  const handleExportExcel = () => {
+    // Create CSV content
+    const headers = ['Mã ĐH', 'Ngày ĐH', 'Order Number', 'Link', 'Màu', 'Size', 'SL', 'Giá web', '% off', 'Ship', '% Tax', '% Công', 'Công NT', 'Tổng NT', 'Tỷ giá', 'Tổng VND', 'Status', 'VN Status', 'Ghi chú'];
+
+    const rows = orders.map(order => [
+      order.id,
+      order.ngayMuaHang ? new Date(order.ngayMuaHang).toLocaleDateString('vi-VN') : '',
+      order.orderNumber || '',
+      order.linkWeb || '',
+      order.color || '',
+      order.size || '',
+      order.soLuong || 0,
+      order.donGiaWeb || 0,
+      order.saleOff || 0,
+      order.shipUsa || '',
+      order.tax || 0,
+      order.cong || 0,
+      order.tienCongUsd || 0,
+      order.tongTienUsd || 0,
+      order.tyGia || 0,
+      order.tongTienVnd || 0,
+      order.trangThaiOrder || '',
+      order.ngayVeVn ? `Đợt hàng ${new Date(order.ngayVeVn).toLocaleDateString('vi-VN')}` : '',
+      order.ghiChu || ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    // Download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `DanhSachDatHang_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
   const totalPages = Math.ceil(total / limit);
 
   const formatNumber = (num: number | null | undefined) => {
@@ -85,7 +135,10 @@ export default function DanhSachDonHangPage() {
                 onChange={() => toggleStatus(status)}
                 className="cursor-pointer accent-cyan-600"
               />
-              <span className="text-sm text-slate-700">{status}</span>
+              <span className="text-sm text-slate-700">
+                {status}
+                {statusCounts[status] !== undefined && ` (${statusCounts[status]})`}
+              </span>
             </label>
           ))}
         </div>
@@ -94,6 +147,13 @@ export default function DanhSachDonHangPage() {
           className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
         >
           Xem
+        </button>
+        <button
+          onClick={handleExportExcel}
+          disabled={orders.length === 0}
+          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Export to Excel
         </button>
       </div>
 

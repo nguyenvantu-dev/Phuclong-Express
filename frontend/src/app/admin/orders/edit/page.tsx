@@ -8,6 +8,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { getOrder, updateOrderDetail, getExchangeRatesForEdit, getProductTypesForEdit, getCountries, getUsernames, uploadOrderImage, calculateServiceFee } from '@/lib/api';
 
+const STYLES = {
+  input: 'w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200',
+  select: 'w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200 cursor-pointer',
+  label: 'block text-sm font-medium text-gray-700 mb-1.5',
+  card: 'bg-white rounded-xl shadow-sm border border-gray-100 p-6',
+  sectionTitle: 'text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100',
+  buttonPrimary: 'px-6 py-2.5 bg-cyan-500 text-white font-medium rounded-lg hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200',
+  buttonSecondary: 'px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200',
+};
+
 /**
  * Edit Order Detail Page
  *
@@ -91,11 +101,11 @@ type OrderEditFormData = z.input<typeof orderEditFormSchema>;
  */
 function LoadingSkeleton() {
   return (
-    <div className="p-6 space-y-4">
-      <div className="h-8 bg-gray-200 animate-pulse rounded w-1/4"></div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="p-6 space-y-6">
+      <div className="h-7 bg-gray-100 animate-pulse rounded w-1/4"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {[...Array(12)].map((_, i) => (
-          <div key={i} className="h-10 bg-gray-200 animate-pulse rounded"></div>
+          <div key={i} className="h-14 bg-gray-100 animate-pulse rounded-lg"></div>
         ))}
       </div>
     </div>
@@ -108,12 +118,17 @@ function LoadingSkeleton() {
 function ErrorDisplay({ message, onBack }: { message: string; onBack: () => void }) {
   return (
     <div className="p-6">
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h2 className="text-red-800 font-semibold mb-2">Lỗi</h2>
-        <p className="text-red-600">{message}</p>
+      <div className="bg-red-50 border border-red-100 rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-2">
+          <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2 className="text-red-800 font-semibold">Lỗi</h2>
+        </div>
+        <p className="text-red-600 text-sm mb-4">{message}</p>
         <button
           onClick={onBack}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
         >
           Quay lại
         </button>
@@ -132,6 +147,7 @@ function EditOrderDetailPageContent() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [congEnabled, setCongEnabled] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Get order ID from query param
   const orderId = parseInt(searchParams.get('id') || '', 10);
@@ -244,6 +260,13 @@ function EditOrderDetailPageContent() {
     }
   }, [watchedFields, setValue]);
 
+  // Scroll to top when error occurs
+  useEffect(() => {
+    if (errorMessage) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [errorMessage]);
+
   // Populate form when order loads
   useEffect(() => {
     if (order) {
@@ -306,9 +329,12 @@ function EditOrderDetailPageContent() {
     onError: (error: Error) => {
       // Handle closed period error
       if (error.message?.includes('closed_period')) {
-        alert('Không được cập nhật đơn hàng này do đã đóng kỳ');
+        setErrorMessage('Không được cập nhật đơn hàng này do đã đóng kỳ');
+      } else if (error.message?.includes('debt_locked')) {
+        setErrorMessage('Không được cập nhật do công nợ bị khóa');
       } else {
-        alert(`Lỗi cập nhật: ${error.message}`);
+        console.log(error);
+        setErrorMessage(`Lỗi cập nhật: ${error.message}`);
       }
     },
   });
@@ -409,41 +435,65 @@ function EditOrderDetailPageContent() {
   ];
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto px-4 py-6 max-w-6xl">
+      {/* Error message */}
+      {errorMessage && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <p className="text-red-700">{errorMessage}</p>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Chỉnh sửa đơn hàng #{(order as any).ordernumber || (order as any).orderNumber || order.orderNumber}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Chỉnh sửa đơn hàng</h1>
+          <p className="text-sm text-gray-500 mt-1">#{(order as any).ordernumber || (order as any).OrderNumber || orderId}</p>
+        </div>
         <button
           onClick={handleBack}
-          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
         >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
           Quay lại
         </button>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Order Info Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={STYLES.card}>
+          <h2 className={STYLES.sectionTitle}>Thông tin đơn hàng</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Order Number */}
             <div>
-              <label className="block text-sm font-medium mb-1">Số đơn hàng</label>
+              <label className={STYLES.label}>Số đơn hàng</label>
               <input
                 {...register('ordernumber')}
                 type="text"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
               {errors.ordernumber && (
-                <p className="text-red-500 text-sm mt-1">{errors.ordernumber.message}</p>
+                <p className="text-red-500 text-xs mt-1">{errors.ordernumber.message}</p>
               )}
             </div>
 
             {/* Username */}
             <div>
-              <label className="block text-sm font-medium mb-1">Username</label>
+              <label className={STYLES.label}>Username</label>
               <select
                 {...register('username')}
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.select}
               >
                 <option value="">Chọn username</option>
                 {usernames.map((u: { username: string }) => (
@@ -453,16 +503,16 @@ function EditOrderDetailPageContent() {
                 ))}
               </select>
               {errors.username && (
-                <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>
+                <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>
               )}
             </div>
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium mb-1">Trạng thái</label>
+              <label className={STYLES.label}>Trạng thái</label>
               <select
                 {...register('trangthaiOrder')}
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.select}
               >
                 {orderStatuses.map((status) => (
                   <option key={status} value={status}>
@@ -474,32 +524,32 @@ function EditOrderDetailPageContent() {
 
             {/* Ngày mua hàng */}
             <div>
-              <label className="block text-sm font-medium mb-1">Ngày mua hàng</label>
+              <label className={STYLES.label}>Ngày mua hàng</label>
               <input
                 {...register('ngaymuahang')}
                 type="date"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Ngày về VN */}
             <div>
-              <label className="block text-sm font-medium mb-1">Ngày về VN</label>
+              <label className={STYLES.label}>Ngày về VN</label>
               <input
                 {...register('ngayveVN')}
                 type="date"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Loại hàng */}
             <div>
-              <label className="block text-sm font-medium mb-1">Loại hàng</label>
+              <label className={STYLES.label}>Loại hàng</label>
               <select
                 {...register('LoaiHangID', {
                   setValueAs: (value) => (value ? (isNaN(Number(value)) ? undefined : Number(value)) : undefined),
                 })}
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.select}
               >
                 <option value="">Chọn loại hàng</option>
                 {productTypes.map((pt: { LoaiHangID: number; TenLoaiHang: string }) => (
@@ -512,12 +562,12 @@ function EditOrderDetailPageContent() {
 
             {/* Quốc gia */}
             <div>
-              <label className="block text-sm font-medium mb-1">Quốc gia</label>
+              <label className={STYLES.label}>Quốc gia</label>
               <select
                 {...register('QuocGiaID', {
                   setValueAs: (value) => (value ? (isNaN(Number(value)) ? undefined : Number(value)) : undefined),
                 })}
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.select}
               >
                 <option value="">Chọn quốc gia</option>
                 {countries.map((c: { QuocGiaID: number; TenQuocGia: string }) => (
@@ -531,34 +581,34 @@ function EditOrderDetailPageContent() {
         </div>
 
         {/* Product Info Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Thông tin sản phẩm</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={STYLES.card}>
+          <h2 className={STYLES.sectionTitle}>Thông tin sản phẩm</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Link web */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Link sản phẩm</label>
+              <label className={STYLES.label}>Link sản phẩm</label>
               <input
                 {...register('linkweb')}
                 type="text"
                 placeholder="https://..."
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Link hình */}
             <div>
-              <label className="block text-sm font-medium mb-1">Link hình ảnh</label>
+              <label className={STYLES.label}>Link hình ảnh</label>
               <input
                 {...register('linkhinh')}
                 type="text"
                 placeholder="https://..."
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Upload hình */}
             <div>
-              <label className="block text-sm font-medium mb-1">Tải lên hình ảnh</label>
+              <label className={STYLES.label}>Tải lên hình ảnh</label>
               <input
                 type="file"
                 accept="image/*"
@@ -569,135 +619,137 @@ function EditOrderDetailPageContent() {
                     setImagePreview(URL.createObjectURL(file));
                   }
                 }}
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={`${STYLES.input} file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100 cursor-pointer`}
               />
               {imagePreview && (
-                <img src={imagePreview} alt="Preview" className="mt-2 h-20 object-contain" />
+                <div className="mt-3 p-2 bg-gray-50 rounded-lg inline-block">
+                  <img src={imagePreview} alt="Preview" className="h-20 w-auto object-contain" />
+                </div>
               )}
             </div>
 
             {/* Màu sắc */}
             <div>
-              <label className="block text-sm font-medium mb-1">Màu sắc</label>
+              <label className={STYLES.label}>Màu sắc</label>
               <input
                 {...register('corlor')}
                 type="text"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Size */}
             <div>
-              <label className="block text-sm font-medium mb-1">Size</label>
+              <label className={STYLES.label}>Size</label>
               <input
                 {...register('size')}
                 type="text"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Số lượng */}
             <div>
-              <label className="block text-sm font-medium mb-1">Số lượng</label>
+              <label className={STYLES.label}>Số lượng</label>
               <input
                 {...register('soluong')}
                 type="number"
                 min="1"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
               {errors.soluong && (
-                <p className="text-red-500 text-sm mt-1">{errors.soluong.message}</p>
+                <p className="text-red-500 text-xs mt-1">{errors.soluong.message}</p>
               )}
             </div>
 
             {/* Đơn giá web */}
             <div>
-              <label className="block text-sm font-medium mb-1">Đơn giá web</label>
+              <label className={STYLES.label}>Đơn giá web</label>
               <input
                 {...register('dongiaweb')}
                 type="number"
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
               {errors.dongiaweb && (
-                <p className="text-red-500 text-sm mt-1">{errors.dongiaweb.message}</p>
+                <p className="text-red-500 text-xs mt-1">{errors.dongiaweb.message}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Pricing Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Thông tin giá</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={STYLES.card}>
+          <h2 className={STYLES.sectionTitle}>Thông tin giá</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Sale off */}
             <div>
-              <label className="block text-sm font-medium mb-1">Sale off (%)</label>
+              <label className={STYLES.label}>Sale off (%)</label>
               <input
                 {...register('saleoff')}
                 type="number"
                 min="0"
                 max="100"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Phụ thu */}
             <div>
-              <label className="block text-sm font-medium mb-1">Phụ thu</label>
+              <label className={STYLES.label}>Phụ thu</label>
               <input
                 {...register('phuthu')}
                 type="number"
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Ship USA */}
             <div>
-              <label className="block text-sm font-medium mb-1">Ship USA</label>
+              <label className={STYLES.label}>Ship USA</label>
               <input
                 {...register('shipUSA')}
                 type="number"
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* Tax */}
             <div>
-              <label className="block text-sm font-medium mb-1">Thuế</label>
+              <label className={STYLES.label}>Thuế</label>
               <input
                 {...register('tax')}
                 type="number"
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
             {/* % Công */}
             <div>
-              <label className="block text-sm font-medium mb-1">% Công</label>
+              <label className={STYLES.label}>% Công</label>
               <input
                 {...register('cong')}
                 type="number"
                 step="0.01"
                 min="0"
                 disabled={!congEnabled}
-                className={`w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 ${!congEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                className={`${STYLES.input} ${!congEnabled ? 'bg-gray-50 cursor-not-allowed text-gray-400' : ''}`}
               />
             </div>
 
             {/* Loại tiền */}
             <div>
-              <label className="block text-sm font-medium mb-1">Loại tiền</label>
+              <label className={STYLES.label}>Loại tiền</label>
               <select
                 {...register('loaitien')}
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.select}
               >
                 {exchangeRates.map((er: { name: string; rate: number }, idx: number) => (
                   <option key={`${er.name}-${idx}`} value={er.name}>
@@ -709,126 +761,141 @@ function EditOrderDetailPageContent() {
 
             {/* Tỷ giá */}
             <div>
-              <label className="block text-sm font-medium mb-1">Tỷ giá</label>
+              <label className={STYLES.label}>Tỷ giá</label>
               <input
                 {...register('tygia')}
                 type="number"
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={STYLES.input}
               />
             </div>
 
-            {/* Empty space for layout */}
+            {/* Spacer */}
             <div></div>
 
             {/* Readonly calculated values */}
             <div>
-              <label className="block text-sm font-medium mb-1">Giá sau off (USD)</label>
+              <label className={STYLES.label}>Giá sau off (USD)</label>
               <input
                 {...register('giasauoffUSD')}
                 type="number"
                 step="0.01"
                 readOnly
-                className="w-full px-3 py-2 border bg-gray-100 rounded"
+                className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Giá sau off (VND)</label>
+              <label className={STYLES.label}>Giá sau off (VND)</label>
               <input
                 {...register('giasauoffVND')}
                 type="number"
                 readOnly
-                className="w-full px-3 py-2 border bg-gray-100 rounded"
+                className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Tiền công (USD)</label>
+              <label className={STYLES.label}>Tiền công (USD)</label>
               <input
                 {...register('tiencongUSD')}
                 type="number"
                 step="0.01"
                 readOnly
-                className="w-full px-3 py-2 border bg-gray-100 rounded"
+                className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Tiền công (VND)</label>
+              <label className={STYLES.label}>Tiền công (VND)</label>
               <input
                 {...register('tiencongVND')}
                 type="number"
                 readOnly
-                className="w-full px-3 py-2 border bg-gray-100 rounded"
+                className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Tổng tiền (USD)</label>
+              <label className={STYLES.label}>Tổng tiền (USD)</label>
               <input
                 {...register('tongtienUSD')}
                 type="number"
                 step="0.01"
                 readOnly
-                className="w-full px-3 py-2 border bg-gray-100 rounded"
+                className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Tổng tiền (VND)</label>
+              <label className={STYLES.label}>Tổng tiền (VND)</label>
               <input
                 {...register('tongtienVND')}
                 type="number"
                 readOnly
-                className="w-full px-3 py-2 border bg-gray-100 rounded"
+                className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"
               />
             </div>
           </div>
         </div>
 
         {/* Notes Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Ghi chú</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={STYLES.card}>
+          <h2 className={STYLES.sectionTitle}>Ghi chú</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Ghi chú */}
             <div>
-              <label className="block text-sm font-medium mb-1">Ghi chú</label>
+              <label className={STYLES.label}>Ghi chú</label>
               <textarea
                 {...register('ghichu')}
                 rows={3}
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={`${STYLES.input} resize-none`}
               />
             </div>
 
             {/* Admin note */}
             <div>
-              <label className="block text-sm font-medium mb-1">Admin ghi chú</label>
+              <label className={STYLES.label}>Admin ghi chú</label>
               <textarea
                 {...register('adminNote')}
                 rows={3}
-                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                className={`${STYLES.input} resize-none`}
               />
             </div>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-end gap-4">
+        <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={handleBack}
-            className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50"
+            className={STYLES.buttonSecondary}
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            className={STYLES.buttonPrimary}
           >
-            {isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Đang lưu...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Cập nhật
+              </span>
+            )}
           </button>
         </div>
       </form>

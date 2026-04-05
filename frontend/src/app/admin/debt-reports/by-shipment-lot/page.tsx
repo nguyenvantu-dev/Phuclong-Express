@@ -289,7 +289,7 @@ export default function DebtReportsByShipmentLotPage() {
                     {/* In phiếu link - matching Eval("UserName"), Eval("TenDotHang") in aspx */}
                     <td className="px-2 py-2">
                       <a
-                        href={`/admin/BaoCao_InPhieuShipTheoDotHang.aspx?u=${encodeURIComponent(item.UserName)}&dh=${encodeURIComponent(item.TenDotHang || '')}`}
+                        href={`/admin/debt-reports/shipping-slip?u=${encodeURIComponent(item.UserName)}&dh=${encodeURIComponent(item.TenDotHang || '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800"

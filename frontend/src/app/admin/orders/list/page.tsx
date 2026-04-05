@@ -223,6 +223,7 @@ function ConfirmModal({
   confirmText = 'Xác nhận',
   cancelText = 'Hủy',
   variant = 'default',
+  error,
 }: {
   open: boolean;
   title: string;
@@ -232,13 +233,19 @@ function ConfirmModal({
   confirmText?: string;
   cancelText?: string;
   variant?: 'default' | 'danger';
+  error?: string;
 }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-200">
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl transition-transform duration-200">
         <h3 className="mb-3 text-lg font-semibold text-gray-900">{title}</h3>
-        <p className="mb-6 text-sm text-gray-600">{message}</p>
+        <p className="mb-4 text-sm text-gray-600">{message}</p>
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
         <div className="flex justify-end gap-3">
           <button
             onClick={onCancel}
@@ -326,11 +333,12 @@ export default function EditOrderListPage() {
     message: string;
     variant: 'default' | 'danger';
     onConfirm: () => void;
+    error?: string;
   }>({ open: false, title: '', message: '', variant: 'default', onConfirm: () => {} });
 
   // Show confirmation modal helper
-  const showConfirm = (title: string, message: string, variant: 'default' | 'danger' = 'default', onConfirm: () => void) => {
-    setConfirmModal({ open: true, title, message, variant, onConfirm });
+  const showConfirm = (title: string, message: string, variant: 'default' | 'danger' = 'default', onConfirm: () => void, error?: string) => {
+    setConfirmModal({ open: true, title, message, variant, onConfirm, error });
   };
 
   // Initialize flatpickr for date inputs
@@ -397,9 +405,11 @@ export default function EditOrderListPage() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['order-status-counts'] });
       setSelectedIds([]);
+      setConfirmModal(prev => ({ ...prev, open: false }));
     },
     onError: (error: any) => {
-      alert(error?.response?.data?.message || error?.message || 'Có lỗi xảy ra');
+      const message = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra';
+      setConfirmModal(prev => ({ ...prev, error: message }));
     },
   });
 
@@ -411,6 +421,11 @@ export default function EditOrderListPage() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['order-status-counts'] });
       setSelectedIds([]);
+      setConfirmModal(prev => ({ ...prev, open: false }));
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra';
+      setConfirmModal(prev => ({ ...prev, error: message }));
     },
   });
 
@@ -436,6 +451,11 @@ export default function EditOrderListPage() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['order-status-counts'] });
       setSelectedIds([]);
+      setConfirmModal(prev => ({ ...prev, open: false }));
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra khi complete';
+      setConfirmModal(prev => ({ ...prev, error: message }));
     },
   });
 
@@ -498,10 +518,12 @@ export default function EditOrderListPage() {
           { ids: selectedIds, username: currentUsername, note: '' },
           {
             onSuccess: () => {
+              setConfirmModal(prev => ({ ...prev, open: false }));
               alert(`Đã hủy ${selectedIds.length} đơn hàng`);
             },
-            onError: () => {
-              alert('Có lỗi xảy ra khi hủy đơn');
+            onError: (error: any) => {
+              const message = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra khi hủy đơn';
+              setConfirmModal(prev => ({ ...prev, error: message }));
             },
           },
         );
@@ -1215,11 +1237,9 @@ export default function EditOrderListPage() {
         title={confirmModal.title}
         message={confirmModal.message}
         variant={confirmModal.variant}
-        onConfirm={() => {
-          confirmModal.onConfirm();
-          setConfirmModal(prev => ({ ...prev, open: false }));
-        }}
-        onCancel={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+        error={confirmModal.error}
+        onConfirm={() => confirmModal.onConfirm()}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, open: false, error: undefined }))}
       />
 
       {/* Return Date Modal */}

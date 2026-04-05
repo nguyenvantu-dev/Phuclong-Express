@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
-const tedious = require('tedious');
 
 export interface Website {
   ID: number;
@@ -23,41 +22,23 @@ export interface UpdateWebsiteDto {
  * Websites Service (DanhMucWebsite)
  *
  * CRUD operations for website catalog
+ * Uses SP_LayWebsite stored procedure (matching C# DBConnect.LayDanhSachWebsite)
  */
 @Injectable()
 export class WebsitesService {
-  private getSequelize(): Sequelize {
-    return new Sequelize({
-      dialect: 'mssql',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '1433'),
-      username: process.env.DB_USERNAME || 'sa',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_DATABASE || process.env.DB_DATABASE || 'PhucLong',
-      logging: false,
-      dialectOptions: {
-        encrypt: true,
-        trustServerCertificate: true,
-      },
-      dialectModule: tedious
-    });
-  }
+  constructor(@Inject('SEQUELIZE') private readonly sequelize: Sequelize) {}
 
   /**
-   * Get all websites
+   * Get all websites using SP_LayWebsite
    */
   async findAll(): Promise<Website[]> {
     try {
-      const sequelize = this.getSequelize();
-      const [data]: any[] = await sequelize.query(`
-        SELECT ID, WebsiteName, GhiChu
-        FROM dbo.WEBSITE
-        ORDER BY WebsiteName
+      const [data]: any[] = await this.sequelize.query(`
+        EXEC SP_LayWebsite
       `);
-      await sequelize.close();
       return data || [];
-    } catch (error) {
-      console.error('Error getting websites:', error.message);
+    } catch (error: any) {
+      console.error('Error getting websites:', error?.message || error);
       return [];
     }
   }
@@ -67,16 +48,15 @@ export class WebsitesService {
    */
   async findOne(id: number): Promise<Website | null> {
     try {
-      const sequelize = this.getSequelize();
-      const [data]: any[] = await sequelize.query(`
-        SELECT ID, WebsiteName, GhiChu
-        FROM dbo.WEBSITE
-        WHERE ID = ${id}
-      `);
-      await sequelize.close();
-      return data[0] || null;
-    } catch (error) {
-      console.error('Error getting website:', error.message);
+      const [data]: any[] = await this.sequelize.query(
+        `EXEC SP_LayWebsiteByID @ID = :id`,
+        {
+          replacements: { id },
+        },
+      );
+      return data?.[0] || null;
+    } catch (error: any) {
+      console.error('Error getting website:', error?.message || error);
       return null;
     }
   }
@@ -86,22 +66,24 @@ export class WebsitesService {
    */
   async create(createDto: CreateWebsiteDto, nguoiTao: string): Promise<{ success: boolean; id?: number; error?: string }> {
     try {
-      const sequelize = this.getSequelize();
-      const [result]: any[] = await sequelize.query(`
-        INSERT INTO dbo.WEBSITE (WebsiteName, GhiChu)
-        VALUES ('${createDto.websiteName}', '${createDto.ghiChu || ''}');
-        SELECT SCOPE_IDENTITY() as ID;
-      `);
-      const id = result[0]?.ID;
+      const [result]: any[] = await this.sequelize.query(
+        `EXEC SP_Them_Website @WebsiteName = :websiteName, @GhiChu = :ghiChu`,
+        {
+          replacements: {
+            websiteName: createDto.websiteName,
+            ghiChu: createDto.ghiChu || '',
+          },
+        },
+      );
+      const id = result?.[0]?.ID;
 
       // Log system
       await this.logAction(nguoiTao, 'ThemMoi', 'Website', id, `WebsiteName: ${createDto.websiteName}; GhiChu: ${createDto.ghiChu || ''}`);
 
-      await sequelize.close();
       return { success: true, id };
-    } catch (error) {
-      console.error('Error creating website:', error.message);
-      return { success: false, error: error.message };
+    } catch (error: any) {
+      console.error('Error creating website:', error?.message || error);
+      return { success: false, error: error?.message || String(error) };
     }
   }
 
@@ -110,22 +92,24 @@ export class WebsitesService {
    */
   async update(updateDto: UpdateWebsiteDto, nguoiCapNhat: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        UPDATE dbo.WEBSITE
-        SET WebsiteName = '${updateDto.websiteName}',
-            GhiChu = '${updateDto.ghiChu || ''}'
-        WHERE ID = ${updateDto.id}
-      `);
+      await this.sequelize.query(
+        `EXEC SP_CapNhat_Website @ID = :id, @WebsiteName = :websiteName, @GhiChu = :ghiChu`,
+        {
+          replacements: {
+            id: updateDto.id,
+            websiteName: updateDto.websiteName,
+            ghiChu: updateDto.ghiChu || '',
+          },
+        },
+      );
 
       // Log system
       await this.logAction(nguoiCapNhat, 'ChinhSua', 'Website', updateDto.id, `WebsiteName: ${updateDto.websiteName}; GhiChu: ${updateDto.ghiChu || ''}`);
 
-      await sequelize.close();
       return { success: true };
-    } catch (error) {
-      console.error('Error updating website:', error.message);
-      return { success: false, error: error.message };
+    } catch (error: any) {
+      console.error('Error updating website:', error?.message || error);
+      return { success: false, error: error?.message || String(error) };
     }
   }
 
@@ -134,19 +118,20 @@ export class WebsitesService {
    */
   async remove(id: number, nguoiXoa: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        DELETE FROM dbo.WEBSITE WHERE ID = ${id}
-      `);
+      await this.sequelize.query(
+        `EXEC SP_Xoa_Website @ID = :id`,
+        {
+          replacements: { id },
+        },
+      );
 
       // Log system
       await this.logAction(nguoiXoa, 'Xoa', 'Website', id, `ID: ${id}`);
 
-      await sequelize.close();
       return { success: true };
-    } catch (error) {
-      console.error('Error deleting website:', error.message);
-      return { success: false, error: error.message };
+    } catch (error: any) {
+      console.error('Error deleting website:', error?.message || error);
+      return { success: false, error: error?.message || String(error) };
     }
   }
 
@@ -155,14 +140,20 @@ export class WebsitesService {
    */
   private async logAction(nguoiTao: string, hanhDong: string, nguon: string, doiTuong: number | string, noiDung: string): Promise<void> {
     try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        INSERT INTO dbo.SystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
-        VALUES ('${nguoiTao}', GETDATE(), '${nguon}', '${hanhDong}', '${doiTuong}', '${noiDung}')
-      `);
-      await sequelize.close();
-    } catch (error) {
-      console.error('Error logging action:', error.message);
+      await this.sequelize.query(
+        `EXEC SP_Them_SystemLogs @NguoiTao = :nguoiTao, @Nguon = :nguon, @HanhDong = :hanhDong, @DoiTuong = :doiTuong, @NoiDung = :noiDung`,
+        {
+          replacements: {
+            nguoiTao,
+            nguon,
+            hanhDong,
+            doiTuong: String(doiTuong),
+            noiDung,
+          },
+        },
+      );
+    } catch (error: any) {
+      console.error('Error logging action:', error?.message || error);
     }
   }
 }

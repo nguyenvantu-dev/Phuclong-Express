@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { QueryTypes } from 'sequelize';
+import Excel from 'exceljs';
 import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { QueryTrackingDto } from './dto/query-tracking.dto';
@@ -436,5 +437,21 @@ export class TrackingService {
     await this.sequelize.query(`
       DELETE FROM dbo.tbTinhTrangTracking WHERE ID = ${historyId}
     `);
+  }
+
+  /**
+   * Get sheets from Excel file for import pages
+   * Converted from: Tracking_Import.aspx - Step 1: Upload file to get sheets
+   */
+  async getExcelSheets(file: any): Promise<{ sheets: string[] }> {
+    try {
+      const workbook = new Excel.Workbook();
+      await workbook.xlsx.load(file.buffer as any);
+      const sheets = workbook.worksheets.map(ws => ws.name);
+      return { sheets };
+    } catch (error) {
+      console.error('Error reading Excel sheets:', error.message);
+      return { sheets: [] };
+    }
   }
 }

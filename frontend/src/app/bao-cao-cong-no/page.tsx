@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getDebtReports, getPeriods, getDebtReportUsers } from '@/lib/api';
+import { useAuth } from '@/hooks/use-auth-context';
 
 interface DebtItem {
   CongNo_ID: number;
@@ -36,10 +37,15 @@ interface Summary {
  * Uses backend: debt-reports
  */
 export default function BaoCaoCongNoPage() {
+  const { user } = useAuth();
   const [debtItems, setDebtItems] = useState<DebtItem[]>([]);
-  const [, setPeriods] = useState<PeriodItem[]>([]);
-  const [, setUsers] = useState<UserItem[]>([]);
+  const [periods, setPeriods] = useState<PeriodItem[]>([]);
+  const [users, setUsers] = useState<UserItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Filter states
+  const [selectedFromKyId, setSelectedFromKyId] = useState<number>(-1);
+  const [selectedToKyId, setSelectedToKyId] = useState<number>(-1);
 
   // Summary
   const [tienMuaHangA, setTienMuaHangA] = useState<number>(0);
@@ -70,9 +76,14 @@ export default function BaoCaoCongNoPage() {
   };
 
   const loadDebtData = async () => {
+    if (!user?.username) return;
+
     setIsLoading(true);
     try {
       const response = await getDebtReports({
+        username: user.username,
+        fromKyId: selectedFromKyId > 0 ? selectedFromKyId : undefined,
+        toKyId: selectedToKyId > 0 ? selectedToKyId : undefined,
         page,
         limit,
       });
@@ -96,7 +107,7 @@ export default function BaoCaoCongNoPage() {
 
   useEffect(() => {
     loadDebtData();
-  }, [page]);
+  }, [page, selectedFromKyId, selectedToKyId]);
 
   const formatNumber = (num: number) => {
     if (!num && num !== 0) return '0';
@@ -108,6 +119,42 @@ export default function BaoCaoCongNoPage() {
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
       <h1 className="text-2xl md:text-3xl font-bold mb-6 text-cyan-700">BẢNG CÂN ĐỐI CÔNG NỢ</h1>
+
+      {/* Period Filter */}
+      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-cyan-50 rounded-xl">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-slate-700">Từ kỳ:</label>
+          <select
+            value={selectedFromKyId}
+            onChange={(e) => setSelectedFromKyId(Number(e.target.value))}
+            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          >
+            <option value={-1}>Tất cả</option>
+            {periods.map((p) => (
+              <option key={p.KyID} value={p.KyID}>{p.TenKy}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-slate-700">Đến kỳ:</label>
+          <select
+            value={selectedToKyId}
+            onChange={(e) => setSelectedToKyId(Number(e.target.value))}
+            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          >
+            <option value={-1}>Tất cả</option>
+            {periods.map((p) => (
+              <option key={p.KyID} value={p.KyID}>{p.TenKy}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          onClick={() => { setPage(1); loadDebtData(); }}
+          className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer"
+        >
+          Lọc
+        </button>
+      </div>
 
       {isLoading ? (
         <div className="text-center py-12">

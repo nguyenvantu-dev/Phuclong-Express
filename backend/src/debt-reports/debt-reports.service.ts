@@ -772,14 +772,11 @@ export class DebtReportsService {
 
   // Helper method to parse date from dd/MM/yyyy to SQL datetime string
   private parseDateToSql(dateStr: string): string {
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const year = parseInt(parts[2], 10);
-      return new Date(year, month, day).toISOString();
+    const date = parseVietnameseDate(dateStr);
+    if (date) {
+      return formatSqlDate(date);
     }
-    return new Date(dateStr).toISOString();
+    return formatSqlDate(new Date());
   }
 
   // ========== BaoCao_TongDoanhThu ==========
@@ -1072,9 +1069,9 @@ export class DebtReportsService {
     orderItems: any[];
   }> {
     try {
-      const [results] = await this.sequelize.query(
+      const results = await this.sequelize.query(
         `EXEC SP_BaoCao_InPhieuShipTheoDotHang
-          @ID = :orderId,
+          @TenDotHang = :orderId,
           @UserName = :userName`,
         {
           replacements: {
@@ -1082,26 +1079,81 @@ export class DebtReportsService {
             userName,
           },
           type: 'SELECT' as const,
+          raw: true,
         },
       );
 
-      // Results contains multiple tables - need to handle differently
-      // For now, return empty structure
-      return {
-        customerInfo: {
-          HoTen: '',
-          PhoneNumber: '',
-          DiaChiNhanHang: '',
-          NgayVeVN: '',
-          TongTien: 0,
-          TienShipVeVN: 0,
-          TienShipTrongNuoc: 0,
-          TienHang: 0,
-          TienDatCoc: 0,
-          TienPhaiThanhToan: 0,
-        },
-        orderItems: [],
+      // Handle multiple result sets from MSSQL
+      // results can be [[customerRow], [orderItem1, orderItem2, ...]] or nested arrays
+      let customerData: any[] = [];
+      let orderItemsData: any[] = [];
+
+      if (Array.isArray(results)) {
+        // Check if results is nested array (multiple result sets)
+        if (results.length > 0) {
+          if (Array.isArray(results[0])) {
+            // Multiple result sets: [customerTable, orderItemsTable]
+            customerData = Array.isArray(results[0]) ? results[0] : [];
+            orderItemsData = Array.isArray(results[1]) ? results[1] : [];
+          } else {
+            // Single result set - might be customer data
+            customerData = results as any[];
+          }
+        }
+      }
+
+      // Extract customer info from first row of first table
+      const customerRow = customerData.length > 0 ? customerData[0] : null;
+
+      if (!customerRow) {
+        return {
+          customerInfo: {
+            HoTen: '',
+            PhoneNumber: '',
+            DiaChiNhanHang: '',
+            NgayVeVN: '',
+            TongTien: 0,
+            TienShipVeVN: 0,
+            TienShipTrongNuoc: 0,
+            TienHang: 0,
+            TienDatCoc: 0,
+            TienPhaiThanhToan: 0,
+          },
+          orderItems: [],
+        };
+      }
+
+      // Parse customer info - matching C# logic in BaoCao_InPhieuShipTheoDotHang.cs:60-75
+      const tongTien = customerRow.TongTien ?? 0;
+      const tienDatCoc = customerRow.TienDatCoc ?? 0;
+
+      const customerInfo = {
+        HoTen: customerRow.HoTen || '',
+        PhoneNumber: customerRow.PhoneNumber || '',
+        DiaChiNhanHang: customerRow.DiaChiNhanHang || '',
+        NgayVeVN: customerRow.NgayVeVN || '',
+        TongTien: Number(tongTien),
+        TienShipVeVN: Number(customerRow.TienShipVeVN ?? 0),
+        TienShipTrongNuoc: Number(customerRow.TienShipTrongNuoc ?? 0),
+        TienHang: Number(customerRow.TienHang ?? 0),
+        TienDatCoc: Number(tienDatCoc),
+        TienPhaiThanhToan: Number(tongTien) - Number(tienDatCoc),
       };
+
+      // Parse order items - matching gvDonHang.DataSource = dataSet.Tables[1]
+      // Normalize keys to match FE interface
+      const orderItems = orderItemsData.map((item: any) => ({
+        ID: item.ID ?? 0,
+        MaSoHang: item.MaSoHang || item.MaSanPham || '',
+        linkhinh: item.linkhinh || item.LinkHinh || '',
+        corlor: item.corlor || item.MauSac || '',
+        size: item.size || item.KichThuoc || '',
+        soluong: item.soluong || item.SoLuong || 0,
+        dongiaweb: item.dongiaweb || item.DonGiaWeb || 0,
+        tongtienVND: item.tongtienVND || item.TongTienVND || 0,
+      }));
+
+      return { customerInfo, orderItems };
     } catch (error) {
       console.error('Error in getShippingSlip:', error.message);
       return {
@@ -1150,13 +1202,13 @@ export class DebtReportsService {
         denNgay = this.parseDateToSql(toDate);
       }
 
-      // Use SP_Lay_DanhSach_CongNo1 similar to C#
+      // Use SP_Lay_CongNo1 similar to C#
       const [results] = await this.sequelize.query(
-        `EXEC SP_Lay_DanhSach_CongNo1
-          @UserName = :username,
-          @TinhTrang = :status,
+        `EXEC SP_Lay_CongNo1
+          @username = :username,
+          @status = :status,
           @LoaiPhatSinh = :loaiPhatSinh,
-          @TaiKhoanNganHang = :bankAccount,
+          @NoiDungTim = :noiDungTim,
           @TuNgay = :tuNgay,
           @DenNgay = :denNgay,
           @PageSize = :limit,
@@ -1166,7 +1218,7 @@ export class DebtReportsService {
             username: username || '',
             status: status ?? -1,
             loaiPhatSinh: loaiPhatSinh || '',
-            bankAccount: bankAccount || '',
+            noiDungTim: bankAccount || '',
             tuNgay,
             denNgay,
             limit,
@@ -1177,11 +1229,11 @@ export class DebtReportsService {
 
       const data = Array.isArray(results) ? results : [];
 
-      // Get total count
+      // Get total count from first row metadata
       const firstItem = data.length > 0 ? data[0] as any : null;
-      const total = firstItem?.TotalCount ? firstItem.TotalCount : data.length;
+      const total = firstItem?.TOTALROW ? Number(firstItem.TOTALROW) : 0;
 
-      return { data, total: Number(total), page, limit };
+      return { data: data.slice(1), total, page, limit };
     } catch (error) {
       console.error('Error in getDebtManagementList:', error.message);
       return { data: [], total: 0, page, limit };
@@ -1202,6 +1254,7 @@ export class DebtReportsService {
       ghiChu?: string;
       loHangId?: number;
       loaiPhatSinh?: number;
+      bankAccount?: string;
     },
     username?: string,
   ): Promise<{ success: boolean; message?: string }> {
@@ -1220,15 +1273,19 @@ export class DebtReportsService {
       if (dr === 0 && cr === 0) {
         return { success: false, message: 'Phải nhập ít nhất một giá trị Nợ hoặc Có' };
       }
+      console.log("333333333333");
 
       const ngayGhiNo = this.parseDateToSql(dto.ngay);
 
       let ghiChu = dto.ghiChu || '';
       // Add bank transfer info if CR > 0 and bank is selected
-      // This would need bank account info in the DTO
+      if (dto.bankAccount && dto.cr && dto.cr > 0) {
+        ghiChu = ghiChu + (ghiChu ? ' - ' : '') + 'Báo chuyển khoản - ' + dto.bankAccount;
+      }
+      console.log("ghiChu");
 
       await this.sequelize.query(
-        `EXEC SP_Insert_CongNo
+        `EXEC CongNo_Insert
           @UserName = :username,
           @NoiDung = :noiDung,
           @NgayGhiNo = :ngayGhiNo,
@@ -1299,18 +1356,20 @@ export class DebtReportsService {
       ghiChu?: string;
       status?: number;
       loHangId?: number;
+      updatedBy?: string;
     },
     username?: string,
   ): Promise<{ success: boolean; message?: string }> {
     try {
       // Check permission to update
-      const [checkResult] = await this.sequelize.query(
-        `EXEC SP_KiemTra_DuocCapNhatCongNoByID @CongNo_ID = :id, @UserName = :username`,
+      const checkResult = await this.sequelize.query(
+        `SET NOCOUNT ON; DECLARE @DuocCapNhat INT; EXEC @DuocCapNhat = SP_KiemTra_DuocCapNhatCongNoByID @ID = :id, @UserName = :username; SELECT @DuocCapNhat AS Result`,
         {
           replacements: { id, username: dto.username || '' },
           type: 'SELECT' as const,
         },
       );
+      console.log(checkResult);
 
       const checkDataRaw = Array.isArray(checkResult) && checkResult.length > 0 ? checkResult[0] as any : { Result: -1 };
       const checkValue = checkDataRaw?.Result ?? -1;
@@ -1336,7 +1395,14 @@ export class DebtReportsService {
           @GhiChu = :ghiChu,
           @Status = :status,
           @LoHangID = :loHangID,
-          @NguoiCapNhat = :nguoiCapNhat`,
+          @NguoiTao = :nguoiCapNhat,
+          @udUserName = 1,
+          @udNoiDung = 1,
+          @udDR = 1,
+          @udCR = 1,
+          @udGhiChu = 1,
+          @udStatus = 1,
+          @udLoHangID = 1`,
         {
           replacements: {
             id,
@@ -1347,7 +1413,7 @@ export class DebtReportsService {
             ghiChu: dto.ghiChu?.trim() || '',
             status,
             loHangID: dto.loHangId || null,
-            nguoiCapNhat: username || 'system',
+            nguoiCapNhat: dto.updatedBy || username || 'system',
           },
           type: 'SELECT' as const,
         },
@@ -1389,7 +1455,7 @@ export class DebtReportsService {
   async deleteDebt(id: number, username?: string): Promise<{ success: boolean; message?: string }> {
     try {
       await this.sequelize.query(
-        `EXEC SP_Xoa_CongNo @CongNo_ID = :id, @NguoiXoa = :username`,
+        `EXEC SP_Xoa_CongNo @CongNo_ID = :id, @NguoiTao = :username`,
         {
           replacements: { id, username: username || 'system' },
           type: 'SELECT' as const,
@@ -1474,13 +1540,14 @@ export class DebtReportsService {
    */
   async getBankAccounts(): Promise<any[]> {
     try {
-      const [results] = await this.sequelize.query(
-        `EXEC SP_Lay_DanhSach_TaiKhoanNganHang`,
+      const results = await this.sequelize.query(
+        `EXEC SP_LayTaiKhoanNganHang`,
         { type: 'SELECT' as const },
       );
-      return results || [];
+      // Ensure always return array (Sequelize may return single object when only 1 row)
+      return Array.isArray(results) ? results : [];
     } catch (error) {
-      console.error('Error in getBankAccounts:', error.message);
+      console.error('Error in getBankAccounts:', error);
       return [];
     }
   }
@@ -1492,7 +1559,7 @@ export class DebtReportsService {
   async getBatchesByUsername(username: string): Promise<any[]> {
     try {
       const [results] = await this.sequelize.query(
-        `EXEC SP_Lay_DanhSach_LoHangTheoUser @UserName = :username`,
+        `EXEC SP_Lay_DanhSachLoHangTheoUser @UserName = :username`,
         {
           replacements: { username },
           type: 'SELECT' as const,

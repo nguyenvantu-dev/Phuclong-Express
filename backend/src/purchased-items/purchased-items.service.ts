@@ -109,23 +109,51 @@ export class PurchasedItemsService {
    * Converted from HangKhoan_LietKe.cs / HangKhoan_Them.cs - Insert logic
    */
   async create(createPurchasedItemDto: CreatePurchasedItemDto): Promise<any> {
-    const orderNumber = this.generateOrderNumber();
+    const [tyGiaResult]: any = await this.sequelize.query(`SELECT TOP 1 CAST(TyGia AS float) as tyGia FROM TY_GIA WHERE DaDong = 0`, { type: 'SELECT' as const });
+    const tyGiaValue = tyGiaResult?.[0]?.tyGia || 23000;
 
-    const [result] = await this.sequelize.query(`
-      EXEC SP_ThemDatHangSimple
-        @WebsiteName = '${createPurchasedItemDto.websiteName}',
-        @Username = '${createPurchasedItemDto.username}',
-        @nguoiTao = '${createPurchasedItemDto.username}',
-        @linkweb = '${createPurchasedItemDto.linkWeb || ''}',
-        @linkhinh = '${createPurchasedItemDto.linkHinh || ''}',
-        @color = '${createPurchasedItemDto.color || ''}',
-        @size = '${createPurchasedItemDto.size || ''}',
-        @soluong = ${createPurchasedItemDto.soLuong || 1},
-        @dongiaweb = ${createPurchasedItemDto.donGiaWeb || 0},
-        @loaitien = '${createPurchasedItemDto.loaiTien || 'VND'}',
-        @ghichu = '${createPurchasedItemDto.ghiChu || ''}',
-        @HangKhoan = 1
-    `);
+    const [result] = await this.sequelize.query(
+      `EXEC SP_Them_DonHang_Simple
+        @WebsiteName = :websiteName,
+        @username = :username,
+        @usernamesave = :usernamesave,
+        @linkweb = :linkweb,
+        @linkhinh = :linkhinh,
+        @corlor = :corlor,
+        @size = :size,
+        @soluong = :soluong,
+        @dongiaweb = :dongiaweb,
+        @loaitien = :loaitien,
+        @ghichu = :ghichu,
+        @tygia = :tygia,
+        @saleoff = :saleoff,
+        @HangKhoan = :hangKhoan,
+        @LoaiHangID = :loaiHangID,
+        @MaSoHang = :maSoHang,
+        @QuocGiaID = :quocGiaID`,
+      {
+        replacements: {
+          websiteName: createPurchasedItemDto.websiteName,
+          username: createPurchasedItemDto.username,
+          usernamesave: createPurchasedItemDto.username,
+          linkweb: createPurchasedItemDto.linkWeb || '',
+          linkhinh: createPurchasedItemDto.linkHinh || '',
+          corlor: createPurchasedItemDto.color || '',
+          size: createPurchasedItemDto.size || '',
+          soluong: createPurchasedItemDto.soLuong || 1,
+          dongiaweb: createPurchasedItemDto.donGiaWeb || 0,
+          loaitien: createPurchasedItemDto.loaiTien || 'VND',
+          ghichu: createPurchasedItemDto.ghiChu || '',
+          tygia: tyGiaValue,
+          saleoff: 0,
+          hangKhoan: 1,
+          loaiHangID: null,
+          maSoHang: null,
+          quocGiaID: null,
+        },
+        type: 'SELECT' as const,
+      },
+    );
 
     return result;
   }

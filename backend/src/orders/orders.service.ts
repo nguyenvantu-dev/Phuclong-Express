@@ -427,74 +427,66 @@ export class OrdersService {
 
   /**
    * Find all orders with filters and pagination
+   * Uses SP_Lay_DonHang stored procedure (matching C# DBConnect.LayDanhSachDonHang)
    */
   async findAll(query: QueryOrderDto): Promise<{ data: any[]; total: number; page: number; limit: number }> {
     const { website, username, status, statuses, search, startDate, endDate, page = 1, limit = 20, includeDeleted = false, quocGiaId, ids } = query;
 
     // Cap limit to 500 max to match @Max(500) validation
     const safeLimit = Math.min(limit, 500);
+
     try {
-      const offset = (page - 1) * safeLimit;
-      let whereClause = 'WHERE DaXoa = 0';
-
-      if (includeDeleted) {
-        whereClause = 'WHERE 1=1';
-      }
-
-      if (website) {
-        whereClause += ` AND WebsiteName LIKE '%${website}%'`;
-      }
-      if (username) {
-        whereClause += ` AND username LIKE '%${username}%'`;
-      }
-      // Use statuses array if provided, otherwise fall back to single status
+      // Build status string for SP (e.g., "'Received','Confirmed'")
+      let trangthaiOrder = '';
       if (statuses && statuses.length > 0) {
-        const statusList = statuses.map(s => `'${s}'`).join(',');
-        whereClause += ` AND trangThaiOrder IN (${statusList})`;
+        trangthaiOrder = statuses.map(s => `'${s}'`).join(',');
       } else if (status) {
-        whereClause += ` AND trangThaiOrder = '${status}'`;
-      }
-      if (search) {
-        whereClause += ` AND (ordernumber LIKE '%${search}%' OR username LIKE '%${search}%' OR MaSoHang LIKE '%${search}%')`;
-      }
-      if (startDate) {
-        whereClause += ` AND ngaySaveLink >= '${startDate}'`;
-      }
-      if (endDate) {
-        whereClause += ` AND ngaySaveLink <= '${endDate}'`;
-      }
-      if (quocGiaId) {
-        whereClause += ` AND dh.QuocGiaID = ${quocGiaId}`;
-      }
-      if (ids) {
-        const idList = ids.split(',').map((id) => parseInt(id.trim(), 10)).filter((id) => !isNaN(id));
-        if (idList.length > 0) {
-          whereClause += ` AND dh.ID IN (${idList.join(',')})`;
-        }
+        trangthaiOrder = `'${status}'`;
       }
 
-      // Get total count with QuocGia join
-      const [countResult]: any[] = await this.sequelize.query(`
-        SELECT COUNT(*) as total FROM dbo.DON_HANG dh
-        LEFT JOIN dbo.tbQuocGia qg ON dh.QuocGiaID = qg.QuocGiaID
-        ${whereClause}
-      `);
-      const total = Number(countResult[0]?.total) || 0;
+      // Execute stored procedure matching C# DBConnect.LayDanhSachDonHang
+      const results = await this.sequelize.query(
+        `EXEC SP_Lay_DonHang
+          @WebsiteName = :website,
+          @username = :username,
+          @trangthaiOrder = :trangthaiOrder,
+          @NoiDungTim = :search,
+          @TimTheo = -1,
+          @MaDatHang = '',
+          @TenDotHang = '',
+          @HangKhoan = 0,
+          @QuocGiaID = :quocGiaId,
+          @PageSize = :limit,
+          @PageNum = :page,
+          @DaXoa = :includeDeleted,
+          @TuNgay = :startDate,
+          @DenNgay = :endDate`,
+        {
+          replacements: {
+            website: website || '',
+            username: username || '',
+            trangthaiOrder,
+            search: search || '',
+            quocGiaId: quocGiaId || -1,
+            limit: safeLimit,
+            page,
+            includeDeleted: includeDeleted,
+            startDate: startDate || '',
+            endDate: endDate || '',
+          },
+          type: 'SELECT' as const,
+        },
+      );
 
-      // Get paginated data with QuocGia join
-      const [data] = await this.sequelize.query(`
-        SELECT * FROM (
-          SELECT ROW_NUMBER() OVER (ORDER BY dh.ID DESC) as RowNum,
-            dh.*, qg.TenQuocGia
-          FROM dbo.DON_HANG dh
-          LEFT JOIN dbo.tbQuocGia qg ON dh.QuocGiaID = qg.QuocGiaID
-          ${whereClause}
-        ) AS Paginated
-        WHERE RowNum BETWEEN ${offset + 1} AND ${offset + limit}
-      `);
+      // SP returns multiple result sets: [count, data, ...]
+      const data = Array.isArray(results) ? results : [];
 
-      // Map SQL column names to camelCase for frontend
-      const mappedData = (data || []).map((row: any) => ({
+      // Extract total from first result (SP returns total count in first table)
+      const firstItem = data.length > 0 ? data[0] as any : null;
+      const total = firstItem?.TotalCount ? Number(firstItem.TotalCount) : (firstItem?.Total ? Number(firstItem.Total) : data.length);
+
+      // Map SQL column names to camelCase for frontend (matching existing mapping)
+      const mappedData = (data.slice(1) || []).map((row: any) => ({
         id: row.ID,
         orderNumber: row.ordernumber,
         username: row.username,
@@ -555,8 +547,8 @@ export class OrdersService {
         page,
         limit: safeLimit,
       };
-    } catch (error) {
-      console.error('Error in findAll:', error.message);
+    } catch (error: any) {
+      console.error('Error in findAll (SP_Lay_DonHang):', error?.message || error);
       return {
         data: [],
         total: 0,
@@ -756,7 +748,7 @@ export class OrdersService {
       soLuong = order.soLuong || 1,
       donGiaWeb = order.donGiaWeb || 0,
       loaiTien = order.loaiTien || 'USD',
-      ghiChu = '',
+      ghiChu = (updateOrderDto as any).ghiChu ?? order.ghiChu ?? '',
       tyGia = order.tyGia || 1,
       saleOff = 0,
       cong = 0,
@@ -843,10 +835,11 @@ export class OrdersService {
     const { ids, username, note } = massDeleteDto;
 
     // Check kỳ đóng (giống EditOrder KiemTraDuocCapNhatCongNo)
-    const [checkResult] = await this.sequelize.query(
-      `EXEC dbo.SP_KiemTra_DuocCapNhatCongNo @NgayGhiNo = GETDATE(), @UserName = :username`,
+    const ngayGhiNo = new Date().toISOString().split('T')[0];
+    const [checkResult]: any[] = await this.sequelize.query(
+      `DECLARE @ret int; EXEC @ret = dbo.SP_KiemTra_DuocCapNhatCongNo @NgayGhiNo = :ngayGhiNo, @UserName = :username; SELECT @ret AS DuocCapNhat`,
       {
-        replacements: { username: username || '' },
+        replacements: { ngayGhiNo, username: username || '' },
         type: QueryTypes.RAW,
       }
     );
@@ -1512,6 +1505,9 @@ export class OrdersService {
     if (checkValue === 1) {
       return { success: false, error: 'closed_period' }; // Kỳ đã đóng
     }
+    if (checkValue === 2) {
+      return { success: false, error: 'debt_locked' }; // Công nợ bị khóa
+    }
     if (checkValue !== 0) {
       return { success: false, error: 'failed' };
     }
@@ -1763,6 +1759,113 @@ export class OrdersService {
     } catch (error) {
       console.error('Error calculating GiaTienCong:', error);
       return { tienCong1Mon: 0, tinhTheoPhanTram: false };
+    }
+  }
+
+  /**
+   * Update tracking number for LIST_ORDER
+   * Converted from: TrackingNumber.aspx - btCapNhat_Click
+   * Uses: orderNumber (string) as input, matching C# capNhatTrackingNumber
+   */
+  async updateTrackingNumber(orderNumber: string, trackingNumber: string, ngayNhanTaiNuocNgoai: string, trackingLink: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const orderNumberSafe = orderNumber.replace(/'/g, "''");
+
+      // Check if order exists in LIST_ORDER by orderNumber
+      const [existing]: any[] = await this.sequelize.query(
+        `SELECT ID FROM dbo.LIST_ORDER WHERE OrderNumber = N'${orderNumberSafe}'`
+      );
+
+      if (!existing || existing.length === 0) {
+        return { success: false, message: 'Order not found' };
+      }
+
+      // Update tracking number - USING STORED PROCEDURE like C#
+      await this.sequelize.query(`
+        EXEC dbo.SP_CapNhat_TrackingNumber
+          @ordernumber = N'${orderNumberSafe}',
+          @tracking_number = N'${trackingNumber || ''}',
+          ${ngayNhanTaiNuocNgoai ? `@NgayNhanTaiNuocNgoai = '${ngayNhanTaiNuocNgoai}'` : '@NgayNhanTaiNuocNgoai = NULL'},
+          @TrackingLink = N'${trackingLink || ''}'
+      `);
+
+      return { success: true, message: 'Đã cập nhật thành công' };
+    } catch (error) {
+      console.error('Error in updateTrackingNumber:', error.message);
+      return { success: false, message: 'Có lỗi xảy ra' };
+    }
+  }
+
+  /**
+   * Search orders by order number OR tracking number for TrackingNumber page
+   * Converted from: TrackingNumber.aspx - btTimKiem_Click
+   * Calls BLL.LayDanhSachListOrder with both orderNumber and trackingNumber search
+   */
+  async searchByOrderOrTracking(orderNumber: string, trackingNumber: string, page: number = 1, limit: number = 20): Promise<{ data: any[]; total: number }> {
+    try {
+      const orderNumberSafe = orderNumber?.replace(/'/g, "''") || '';
+      const trackingNumberSafe = trackingNumber?.replace(/'/g, "''") || '';
+
+      // Search using STORED PROCEDURE like C# SP_Lay_ListOrder
+      // SP returns: [ { TOTALROW: 50 }, {row1}, {row2}, ... ]
+      const results: any[] = await this.sequelize.query(`
+        EXEC dbo.SP_Lay_ListOrder
+          @OrderNumber = N'${orderNumberSafe || ''}',
+          @TrackingNumber = N'${trackingNumberSafe || ''}',
+          @PageSize = ${limit},
+          @PageNum = ${page}
+      `);
+
+      const total = Number(results[0]?.TOTALROW) || 0;
+      const data = results.slice(1) || [];
+
+      return { data, total };
+    } catch (error) {
+      console.error('Error in searchByOrderOrTracking:', error.message);
+      return { data: [], total: 0 };
+    }
+  }
+
+  /**
+   * Get totals for QLDatHang_LietKe page
+   * Converted from: QLDatHang_LietKe.aspx - CheckAllItem JavaScript calculation
+   */
+  async getTotals(query: QueryOrderDto): Promise<{ totalCount: number; totalPrice: number; totalVnd: number }> {
+    try {
+      const { website, username, status, statuses, search, startDate, endDate, quocGiaId } = query;
+
+      let whereClause = 'WHERE dh.DaXoa = 0';
+
+      if (website) whereClause += ` AND dh.WebsiteName LIKE '%${website}%'`;
+      if (username) whereClause += ` AND dh.username LIKE '%${username}%'`;
+      if (statuses && statuses.length > 0) {
+        const statusList = statuses.map(s => `'${s}'`).join(',');
+        whereClause += ` AND dh.trangthaiOrder IN (${statusList})`;
+      } else if (status) {
+        whereClause += ` AND dh.trangthaiOrder = '${status}'`;
+      }
+      if (search) whereClause += ` AND (dh.ordernumber LIKE '%${search}%' OR dh.username LIKE '%${search}%')`;
+      if (startDate) whereClause += ` AND dh.ngaySaveLink >= '${startDate}'`;
+      if (endDate) whereClause += ` AND dh.ngaySaveLink <= '${endDate}'`;
+      if (quocGiaId && quocGiaId > 0) whereClause += ` AND dh.QuocGiaID = ${quocGiaId}`;
+
+      const [result]: any[] = await this.sequelize.query(`
+        SELECT
+          SUM(dh.soluong) as totalCount,
+          SUM(dh.giasauoffusd * dh.soluong) as totalPrice,
+          SUM(dh.tongtienvnd) as totalVnd
+        FROM dbo.DON_HANG dh
+        ${whereClause}
+      `);
+
+      return {
+        totalCount: Number(result[0]?.totalCount) || 0,
+        totalPrice: Number(result[0]?.totalPrice) || 0,
+        totalVnd: Number(result[0]?.totalVnd) || 0,
+      };
+    } catch (error) {
+      console.error('Error in getTotals:', error.message);
+      return { totalCount: 0, totalPrice: 0, totalVnd: 0 };
     }
   }
 }

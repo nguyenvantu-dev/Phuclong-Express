@@ -1,0 +1,757 @@
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetRoles definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetRoles;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetRoles (
+	Id nvarchar(128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	Name nvarchar(256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserClaims definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserClaims;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserClaims (
+	Id int NOT NULL,
+	UserId nvarchar(128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	ClaimType nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	ClaimValue nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserLogins definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserLogins;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserLogins (
+	LoginProvider nvarchar(128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	ProviderKey nvarchar(128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	UserId nvarchar(128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserRoles definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserRoles;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUserRoles (
+	UserId nvarchar(128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	RoleId nvarchar(128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUsers definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUsers;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUsers (
+	Id nvarchar(128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	HoTen nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	DiaChi nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	TinhThanh nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	SoTaiKhoan nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	Email nvarchar(256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	EmailConfirmed bit NOT NULL,
+	PasswordHash nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	SecurityStamp nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	PhoneNumber nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	PhoneNumberConfirmed bit NOT NULL,
+	TwoFactorEnabled bit NOT NULL,
+	LockoutEndDateUtc smalldatetime NULL,
+	LockoutEnabled bit NOT NULL,
+	AccessFailedCount int NOT NULL,
+	UserName nvarchar(256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	HinhThucNhanHang nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	KhachBuon bit DEFAULT 0 NOT NULL,
+	LinkTaiKhoanMang nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	VungMien nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_AspNetUsers PRIMARY KEY (Id)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CONGNO definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CONGNO;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CONGNO (
+	CongNo_ID int IDENTITY(1,1) NOT NULL,
+	DonHang_ID int NULL,
+	LoHangID int NULL,
+	NoiDung nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayGhiNo datetime NULL,
+	DR float NULL,
+	CR float NULL,
+	CanDoi AS ([DR]-[CR]),
+	UserName nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	GhiChu nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	Status bit NULL,
+	[style] int NULL,
+	DaXoa bit DEFAULT 0 NOT NULL,
+	TenDotHang nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	HienTai bit DEFAULT 1 NOT NULL,
+	NguoiTao nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayCapNhatCuoi datetime NULL,
+	NguoiCapNhatCuoi nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_CONGNO PRIMARY KEY (CongNo_ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CauHinh definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CauHinh;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CauHinh (
+	TenCauHinh nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	GiaTriCauHinh nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_CauHinh PRIMARY KEY (TenCauHinh)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CongShipVeVN definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CongShipVeVN;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CongShipVeVN (
+	ID int IDENTITY(1,1) NOT NULL,
+	LoaiHangID int NOT NULL,
+	LoaiTien nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	TienCongShipVeVN int NOT NULL,
+	KhachBuon bit NULL,
+	CONSTRAINT PK_CongShipVeVN PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DON_HANG definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DON_HANG;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DON_HANG (
+	ID int IDENTITY(1,1) NOT NULL,
+	ordernumber nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	username nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	usernamesave nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	linkweb nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	linkhinh nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	corlor nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[size] nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	soluong int DEFAULT 0 NULL,
+	dongiaweb float DEFAULT 0 NULL,
+	saleoff float DEFAULT 0 NULL,
+	phuthu float DEFAULT 0 NULL,
+	shipUSA float DEFAULT 0 NULL,
+	tax float NULL,
+	cong float NULL,
+	loaitien nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	ghichu nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	tygia float NULL,
+	giasauoffUSD float NULL,
+	giasauoffVND float NULL,
+	tiencongUSD float NULL,
+	tiencongVND float NULL,
+	tongtienUSD float NULL,
+	tongtienVND float NULL,
+	trangthaiOrder nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	AdminNote nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	ngayveVN date NULL,
+	ngaysaveLink date NULL,
+	ngaymuahang date NULL,
+	nam_taichinh int NULL,
+	WebsiteName nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	TenDotHang nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	YeuCauGuiHang int DEFAULT 0 NULL,
+	NgayYeuCauGuiHang smalldatetime NULL,
+	YeuCauGui_GhiChu nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayGuiHang date NULL,
+	ShipperID int NULL,
+	SoVanDon nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	DaXoa bit DEFAULT 0 NOT NULL,
+	GuiHang_SoKg float NULL,
+	GuiHang_Tien float NULL,
+	LoaiHangID int NULL,
+	CanHang_SoKg float NULL,
+	CanHang_TienShipVeVN float NULL,
+	CanHang_TienShipTrongNuoc float NULL,
+	HangKhoan bit DEFAULT 0 NOT NULL,
+	MaSoHang nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	QuocGiaID int NULL,
+	CONSTRAINT PK_DON_HANG PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DiaChiNhanHang definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DiaChiNhanHang;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DiaChiNhanHang (
+	ID int IDENTITY(1,1) NOT NULL,
+	UserName nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	DiaChi nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_DiaChiNhanHang PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DotHang definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DotHang;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.DotHang (
+	TenDotHang nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	NgayVeVN date NOT NULL,
+	UserName nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	CanNang float NULL,
+	PhiShipVeVN_USD float NULL,
+	TyGia float NULL,
+	PhiShipVeVN_VND float NULL,
+	NgayGuiHang date NULL,
+	ShipperID int NULL,
+	SoVanDon nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	PhiShipTrongNuoc float NULL,
+	YeuCauGuiHang int DEFAULT 0 NULL,
+	NgayYeuCauGuiHang datetime NULL,
+	YeuCauGui_GhiChu nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	DaComplete bit DEFAULT 0 NULL,
+	DiaChiNhanHang nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.GiaTienCong definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.GiaTienCong;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.GiaTienCong (
+	ID int IDENTITY(1,1) NOT NULL,
+	LoaiTien nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS DEFAULT N'GBP' NULL,
+	TuGia float NULL,
+	DenGia float NULL,
+	TienCong1Mon float NOT NULL,
+	TinhTheoPhanTram bit DEFAULT 0 NOT NULL,
+	KhachBuon bit DEFAULT 1 NOT NULL,
+	CONSTRAINT PK_GiaTienCong PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.HanMucKhachHang definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.HanMucKhachHang;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.HanMucKhachHang (
+	ID int IDENTITY(1,1) NOT NULL,
+	UserName nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	DaQuaHanMuc bit DEFAULT 0 NOT NULL,
+	LaKhachVip bit DEFAULT 0 NOT NULL,
+	CONSTRAINT PK_HanMucKhachHang PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.HangCoSan definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.HangCoSan;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.HangCoSan (
+	ID int NOT NULL,
+	MaSoHang nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	TenHinh nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	TenHang nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	LinkHang nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	GiaTien int NULL,
+	MoTa nvarchar(2500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	SoSao int NULL,
+	ThuTu int NULL,
+	NoiDungTimKiem nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_HangCoSan PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.ISSUES_KHACH_HANG definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.ISSUES_KHACH_HANG;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.ISSUES_KHACH_HANG (
+	id int IDENTITY(1,1) NOT NULL,
+	User_ID int NULL,
+	TitleYeuCau nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NoiDungYeuCau nvarchar(1000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	TraLoiYeuCau nvarchar(1000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	Status nchar(10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayYeuCau date NULL,
+	NgayTraLoi date NULL,
+	CONSTRAINT PK_ISSUES_KHACH_HANG PRIMARY KEY (id)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.LIST_ORDER definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.LIST_ORDER;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.LIST_ORDER (
+	ID int IDENTITY(1,1) NOT NULL,
+	OrderNumber nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	TongSoLink int NULL,
+	TongTienOrder float NULL,
+	Card_ID int NULL,
+	tracking_number nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayNhanTaiNuocNgoai date NULL,
+	TrackingLink nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	TongTienOrderVND float NULL,
+	CONSTRAINT PK_LIST_ORDER PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.LoaiHang definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.LoaiHang;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.LoaiHang (
+	LoaiHangID int IDENTITY(1,1) NOT NULL,
+	TenLoaiHang nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	CONSTRAINT PK_LoaiHang PRIMARY KEY (LoaiHangID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.SHIPPER_MAN definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.SHIPPER_MAN;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.SHIPPER_MAN (
+	ID int IDENTITY(1,1) NOT NULL,
+	ShipperName nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	ShipperPhone nvarchar(20) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	ShipperAddress nvarchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	DaXoa bit DEFAULT 0 NOT NULL,
+	CONSTRAINT PK_SHIPPER_MAN PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.SHIPPING_ORDER definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.SHIPPING_ORDER;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.SHIPPING_ORDER (
+	Order_ID int NULL,
+	Shipper_id int NULL,
+	Shipping_date date NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.THACMAC definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.THACMAC;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.THACMAC (
+	ID int IDENTITY(1,1) NOT NULL,
+	username nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	CauHoi nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	TraLoi nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayTao smalldatetime DEFAULT getdate() NOT NULL,
+	NgayTraLoi smalldatetime NULL,
+	CONSTRAINT PK_THACMAC PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.THONGTIN_WEB definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.THONGTIN_WEB;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.THONGTIN_WEB (
+	ID int IDENTITY(1,1) NOT NULL,
+	TenThongTin nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	NoiDungThongTin nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_THONGTIN_WEB PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.TY_GIA definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.TY_GIA;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.TY_GIA (
+	Name nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	TyGiaVND float NULL,
+	TuNgay date NULL,
+	DenNgay date NULL,
+	CongShipVeVN float NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.TaiKhoanNganHang definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.TaiKhoanNganHang;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.TaiKhoanNganHang (
+	ID int IDENTITY(1,1) NOT NULL,
+	TenTaiKhoanNganHang nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	GhiChu nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_TaiKhoanNganHang PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.USERS definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.USERS;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.USERS (
+	user_id int NOT NULL,
+	UserName nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	PassWord nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	FullName nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	Address nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	Mobile nvarchar(20) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	BankAccount nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.WEBSITE definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.WEBSITE;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.WEBSITE (
+	ID int IDENTITY(1,1) NOT NULL,
+	WebsiteName nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	GhiChu nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_WEBSITE PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.WebLogo definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.WebLogo;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.WebLogo (
+	ID int IDENTITY(1,1) NOT NULL,
+	TenHinh nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	NoiDung nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	LinkWeb nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	ThuTu int NULL,
+	CONSTRAINT PK_WebLogo PRIMARY KEY (ID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.[__MigrationHistory] definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.[__MigrationHistory];
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.[__MigrationHistory] (
+	MigrationId nvarchar(150) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	ContextKey nvarchar(300) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	Model varbinary(MAX) NOT NULL,
+	ProductVersion nvarchar(32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbChiTietTracking definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbChiTietTracking;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbChiTietTracking (
+	ChiTietTrackingID int IDENTITY(1,1) NOT NULL,
+	TrackingID int NOT NULL,
+	LinkHinhDaiDien nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	SoLuong int NULL,
+	Gia float NULL,
+	GhiChu nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_tbChiTietTracking PRIMARY KEY (ChiTietTrackingID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbChotKy definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbChotKy;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbChotKy (
+	ChotKyID bigint NOT NULL,
+	KyID int NOT NULL,
+	UserName nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	DauKy float NOT NULL,
+	PhatSinhThuDR float NOT NULL,
+	PhatSinhChiCR float NOT NULL,
+	PhatSinhCanDoi float NOT NULL,
+	CuoiKy float NOT NULL,
+	TamMoKy bit NOT NULL,
+	NguoiTao nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayTao datetime NULL,
+	NgayCapNhatCuoi datetime NULL,
+	NguoiCapNhatCuoi nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbKy definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbKy;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbKy (
+	KyID int IDENTITY(1,1) NOT NULL,
+	Thang int NOT NULL,
+	Nam int NOT NULL,
+	TenKy AS ([Nam]*(100)+[Thang]) PERSISTED,
+	NgayDauKy AS (datetimefromparts([Nam],[Thang],(1),(0),(0),(0),(0))) PERSISTED NOT NULL,
+	NgayCuoiKy AS (dateadd(millisecond,(-2),dateadd(month,(1),datetimefromparts([Nam],[Thang],(1),(0),(0),(0),(0))))) PERSISTED,
+	DaDong bit DEFAULT 0 NOT NULL,
+	CONSTRAINT PK_tbKy PRIMARY KEY (KyID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang (
+	LoHangID int IDENTITY(1,1) NOT NULL,
+	UserName nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	LoaiTien nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	TyGia int NULL,
+	NgayDenDuKien datetime NULL,
+	NgayDenThucTe datetime NULL,
+	NguoiTao nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayTao datetime DEFAULT getdate() NOT NULL,
+	DaXoa bit DEFAULT 0 NOT NULL,
+	NgayLoHang datetime NULL,
+	TenLoHang AS (CONVERT([nvarchar](50),[NgayLoHang],(112))+case when [GhiChu]='' OR [GhiChu] IS NULL then '' else '-'+[GhiChu] end),
+	GhiChu nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_tbLoHang PRIMARY KEY (LoHangID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_ChiPhiLoHang definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_ChiPhiLoHang;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_ChiPhiLoHang (
+	LoHang_ChiPhiLoHangID int IDENTITY(1,1) NOT NULL,
+	TenLoHang nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	LoaiChiPhiLoHangID int NULL,
+	TienVND int NULL,
+	CONSTRAINT PK_tbLoHang_ChiPhiLoHang PRIMARY KEY (LoHang_ChiPhiLoHangID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_PhiShipVeVN definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_PhiShipVeVN;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_PhiShipVeVN (
+	LoHang_PhiShipVeVNID int IDENTITY(1,1) NOT NULL,
+	LoHangID int NOT NULL,
+	LoaiHangShipID int NULL,
+	CanNang float NULL,
+	DonGia int NULL,
+	TongTienShipVeVN_VND int NULL,
+	CONSTRAINT PK_tbLoHang_PhiShipVeVN PRIMARY KEY (LoHang_PhiShipVeVNID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_ThueHaiQuan definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_ThueHaiQuan;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoHang_ThueHaiQuan (
+	LoHang_ThueHaiQuanID int IDENTITY(1,1) NOT NULL,
+	LoHangID int NULL,
+	LoaiHangThueHaiQuanID int NULL,
+	CanNangSoLuongGiaTri float NOT NULL,
+	DonGia float NULL,
+	TongTienThueHaiQuan_VND int NULL,
+	CONSTRAINT PK_tbLoHang_ThueHaiQuan PRIMARY KEY (LoHang_ThueHaiQuanID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiChiPhiLoHang definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiChiPhiLoHang;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiChiPhiLoHang (
+	LoaiChiPhiLoHangID int IDENTITY(1,1) NOT NULL,
+	TenLoaiChiPhiLoHang nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	CONSTRAINT PK_tbLoaiChiPhiLoHang PRIMARY KEY (LoaiChiPhiLoHangID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiHangShip definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiHangShip;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiHangShip (
+	LoaiHangShipID int IDENTITY(1,1) NOT NULL,
+	TenLoaiHangShip nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	DonGia int NULL,
+	CONSTRAINT PK_tbLoaiHangShip PRIMARY KEY (LoaiHangShipID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiHangThueHaiQuan definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiHangThueHaiQuan;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbLoaiHangThueHaiQuan (
+	LoaiHangThueHaiQuanID int IDENTITY(1,1) NOT NULL,
+	TenLoaiHangThueHaiQuan nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	DonGia float NULL,
+	CONSTRAINT PK_tbLoaiHangThueHaiQuan PRIMARY KEY (LoaiHangThueHaiQuanID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbNhaVanChuyen definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbNhaVanChuyen;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbNhaVanChuyen (
+	NhaVanChuyenID int IDENTITY(1,1) NOT NULL,
+	TenNhaVanChuyen nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	MoTa nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_tbNhaVanChuyen PRIMARY KEY (NhaVanChuyenID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbQuocGia definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbQuocGia;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbQuocGia (
+	QuocGiaID int IDENTITY(1,1) NOT NULL,
+	TenQuocGia nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	PhiShipVeVN int NULL,
+	CONSTRAINT PK_tbQuocGia PRIMARY KEY (QuocGiaID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbSystemLogs definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbSystemLogs;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbSystemLogs (
+	SystemLogsID uniqueidentifier DEFAULT newid() NOT NULL,
+	NgayTao datetime DEFAULT getdate() NOT NULL,
+	NguoiTao nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	Nguon nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	HanhDong nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	DoiTuong nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	NoiDung nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	CONSTRAINT PK_tbSystemLogs PRIMARY KEY (SystemLogsID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbTinhTrangTracking definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbTinhTrangTracking;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbTinhTrangTracking (
+	TinhTrangTrackingID int IDENTITY(1,1) NOT NULL,
+	TrackingID int NOT NULL,
+	TinhTrang nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	NgayChuyenTinhTrang datetime NOT NULL,
+	GhiChu nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayTao datetime NOT NULL,
+	NguoiTao nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	DaXoa bit DEFAULT 0 NOT NULL,
+	CONSTRAINT PK_tbTinhTrangTracking PRIMARY KEY (TinhTrangTrackingID)
+);
+
+
+-- PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbTracking definition
+
+-- Drop table
+
+-- DROP TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbTracking;
+
+CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.tbTracking (
+	TrackingID int IDENTITY(1,1) NOT NULL,
+	UserName nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	TrackingNumber nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	OrderNumber nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayDatHang datetime NULL,
+	NhaVanChuyenID int NULL,
+	QuocGiaID int NULL,
+	TinhTrang nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	GhiChu nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NguoiTao nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayTao datetime DEFAULT getdate() NOT NULL,
+	DaXoa bit DEFAULT 0 NOT NULL,
+	NgayLoHang datetime NULL,
+	TenLoHang nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	Kien nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	Mawb nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	Hawb nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	CONSTRAINT PK_tbTracking PRIMARY KEY (TrackingID)
+);

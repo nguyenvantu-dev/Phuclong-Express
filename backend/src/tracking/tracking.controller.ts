@@ -10,12 +10,15 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { TrackingService } from './tracking.service';
 import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { QueryTrackingDto } from './dto/query-tracking.dto';
 import { MassUpdateTrackingDto } from './dto/mass-update-tracking.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 /**
  * Tracking Controller
@@ -203,5 +206,15 @@ export class TrackingController {
     @Param('historyId', ParseIntPipe) historyId: number,
   ): Promise<void> {
     return this.trackingService.deleteHistory(historyId);
+  }
+
+  /**
+   * POST /tracking/import/sheets
+   * Get sheets from uploaded Excel file (Tracking_Import.aspx Step 1)
+   */
+  @Post('import/sheets')
+  @UseInterceptors(FileInterceptor('file'))
+  async getSheets(@UploadedFile() file: any) {
+    return this.trackingService.getExcelSheets(file);
   }
 }
