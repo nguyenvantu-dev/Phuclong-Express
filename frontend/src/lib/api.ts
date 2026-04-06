@@ -393,6 +393,62 @@ export const restoreOrder = async (id: number): Promise<Order> => {
 };
 
 /**
+ * Get deleted orders status counts (for CheckBoxList with counts)
+ */
+export const getDeletedStatusCounts = async (): Promise<{ status: string; count: number }[]> => {
+  const response = await apiClient.get<{ status: string; count: number }[]>('/orders/deleted/status-counts');
+  return response.data;
+};
+
+/**
+ * Batch restore multiple deleted orders
+ */
+export const batchRestoreOrders = async (ids: number[]): Promise<{ success: boolean; count: number }> => {
+  const response = await apiClient.post<{ success: boolean; count: number }>('/orders/batch-restore', { ids });
+  return response.data;
+};
+
+/**
+ * Permanently delete an order
+ */
+export const permanentDeleteOrder = async (id: number): Promise<{ success: boolean }> => {
+  const response = await apiClient.delete<{ success: boolean }>(`/orders/${id}/permanent`);
+  return response.data;
+};
+
+/**
+ * Batch cancel orders
+ */
+export const batchCancelOrders = async (ids: number[]): Promise<{ success: boolean; count: number }> => {
+  const response = await apiClient.post<{ success: boolean; count: number }>('/orders/batch-cancel', { ids });
+  return response.data;
+};
+
+/**
+ * Batch complete orders (only Ordered/Shipped can be completed)
+ */
+export const batchCompleteOrders = async (ids: number[]): Promise<{ success: boolean; count: number; message?: string }> => {
+  const response = await apiClient.post<{ success: boolean; count: number; message?: string }>('/orders/batch-complete', { ids });
+  return response.data;
+};
+
+/**
+ * Batch set orders to Received status
+ */
+export const batchReceivedOrders = async (ids: number[]): Promise<{ success: boolean; count: number }> => {
+  const response = await apiClient.post<{ success: boolean; count: number }>('/orders/batch-received', { ids });
+  return response.data;
+};
+
+/**
+ * Batch set orders to Shipped status
+ */
+export const batchShippedOrders = async (ids: number[]): Promise<{ success: boolean; count: number }> => {
+  const response = await apiClient.post<{ success: boolean; count: number }>('/orders/batch-shipped', { ids });
+  return response.data;
+};
+
+/**
  * Get deleted orders
  *
  * @param params - Query parameters

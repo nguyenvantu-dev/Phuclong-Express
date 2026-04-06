@@ -9,7 +9,7 @@ import {
   IsBoolean,
   IsArray,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { OrderStatus } from '../entities/order.entity';
 
 /**
@@ -32,13 +32,25 @@ export class QueryOrderDto {
 
   @IsArray()
   @IsOptional()
-  @Type(() => String)
-  @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    // If it's already an array, return as is
+    if (Array.isArray(value)) return value;
+    // If it's a string, convert to array
+    if (typeof value === 'string') {
+      return value.split(',').map((v) => v.trim()).filter(Boolean);
+    }
+    return undefined;
+  })
   statuses?: string[];
 
   @IsString()
   @IsOptional()
   search?: string;
+
+  @IsString()
+  @IsOptional()
+  orderId?: string; // Mã đặt hàng filter
 
   @IsDateString()
   @IsOptional()

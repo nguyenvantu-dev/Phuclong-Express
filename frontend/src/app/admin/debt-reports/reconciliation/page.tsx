@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 import {
   getDebtReconciliation,
   moveToReceived,
@@ -34,6 +36,10 @@ export default function DebtReconciliationPage() {
     orderNumber: '',
   });
 
+  // Refs for date inputs
+  const fromDateRef = useRef<HTMLInputElement>(null);
+  const toDateRef = useRef<HTMLInputElement>(null);
+
   // Edit state for inline editing - matching gvDoiChieuCongNo.EditIndex
   const [editingRow, setEditingRow] = useState<{ ordernumber: string; tracking_number: string } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
@@ -46,12 +52,50 @@ export default function DebtReconciliationPage() {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
+    // Format dd/mm/yyyy for flatpickr
+    const formatDate = (d: Date) => {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
     setFilters({
-      fromDate: firstDayOfMonth.toISOString().split('T')[0],
-      toDate: today.toISOString().split('T')[0],
+      fromDate: formatDate(firstDayOfMonth),
+      toDate: formatDate(today),
       username: '',
       orderNumber: '',
     });
+
+    // Initialize flatpickr
+    const fpFrom = flatpickr(fromDateRef.current!, {
+      dateFormat: 'd/m/Y',
+      defaultDate: formatDate(firstDayOfMonth),
+      onChange: (dates) => {
+        if (dates[0]) {
+          const d = dates[0];
+          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+          setFilters(prev => ({ ...prev, fromDate: formatted }));
+        }
+      },
+    });
+
+    const fpTo = flatpickr(toDateRef.current!, {
+      dateFormat: 'd/m/Y',
+      defaultDate: formatDate(today),
+      onChange: (dates) => {
+        if (dates[0]) {
+          const d = dates[0];
+          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+          setFilters(prev => ({ ...prev, toDate: formatted }));
+        }
+      },
+    });
+
+    return () => {
+      fpFrom.destroy();
+      fpTo.destroy();
+    };
   }, []);
 
   // Fetch users for dropdown - matching LoadDataUser() in C#
@@ -63,14 +107,31 @@ export default function DebtReconciliationPage() {
   // Fetch debt reconciliation report
   const { data, isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ['debt-reconciliation', filters],
-    queryFn: () =>
-      getDebtReconciliation(
-        filters.fromDate,
-        filters.toDate,
+    queryFn: () => {
+      const { fromDate, toDate } = getAPIDates();
+      return getDebtReconciliation(
+        fromDate,
+        toDate,
         filters.username || undefined,
         filters.orderNumber || undefined,
-      ),
+      );
+    },
     enabled: !!filters.fromDate && !!filters.toDate,
+  });
+
+  // Convert dd/mm/yyyy to yyyy-mm-dd for API
+  const convertToISODate = (dateStr: string) => {
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  // Get dates for API (convert to YYYY-MM-DD format)
+  const getAPIDates = () => ({
+    fromDate: convertToISODate(filters.fromDate),
+    toDate: convertToISODate(filters.toDate),
   });
 
   // Move to Received mutation - matching gvDoiChieuCongNo_RowCommand("ChuyenVeReceived") in C#
@@ -114,13 +175,15 @@ export default function DebtReconciliationPage() {
 
   // Export mutation
   const exportMutation = useMutation({
-    mutationFn: () =>
-      exportDebtReconciliation(
-        filters.fromDate,
-        filters.toDate,
+    mutationFn: () => {
+      const { fromDate, toDate } = getAPIDates();
+      return exportDebtReconciliation(
+        fromDate,
+        toDate,
         filters.username || undefined,
         filters.orderNumber || undefined,
-      ),
+      );
+    },
     onSuccess: (result) => {
       // Create and download CSV file
       const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
@@ -242,10 +305,12 @@ export default function DebtReconciliationPage() {
               Từ ngày
             </label>
             <input
-              type="date"
+              ref={fromDateRef}
+              type="text"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              placeholder="dd/mm/yyyy"
               value={filters.fromDate}
-              onChange={(e) => handleFilterChange('fromDate', e.target.value)}
+              readOnly
             />
           </div>
 
@@ -255,10 +320,12 @@ export default function DebtReconciliationPage() {
               Đến ngày
             </label>
             <input
-              type="date"
+              ref={toDateRef}
+              type="text"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              placeholder="dd/mm/yyyy"
               value={filters.toDate}
-              onChange={(e) => handleFilterChange('toDate', e.target.value)}
+              readOnly
             />
           </div>
 

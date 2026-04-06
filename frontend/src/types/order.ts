@@ -81,6 +81,7 @@ export interface QueryParams {
   status?: OrderStatus;
   statuses?: string[];
   search?: string;
+  orderId?: string;
   startDate?: string;
   endDate?: string;
   page?: number;

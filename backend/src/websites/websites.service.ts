@@ -49,7 +49,7 @@ export class WebsitesService {
   async findOne(id: number): Promise<Website | null> {
     try {
       const [data]: any[] = await this.sequelize.query(
-        `EXEC SP_LayWebsiteByID @ID = :id`,
+        `SELECT * FROM WEBSITE WHERE ID = :id`,
         {
           replacements: { id },
         },
@@ -115,6 +115,7 @@ export class WebsitesService {
 
   /**
    * Delete website
+   * Uses SP_Xoa_Website (matching C# code: DBConnect.XoaWebsite)
    */
   async remove(id: number, nguoiXoa: string): Promise<{ success: boolean; error?: string }> {
     try {

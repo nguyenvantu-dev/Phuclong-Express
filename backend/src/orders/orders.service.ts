@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Inject, BadRequestException } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
-import { QueryTypes } from 'sequelize';
+import { QueryTypes, Op } from 'sequelize';
 import { Order, OrderModel, OrderStatus } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -1075,12 +1075,106 @@ export class OrdersService {
   }
 
   /**
+   * Batch restore multiple deleted orders
+   */
+  async batchRestore(ids: number[]): Promise<{ success: boolean; count: number }> {
+    try {
+      const [updated] = await this.orderModel.update(
+        { DaXoa: false },
+        { where: { id: { [Op.in]: ids }, DaXoa: true } }
+      );
+      return { success: true, count: updated };
+    } catch (error: any) {
+      console.error('Error in batchRestore:', error.message);
+      return { success: false, count: 0 };
+    }
+  }
+
+  /**
+   * Permanently delete an order (vĩnh viễn xóa)
+   */
+  async permanentDelete(id: number): Promise<{ success: boolean }> {
+    try {
+      await this.orderModel.destroy({ where: { id }, force: true });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error in permanentDelete:', error.message);
+      return { success: false };
+    }
+  }
+
+  /**
+   * Mass cancel orders
+   */
+  async batchCancel(ids: number[]): Promise<{ success: boolean; count: number }> {
+    try {
+      const [updated] = await this.orderModel.update(
+        { trangThaiOrder: 'Cancelled' },
+        { where: { id: { [Op.in]: ids }, DaXoa: true } }
+      );
+      return { success: true, count: updated };
+    } catch (error: any) {
+      console.error('Error in batchCancel:', error.message);
+      return { success: false, count: 0 };
+    }
+  }
+
+  /**
+   * Mass complete orders (only Ordered/Shipped can be completed)
+   */
+  async batchComplete(ids: number[]): Promise<{ success: boolean; count: number; message?: string }> {
+    try {
+      // Only update orders that are Ordered or Shipped
+      const [updated] = await this.orderModel.update(
+        { trangThaiOrder: 'Completed' },
+        { where: { id: { [Op.in]: ids }, DaXoa: true, trangThaiOrder: { [Op.in]: ['Ordered', 'Shipped'] } } }
+      );
+      return { success: true, count: updated };
+    } catch (error: any) {
+      console.error('Error in batchComplete:', error.message);
+      return { success: false, count: 0 };
+    }
+  }
+
+  /**
+   * Mass set orders to Received status
+   */
+  async batchReceived(ids: number[]): Promise<{ success: boolean; count: number }> {
+    try {
+      const [updated] = await this.orderModel.update(
+        { trangThaiOrder: 'Received' },
+        { where: { id: { [Op.in]: ids }, DaXoa: true } }
+      );
+      return { success: true, count: updated };
+    } catch (error: any) {
+      console.error('Error in batchReceived:', error.message);
+      return { success: false, count: 0 };
+    }
+  }
+
+  /**
+   * Mass set orders to Shipped status
+   */
+  async batchShipped(ids: number[]): Promise<{ success: boolean; count: number }> {
+    try {
+      const [updated] = await this.orderModel.update(
+        { trangThaiOrder: 'Shipped' },
+        { where: { id: { [Op.in]: ids }, DaXoa: true } }
+      );
+      return { success: true, count: updated };
+    } catch (error: any) {
+      console.error('Error in batchShipped:', error.message);
+      return { success: false, count: 0 };
+    }
+  }
+
+  /**
    * Find all deleted orders with filters and pagination
    *
    * Converted from OrderDaXoa.aspx.cs - LoadDanhSachDonHangDaXoa()
    */
   async findDeleted(query: QueryOrderDto): Promise<{ data: any[]; total: number; page: number; limit: number }> {
-    const { website, username, status, search, startDate, endDate, page = 1, limit = 20 } = query;
+    const { website, username, status, statuses, search, orderId, startDate, endDate, quocGiaId, page = 1, limit = 20 } = query;
 
     // Cap limit to 500 max to match @Max(500) validation
     const safeLimit = Math.min(limit, 500);
@@ -1097,8 +1191,19 @@ export class OrdersService {
       if (status) {
         whereClause += ` AND trangThaiOrder = '${status}'`;
       }
+      // Handle statuses array for CheckBoxList filter
+      if (statuses && statuses.length > 0) {
+        const statusList = statuses.map((s) => `'${s}'`).join(',');
+        whereClause += ` AND trangThaiOrder IN (${statusList})`;
+      }
       if (search) {
         whereClause += ` AND (ordernumber LIKE '%${search}%' OR username LIKE '%${search}%' OR MaSoHang LIKE '%${search}%')`;
+      }
+      if (orderId) {
+        whereClause += ` AND ID = '${orderId}'`;
+      }
+      if (quocGiaId && quocGiaId > 0) {
+        whereClause += ` AND QuocGiaID = ${quocGiaId}`;
       }
       if (startDate) {
         whereClause += ` AND ngaySaveLink >= '${startDate}'`;
@@ -1113,12 +1218,21 @@ export class OrdersService {
       );
       const total = Number(countResult[0]?.total) || 0;
 
-      // Get paginated data
+      // Get paginated data with lowercase aliases for frontend compatibility
       const [data] = await this.sequelize.query(`
         SELECT * FROM (
-          SELECT ROW_NUMBER() OVER (ORDER BY ID DESC) as RowNum, * FROM dbo.DON_HANG ${whereClause}
+          SELECT ROW_NUMBER() OVER (ORDER BY ID DESC) as RowNum,
+            ID as id, username, WebsiteName as websiteName, ordernumber as orderNumber,
+            linkweb as linkWeb, linkhinh as linkHinh, corlor as color, size, soluong as soLuong,
+            dongiaweb as donGiaWeb, saleoff as saleOff, phuthu as phuThu, shipUSA as shipUsa,
+            tax, cong, tiencongUSD as tienCongUsd, tongtienUSD as tongTienUsd,
+            tyGia, tongtienVND as tongTienVnd, trangThaiOrder as trangThaiOrder,
+            ngayveVN as ngayVeVn, ngaySaveLink as ngaySaveLink, ngaymuahang as ngayMuaHang,
+            TenDotHang as tenDotHang, ghichu as ghiChu, MaSoHang as maSoHang,
+            QuocGiaID as quocGiaId, HangKhoan as hangKhoan
+          FROM dbo.DON_HANG ${whereClause}
         ) AS Paginated
-        WHERE RowNum BETWEEN ${offset + 1} AND ${offset + limit}
+        WHERE RowNum BETWEEN ${offset + 1} AND ${offset + safeLimit}
       `);
 
       return {
@@ -1135,6 +1249,25 @@ export class OrdersService {
         page,
         limit: safeLimit,
       };
+    }
+  }
+
+  /**
+   * Get count of deleted orders by status
+   * For CheckBoxList with counts like C# version
+   */
+  async getDeletedStatusCounts(): Promise<{ status: string; count: number }[]> {
+    try {
+      const [results]: any[] = await this.sequelize.query(`
+        SELECT trangThaiOrder as status, COUNT(*) as count
+        FROM dbo.DON_HANG
+        WHERE DaXoa = 1
+        GROUP BY trangThaiOrder
+      `);
+      return results || [];
+    } catch (error: any) {
+      console.error('Error in getDeletedStatusCounts:', error.message);
+      return [];
     }
   }
 

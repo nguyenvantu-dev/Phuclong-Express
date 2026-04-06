@@ -13,6 +13,7 @@ import {
   FiSearch,
   FiMenu,
   FiX,
+  FiInfo,
 } from 'react-icons/fi';
 
 /**
@@ -40,6 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       submenu: [
         { href: '/admin/orders/list', label: 'Mua hàng' },
         { href: '/admin/order-management-list', label: 'Nhận đơn hàng' },
+        { href: '/admin/orders/deleted', label: 'Các đơn hàng đã xóa' },
       ],
     },
     {
@@ -56,6 +58,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { href: '/admin/debt-reports/reconciliation', label: 'Báo cáo kiểm tra đơn hàng mua' },
         { href: '/admin/debt-reports/customer', label: 'Báo cáo công nợ khách hàng' },
         { href: '/admin/debt-reports/by-lot', label: 'Báo cáo công nợ theo đợt hàng' },
+      ],
+    },
+    {
+      label: 'THÔNG TIN',
+      icon: FiInfo,
+      submenu: [
+        { href: '/', label: 'Trang chủ' },
+        { href: '/admin/info', label: 'Thông tin' },
+        { href: '/admin/qna', label: 'Thắc mắc' },
+        { href: '/admin/websites', label: 'Cập nhật các trang web hay' },
       ],
     },
   ];
@@ -112,7 +124,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Navigation */}
         <nav className="mt-4 px-3 pb-4 space-y-1 overflow-y-auto max-h-[calc(100vh-8rem)]">
           {navItems.map((item) => {
-            const isActive = pathname.startsWith(item.submenu?.[0]?.href || item.label);
+            const isActive = item.submenu?.some(sub => sub.href && sub.href !== '/' && pathname.startsWith(sub.href)) ?? false;
             const isOpen = openSubmenu === item.label;
             const IconComponent = item.icon;
             return (

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useRef, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 import {
   getDebtReportByLot,
   exportDebtReportByLot,
-  LotDebtItem,
 } from '@/lib/api';
 
 /**
@@ -20,39 +21,100 @@ import {
  */
 
 export default function DebtReportsByLotPage() {
-  const queryClient = useQueryClient();
-
   // Filter state - matching tbTuNgay, tbDenNgay in aspx
   const [filters, setFilters] = useState({
     fromDate: '',
     toDate: '',
   });
 
+  // Refs for date inputs
+  const fromDateRef = useRef<HTMLInputElement>(null);
+  const toDateRef = useRef<HTMLInputElement>(null);
+
   // Error message
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Initialize dates on mount - matching KhoiTaoNgay() in C#
-  useState(() => {
+  useEffect(() => {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+    // Format dd/mm/yyyy for flatpickr
+    const formatDate = (d: Date) => {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
     setFilters({
-      fromDate: firstDayOfMonth.toISOString().split('T')[0].split('-').reverse().join('/'),
-      toDate: lastDayOfMonth.toISOString().split('T')[0].split('-').reverse().join('/'),
+      fromDate: formatDate(firstDayOfMonth),
+      toDate: formatDate(lastDayOfMonth),
     });
-  });
+
+    // Initialize flatpickr
+    const fpFrom = flatpickr(fromDateRef.current!, {
+      dateFormat: 'd/m/Y',
+      defaultDate: formatDate(firstDayOfMonth),
+      onChange: (dates) => {
+        if (dates[0]) {
+          const d = dates[0];
+          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+          setFilters(prev => ({ ...prev, fromDate: formatted }));
+        }
+      },
+    });
+
+    const fpTo = flatpickr(toDateRef.current!, {
+      dateFormat: 'd/m/Y',
+      defaultDate: formatDate(lastDayOfMonth),
+      onChange: (dates) => {
+        if (dates[0]) {
+          const d = dates[0];
+          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+          setFilters(prev => ({ ...prev, toDate: formatted }));
+        }
+      },
+    });
+
+    return () => {
+      fpFrom.destroy();
+      fpTo.destroy();
+    };
+  }, []);
 
   // Fetch debt reports by lot
   const { data, isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ['debt-reports-by-lot', filters],
-    queryFn: () => getDebtReportByLot(filters.fromDate, filters.toDate),
+    queryFn: () => {
+      const { fromDate, toDate } = getAPIDates();
+      return getDebtReportByLot(fromDate, toDate);
+    },
     enabled: !!filters.fromDate && !!filters.toDate,
+  });
+
+  // Convert dd/mm/yyyy to yyyy-mm-dd for API
+  const convertToISODate = (dateStr: string) => {
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  // Get dates for API (convert to YYYY-MM-DD format)
+  const getAPIDates = () => ({
+    fromDate: convertToISODate(filters.fromDate),
+    toDate: convertToISODate(filters.toDate),
   });
 
   // Export mutation
   const exportMutation = useMutation({
-    mutationFn: () => exportDebtReportByLot(filters.fromDate, filters.toDate),
+    mutationFn: () => {
+      const { fromDate, toDate } = getAPIDates();
+      return exportDebtReportByLot(fromDate, toDate);
+    },
     onSuccess: (result) => {
       // Create and download CSV file
       const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
@@ -65,12 +127,6 @@ export default function DebtReportsByLotPage() {
       setErrorMessage('Export thất bại: ' + err.message);
     },
   });
-
-  // Handle filter changes
-  const handleFilterChange = (key: 'fromDate' | 'toDate', value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setErrorMessage('');
-  };
 
   // Handle search button click - matching tbTim_Click in C#
   const handleSearch = () => {
@@ -130,28 +186,66 @@ export default function DebtReportsByLotPage() {
         <div className="grid gap-4 md:grid-cols-4">
           {/* From date - matching tbTuNgay in aspx */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">
               Từ ngày
             </label>
-            <input
-              type="date"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              value={filters.fromDate}
-              onChange={(e) => handleFilterChange('fromDate', e.target.value)}
-            />
+            <div className="relative">
+              <input
+                ref={fromDateRef}
+                type="text"
+                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 hover:border-gray-300"
+                placeholder="dd/mm/yyyy"
+                value={filters.fromDate}
+                readOnly
+              />
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg
+                  className="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* To date - matching tbDenNgay in aspx */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">
               Đến ngày
             </label>
-            <input
-              type="date"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              value={filters.toDate}
-              onChange={(e) => handleFilterChange('toDate', e.target.value)}
-            />
+            <div className="relative">
+              <input
+                ref={toDateRef}
+                type="text"
+                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 hover:border-gray-300"
+                placeholder="dd/mm/yyyy"
+                value={filters.toDate}
+                readOnly
+              />
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg
+                  className="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* Action buttons - matching tbTim, btExportToExcel in aspx */}

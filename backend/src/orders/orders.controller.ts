@@ -97,6 +97,15 @@ export class OrdersController {
   }
 
   /**
+   * GET /orders/deleted/status-counts
+   * Get count of deleted orders by status (for CheckBoxList with counts)
+   */
+  @Get('deleted/status-counts')
+  async getDeletedStatusCounts(): Promise<{ status: string; count: number }[]> {
+    return this.ordersService.getDeletedStatusCounts();
+  }
+
+  /**
    * POST /orders/calculate-shipping
    * Calculate shipping fee based on weight, product type, currency, and user
    */
@@ -369,6 +378,60 @@ export class OrdersController {
   @Post(':id/restore')
   async restore(@Param('id', ParseIntPipe) id: number): Promise<Order> {
     return this.ordersService.restore(id);
+  }
+
+  /**
+   * POST /orders/batch-restore
+   * Restore multiple deleted orders
+   */
+  @Post('batch-restore')
+  async batchRestore(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number }> {
+    return this.ordersService.batchRestore(body.ids);
+  }
+
+  /**
+   * DELETE /orders/:id/permanent
+   * Permanently delete an order (vĩnh viễn xóa)
+   */
+  @Delete(':id/permanent')
+  async permanentDelete(@Param('id', ParseIntPipe) id: number): Promise<{ success: boolean }> {
+    return this.ordersService.permanentDelete(id);
+  }
+
+  /**
+   * POST /orders/batch-cancel
+   * Mass cancel deleted orders
+   */
+  @Post('batch-cancel')
+  async batchCancel(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number }> {
+    return this.ordersService.batchCancel(body.ids);
+  }
+
+  /**
+   * POST /orders/batch-complete
+   * Mass complete deleted orders (only Ordered/Shipped)
+   */
+  @Post('batch-complete')
+  async batchComplete(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number; message?: string }> {
+    return this.ordersService.batchComplete(body.ids);
+  }
+
+  /**
+   * POST /orders/batch-received
+   * Mass set orders to Received status
+   */
+  @Post('batch-received')
+  async batchReceived(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number }> {
+    return this.ordersService.batchReceived(body.ids);
+  }
+
+  /**
+   * POST /orders/batch-shipped
+   * Mass set orders to Shipped status
+   */
+  @Post('batch-shipped')
+  async batchShipped(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number }> {
+    return this.ordersService.batchShipped(body.ids);
   }
 
   /**
