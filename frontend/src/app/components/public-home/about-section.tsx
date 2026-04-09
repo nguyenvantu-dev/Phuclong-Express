@@ -1,5 +1,5 @@
 import { FiMail, FiPhone } from 'react-icons/fi';
-import { FaCalendar } from 'react-icons/fa';
+import { FaCalendar, FaFacebook } from 'react-icons/fa';
 
 /**
  * About Section Component
@@ -63,45 +63,82 @@ Trong tương lai gần, PLE Logistics định hướng sẽ tiếp tục phát 
         </div>
 
         {/* CSKH Card */}
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div
-            className="rounded-2xl p-8 md:p-12 shadow-xl"
-            style={{ backgroundColor: 'white', border: `1px solid ${colors.primaryLight}` }}
+            className="rounded-3xl overflow-hidden shadow-2xl"
+            style={{ background: `linear-gradient(135deg, ${colors.primaryDark} 0%, ${colors.primary} 60%, #7dd8f5 100%)` }}
           >
-            <div className="text-center mb-8">
-              <div
-                className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center"
-                style={{ backgroundColor: colors.primary }}
-              >
-                <FiPhone className="w-10 h-10 text-white" />
+            {/* Header */}
+            <div className="px-8 pt-10 pb-6 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 bg-white/20 backdrop-blur-sm">
+                <FiPhone className="w-8 h-8 text-white" />
               </div>
-              <h3
-                className="text-2xl font-bold mb-2"
-                style={{ color: colors.text }}
-              >
+              <h3 className="text-2xl md:text-3xl font-black text-white mb-1 tracking-wide">
                 HOTLINE CSKH
               </h3>
-              <p style={{ color: colors.textMuted }}>
-                Dịch vụ chăm sóc khách hàng tận tình 24/7
+              <p className="text-white/80 text-sm">
+                Chăm sóc khách hàng tận tình — 24/7
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-              <a
-                href="mailto:cskh.plelogistics@gmail.com"
-                className="flex items-center gap-3 p-4 rounded-xl transition-all duration-300 hover:shadow-md cursor-pointer"
-                style={{ backgroundColor: colors.primaryLight, color: colors.primaryDark }}
-              >
-                <FiMail className="w-5 h-5" />
-                <span className="font-medium">cskh.plelogistics@gmail.com</span>
-              </a>
+            {/* Contact grid */}
+            <div className="px-6 pb-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Phone 1 */}
               <a
                 href="tel:+84962904490"
-                className="flex items-center gap-3 p-4 rounded-xl transition-all duration-300 hover:shadow-md cursor-pointer"
-                style={{ backgroundColor: colors.primary, color: 'white' }}
+                className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 hover:bg-white/25 transition-all duration-200 cursor-pointer group"
               >
-                <FiPhone className="w-5 h-5" />
-                <span className="font-bold">(+84) 962.904.490</span>
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors duration-200">
+                  <FiPhone className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white/70 text-xs mb-0.5">Hotline 1</p>
+                  <p className="text-white font-bold text-base">(+84) 962.904.490</p>
+                </div>
+              </a>
+
+              {/* Phone 2 */}
+              <a
+                href="tel:+840344415213"
+                className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 hover:bg-white/25 transition-all duration-200 cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors duration-200">
+                  <FiPhone className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white/70 text-xs mb-0.5">Hotline 2</p>
+                  <p className="text-white font-bold text-base">(+84) 344.415.213</p>
+                </div>
+              </a>
+
+              {/* Email */}
+              <a
+                href="mailto:cskh.plelogistics@gmail.com"
+                className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 hover:bg-white/25 transition-all duration-200 cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors duration-200">
+                  <FiMail className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white/70 text-xs mb-0.5">Email</p>
+                  <p className="text-white font-semibold text-sm truncate">cskh.plelogistics@gmail.com</p>
+                </div>
+              </a>
+
+              {/* Facebook */}
+              <a
+                href="https://www.facebook.com/phuclongexpress"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25 hover:bg-white/25 transition-all duration-200 cursor-pointer group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#1877F2]/80 flex items-center justify-center flex-shrink-0 group-hover:bg-[#1877F2] transition-colors duration-200">
+                  <FaFacebook className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white/70 text-xs mb-0.5">Facebook</p>
+                  <p className="text-white font-semibold text-sm">Phuc Long Express</p>
+                </div>
               </a>
             </div>
           </div>

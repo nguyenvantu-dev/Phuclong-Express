@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth-context';
 import {
@@ -120,7 +121,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Logo */}
         <div className="flex h-16 items-center justify-center border-b border-slate-700/50 bg-slate-900/30">
-          <img src="/image1/logo3.png" alt="Phuc Long Express" className="h-12 object-contain" />
+          <Link href="/admin" className="inline-flex items-center justify-center" onClick={() => setSidebarOpen(false)}>
+            <Image src="/image1/logo3.png" alt="Phuc Long Express" width={160} height={48} className="h-12 w-auto object-contain" />
+          </Link>
         </div>
 
         {/* Navigation */}

@@ -37,6 +37,7 @@ export default function DebtReportsPage() {
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
   });
+  const isAllPeriodsFilter = filters.fromKyId === -1;
 
   // Edit state for inline editing
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -71,7 +72,7 @@ export default function DebtReportsPage() {
   const { data, isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ['debt-reports', filters],
     queryFn: () => getDebtReports(filters),
-    enabled: !!filters.username && !!filters.fromKyId && !!filters.toKyId,
+    enabled: !!filters.username && (isAllPeriodsFilter || (!!filters.fromKyId && !!filters.toKyId)),
   });
 
   // Update debt record mutation
@@ -97,7 +98,7 @@ export default function DebtReportsPage() {
       exportDebtReport(
         filters.username!,
         filters.fromKyId!,
-        filters.toKyId!,
+        filters.toKyId ?? 0,
       ),
     onSuccess: (result) => {
       // Create and download CSV file
@@ -114,14 +115,43 @@ export default function DebtReportsPage() {
 
   // Handle filter changes
   const handleFilterChange = (key: keyof DebtReportQueryParams, value: string | number) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => {
+      if (key === 'username') {
+        const username = typeof value === 'string' ? value : String(value);
+
+        return {
+          ...prev,
+          username,
+          fromKyId: username ? -1 : undefined,
+          toKyId: username ? undefined : prev.toKyId,
+          page: 1,
+        };
+      }
+
+      if (key === 'fromKyId') {
+        const fromKyId = typeof value === 'number' ? value : Number(value);
+
+        return {
+          ...prev,
+          fromKyId: fromKyId || undefined,
+          toKyId: fromKyId === -1 ? undefined : prev.toKyId,
+          page: 1,
+        };
+      }
+
+      return { ...prev, [key]: value || undefined, page: 1 };
+    });
     setErrorMessage('');
   };
 
   // Handle search button click
   const handleSearch = () => {
-    if (!filters.username || !filters.fromKyId || !filters.toKyId) {
-      setErrorMessage('Vui lòng chọn Username, Từ kỳ và Đến kỳ');
+    if (!filters.username || (!isAllPeriodsFilter && (!filters.fromKyId || !filters.toKyId))) {
+      setErrorMessage(
+        isAllPeriodsFilter
+          ? 'Vui lòng chọn Username'
+          : 'Vui lòng chọn Username, Từ kỳ và Đến kỳ',
+      );
       return;
     }
     setErrorMessage('');
@@ -171,8 +201,12 @@ export default function DebtReportsPage() {
 
   // Handle export all with filter
   const handleExportAll = () => {
-    if (!filters.username || !filters.fromKyId || !filters.toKyId) {
-      setErrorMessage('Vui lòng chọn Username, Từ kỳ và Đến kỳ');
+    if (!filters.username || (!isAllPeriodsFilter && (!filters.fromKyId || !filters.toKyId))) {
+      setErrorMessage(
+        isAllPeriodsFilter
+          ? 'Vui lòng chọn Username'
+          : 'Vui lòng chọn Username, Từ kỳ và Đến kỳ',
+      );
       return;
     }
     exportMutation.mutate();
@@ -262,12 +296,13 @@ export default function DebtReportsPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">Từ kỳ</label>
             <select
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-              value={filters.fromKyId || ''}
+              value={filters.fromKyId ?? ''}
               onChange={(e) =>
                 handleFilterChange('fromKyId', e.target.value ? Number(e.target.value) : 0)
               }
             >
               <option value="">-- Không xác định --</option>
+              <option value={-1}>-- Tất cả kỳ --</option>
               {closedPeriods?.map((period: PeriodItem) => (
                 <option key={period.KyID} value={period.KyID}>
                   {period.TenKy}
@@ -280,8 +315,9 @@ export default function DebtReportsPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Đến kỳ</label>
             <select
+              disabled={isAllPeriodsFilter}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-              value={filters.toKyId || ''}
+              value={filters.toKyId ?? ''}
               onChange={(e) =>
                 handleFilterChange('toKyId', e.target.value ? Number(e.target.value) : 0)
               }

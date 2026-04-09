@@ -44,9 +44,9 @@ export class DebtReportsService {
           @PageNum = :page`,
         {
           replacements: {
-            username: username || null,
-            fromKyId: fromKyId || null,
-            toKyId: toKyId || null,
+            username: username ?? null,
+            fromKyId: fromKyId ?? null,
+            toKyId: toKyId ?? null,
             limit,
             page,
           },
@@ -375,8 +375,8 @@ export class DebtReportsService {
           @DenNgay = :denNgay`,
         {
           replacements: {
-            tuNgay,
-            denNgay,
+            tuNgay: formatSqlDate(tuNgay),
+            denNgay: formatSqlEndOfDay(denNgay),
           },
           type: 'SELECT' as const,
         },

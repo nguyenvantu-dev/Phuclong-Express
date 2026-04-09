@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { EffectFade, Autoplay, Navigation } from 'swiper/modules';
+import { EffectFade, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
-import 'swiper/css/navigation';
-import { FiSearch, FiTruck, FiPackage, FiShield } from 'react-icons/fi';
+import { FiSearch, FiTruck, FiPackage, FiShield, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { searchTracking } from '@/lib/api';
+import type { Swiper as SwiperType } from 'swiper';
 
 interface TrackingHistoryItem {
   ngay: string;
@@ -41,6 +41,8 @@ const colors = {
 export default function HeroSection() {
   const [trackingCode, setTrackingCode] = useState('');
   const [trackingResult, setTrackingResult] = useState<TrackingResultState | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const swiperRef = useRef<SwiperType | null>(null);
 
   const slides = [
     { src: '/image1/slide-1.jpg', alt: 'Slide 1' },
@@ -84,122 +86,147 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative h-[85vh] min-h-[600px] overflow-hidden">
+    <section className="relative h-[90vh] min-h-[620px] overflow-hidden">
+
       {/* Slider */}
       <div className="absolute inset-0">
         <Swiper
-          modules={[EffectFade, Autoplay, Navigation]}
+          modules={[EffectFade, Autoplay]}
           effect="fade"
-          speed={2000}
+          speed={1500}
           autoplay={{ delay: 5000, disableOnInteraction: false }}
-          navigation={{
-            prevEl: '#introSliderPrev',
-            nextEl: '#introSliderNext',
-          }}
           loop={true}
           className="h-full"
+          onSwiper={(swiper) => { swiperRef.current = swiper; }}
+          onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
         >
           {slides.map((slide, index) => (
             <SwiperSlide key={index} className="h-full">
-              <div
-                className="absolute inset-0 z-10"
-                style={{
-                  background: `linear-gradient(135deg, rgba(42, 143, 179, 0.9) 0%, rgba(92, 198, 238, 0.7) 50%, rgba(42, 143, 179, 0.5) 100%)`,
-                }}
-              />
-              <img
-                className="w-full h-full object-cover"
-                src={slide.src}
-                alt={slide.alt}
-              />
+              <img className="w-full h-full object-cover" src={slide.src} alt={slide.alt} />
             </SwiperSlide>
           ))}
         </Swiper>
+
+        {/* Cinematic overlay: dark left + dark bottom, image visible in center/right */}
+        <div
+          className="absolute inset-0 z-10"
+          style={{
+            background: 'linear-gradient(to right, rgba(10,25,40,0.85) 0%, rgba(10,25,40,0.5) 55%, rgba(10,25,40,0.2) 100%)',
+          }}
+        />
+        <div
+          className="absolute inset-0 z-10"
+          style={{ background: 'linear-gradient(to top, rgba(10,25,40,0.7) 0%, transparent 50%)' }}
+        />
       </div>
 
-      {/* Content Overlay */}
+      {/* Content */}
       <div className="relative z-20 h-full flex items-center">
-        <div className="container mx-auto px-4 md:px-8 flex flex-col lg:flex-row items-end justify-between gap-12">
-          {/* Tracking Form - Glass Style */}
+        <div className="container mx-auto px-6 md:px-12 flex flex-col lg:flex-row items-center justify-between gap-10">
+
+          {/* Left: Headline */}
+          <div className="flex-1 text-left">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-0.5" style={{ backgroundColor: colors.primary }} />
+              <span className="text-sm font-semibold tracking-widest uppercase" style={{ color: colors.primary }}>
+                PLE Logistics
+              </span>
+            </div>
+            <h1
+              className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-4"
+              style={{ color: '#ffffff', textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
+            >
+              Mua hộ
+              <br />
+              <span style={{ color: colors.primary }}>Vận chuyển</span>
+              <br />
+              <span className="text-3xl md:text-4xl lg:text-5xl font-bold" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                USA &amp; Toàn quốc
+              </span>
+            </h1>
+            {/* Feature pills */}
+            <div className="flex flex-wrap gap-2 mt-6">
+              <div
+                className="px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-md text-sm font-medium"
+                style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+              >
+                <FiShield className="w-3.5 h-3.5" style={{ color: colors.primary }} />
+                Bảo hiểm hàng hóa
+              </div>
+              <div
+                className="px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-md text-sm font-medium"
+                style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
+              >
+                <FiTruck className="w-3.5 h-3.5" style={{ color: colors.primary }} />
+                Giao hàng toàn quốc
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Tracking form */}
           <div
-            className="w-full max-w-md p-6 rounded-2xl backdrop-blur-xl"
+            className="w-full lg:w-[400px] flex-shrink-0 p-6 rounded-2xl backdrop-blur-xl"
             style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             }}
           >
-            <h3
-              className="flex items-center justify-center gap-3 text-xl font-bold mb-4"
-              style={{ color: colors.textLight }}
-            >
-              <FiPackage className="w-6 h-6" />
+            <h3 className="flex items-center justify-center gap-2 text-base font-bold mb-4 text-white">
+              <FiPackage className="w-5 h-5" style={{ color: colors.primary }} />
               TRA CỨU TRACKING
             </h3>
-            <form onSubmit={handleTrackingSearch} className="space-y-4">
+            <form onSubmit={handleTrackingSearch} className="space-y-3">
               <input
                 type="text"
                 placeholder="Nhập mã tracking..."
                 value={trackingCode}
                 onChange={(e) => setTrackingCode(e.target.value)}
-                className="w-full px-5 py-4 rounded-xl text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 backdrop-blur-sm transition-all border border-white/20 bg-white/10"
+                className="w-full px-4 py-3 rounded-xl text-white placeholder-white/50 outline-none focus:ring-2 backdrop-blur-sm transition-all border bg-white/10"
+                style={{ borderColor: 'rgba(255,255,255,0.2)', '--tw-ring-color': colors.primary } as React.CSSProperties}
               />
               <button
                 type="submit"
-                className="w-full py-4 rounded-xl font-bold transition-all cursor-pointer hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
-                style={{ backgroundColor: colors.primary, color: 'white' }}
+                className="w-full py-3 rounded-xl font-bold transition-all duration-200 cursor-pointer hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2 text-white"
+                style={{ backgroundColor: colors.primary }}
               >
-                <FiSearch className="w-5 h-5" />
+                <FiSearch className="w-4 h-4" />
                 Tìm kiếm
               </button>
             </form>
 
-            {/* Results - Timeline Style */}
+            {/* Results */}
             {trackingResult && (
-              <div className="mt-4 max-h-64 overflow-y-auto">
+              <div className="mt-3 max-h-60 overflow-y-auto">
                 {trackingResult.status === 'pending' && (
-                  <div
-                    className="p-4 rounded-xl text-center animate-pulse"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: colors.textLight }}
-                  >
+                  <div className="p-3 rounded-xl text-center text-sm animate-pulse text-white" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
                     {trackingResult.message}
                   </div>
                 )}
                 {trackingResult.status === 'not_found' && (
-                  <div
-                    className="p-4 rounded-xl text-sm"
-                    style={{ backgroundColor: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5' }}
-                  >
-                    {trackingResult.message}
+                  <div className="p-3 rounded-xl text-sm space-y-1.5" style={{ backgroundColor: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    <p style={{ color: '#fca5a5' }}>{trackingResult.message}</p>
+                    <p className="font-medium text-xs" style={{ color: '#fed7aa' }}>
+                      Tracking chưa có thông tin. Quý khách vui lòng inbox nhóm làm việc ngay để được kiểm tra và giải đáp.
+                    </p>
                   </div>
                 )}
                 {trackingResult.status === 'error' && (
-                  <div
-                    className="p-4 rounded-xl text-sm"
-                    style={{ backgroundColor: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5' }}
-                  >
+                  <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.25)', color: '#fca5a5' }}>
                     {trackingResult.message}
                   </div>
                 )}
                 {trackingResult.status === 'found' && trackingResult.history && (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {trackingResult.history.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex gap-4 p-3 rounded-lg"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
-                      >
-                        <div className="w-1/4 text-right">
-                          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                            {formatDate(item.ngay)}
-                          </p>
+                      <div key={idx} className="flex gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <div className="w-1/3 text-right">
+                          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>{formatDate(item.ngay)}</p>
                         </div>
-                        <div className="w-3/4">
-                          <p className="font-medium" style={{ color: colors.textLight }}>
-                            {item.moTa}
-                          </p>
+                        <div className="w-2/3">
+                          <p className="text-sm font-medium text-white">{item.moTa}</p>
                           {item.ghiChu && (
-                            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
                               <span className="font-medium">Ghi chú:</span> {item.ghiChu}
                             </p>
                           )}
@@ -212,73 +239,52 @@ export default function HeroSection() {
             )}
           </div>
 
-          {/* Intro Text - Bold Typography */}
-          <div className="text-right flex-1" data-aos="fade-left">
-            <div
-              className="mb-4 text-lg font-medium tracking-widest uppercase"
-              style={{ color: 'rgba(255,255,255,0.8)' }}
-            >
-              <FiTruck className="inline mr-2" />
-              Usa
-            </div>
-            <h1
-              className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight"
+        </div>
+      </div>
+
+      {/* Bottom bar: dots + arrows */}
+      <div className="absolute bottom-6 left-0 right-0 z-30 flex items-center justify-center gap-6">
+        {/* Prev */}
+        <button
+          type="button"
+          aria-label="Previous slide"
+          onClick={() => swiperRef.current?.slidePrev()}
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer hover:bg-white/20"
+          style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
+        >
+          <FiChevronLeft className="w-4 h-4 text-white" />
+        </button>
+
+        {/* Dots */}
+        <div className="flex items-center gap-2">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              aria-label={`Go to slide ${idx + 1}`}
+              onClick={() => { swiperRef.current?.slideToLoop(idx); setActiveIndex(idx); }}
+              className="transition-all duration-300 cursor-pointer rounded-full"
               style={{
-                color: colors.textLight,
-                textShadow: '0 4px 30px rgba(0,0,0,0.2)',
+                width: activeIndex === idx ? '24px' : '8px',
+                height: '8px',
+                backgroundColor: activeIndex === idx ? colors.primary : 'rgba(255,255,255,0.4)',
               }}
-            >
-              <span className="text-white">&</span>
-              <br />
-              Mua hộ
-              <br />
-              Vận chuyển
-            </h1>
-          </div>
+            />
+          ))}
         </div>
-      </div>
 
-      {/* Slider Arrows */}
-      <div className="absolute bottom-8 right-8 z-30 flex gap-2">
+        {/* Next */}
         <button
-          className="w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer hover:bg-white/30"
-          style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
-          id="introSliderPrev"
           type="button"
+          aria-label="Next slide"
+          onClick={() => swiperRef.current?.slideNext()}
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer hover:bg-white/20"
+          style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
         >
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <button
-          className="w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer hover:bg-white/30"
-          style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}
-          id="introSliderNext"
-          type="button"
-        >
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          <FiChevronRight className="w-4 h-4 text-white" />
         </button>
       </div>
 
-      {/* Feature Pills */}
-      <div className="absolute bottom-8 left-8 z-30 hidden md:flex gap-3">
-        <div
-          className="px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md"
-          style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: colors.textLight }}
-        >
-          <FiShield className="w-4 h-4" />
-          <span className="text-sm font-medium">Bảo hiểm hàng hóa</span>
-        </div>
-        <div
-          className="px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md"
-          style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: colors.textLight }}
-        >
-          <FiTruck className="w-4 h-4" />
-          <span className="text-sm font-medium">Giao hàng toàn quốc</span>
-        </div>
-      </div>
     </section>
   );
 }

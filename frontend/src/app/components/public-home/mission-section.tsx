@@ -13,6 +13,14 @@ import { FiCheckCircle, FiGlobe, FiTruck, FiShield } from 'react-icons/fi';
  * Uses #5cc6ee as primary color.
  */
 export default function MissionSection() {
+  // Background images cycling for carousel cards
+  const cardImages = [
+    '/image1/mission1.png',
+    '/image1/mission2.png',
+    '/image1/mission1.png',
+    '/image1/mission2.png',
+  ];
+
   const colors = {
     primary: '#5cc6ee',
     primaryLight: '#e0f7ff',
@@ -20,12 +28,6 @@ export default function MissionSection() {
     text: '#1e293b',
     textMuted: '#64748b',
   };
-
-  const missionImages = [
-    '/image1/mission1.png',
-    '/image1/mission2.png',
-    '/image1/mission1.png',
-  ];
 
   const missions = [
     {
@@ -76,32 +78,66 @@ export default function MissionSection() {
           ))}
         </div>
 
-        {/* Image Carousel */}
-        <div className="max-w-4xl mx-auto">
+        {/* Mission Carousel — card-per-slide with big number */}
+        <div className="max-w-5xl mx-auto">
           <Swiper
             modules={[Autoplay]}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             loop={true}
-            className="rounded-2xl overflow-hidden"
+            speed={600}
+            slidesPerView={1}
+            breakpoints={{
+              640: { slidesPerView: 2, spaceBetween: 20 },
+              1024: { slidesPerView: 3, spaceBetween: 24 },
+            }}
+            spaceBetween={16}
           >
-            {missionImages.map((src, index) => {
-              const missionIndex = index % missions.length;
+            {missions.map((mission, index) => {
+              const Icon = mission.icon;
               return (
                 <SwiperSlide key={index}>
-                  <div className="relative h-64 md:h-80">
+                  <div
+                    className="rounded-2xl p-7 h-56 flex flex-col justify-between relative overflow-hidden"
+                    style={{ border: '1px solid rgba(92,198,238,0.15)' }}
+                  >
+                    {/* Background image */}
                     <img
-                      className="w-full h-full object-cover"
-                      src={src}
-                      alt={`Mission ${index + 1}`}
+                      src={cardImages[index % cardImages.length]}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
-                    <div
-                      className="absolute inset-0 flex items-center justify-center"
-                      style={{
-                        background: `linear-gradient(135deg, ${colors.primaryDark}cc 0%, ${colors.primary}cc 100%)`,
-                      }}
+                    {/* Dark overlay so text is always readable */}
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(10,25,40,0.92) 0%, rgba(10,25,40,0.75) 100%)' }} />
+
+                    {/* Big background number */}
+                    <span
+                      className="absolute top-2 right-4 font-black select-none pointer-events-none z-10"
+                      style={{ fontSize: '5rem', lineHeight: 1, color: 'rgba(92,198,238,0.12)' }}
                     >
-                      <p className="text-white text-2xl font-bold text-center px-8">
-                        {missions[missionIndex].desc}
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+
+                    {/* Top row: icon + number */}
+                    <div className="relative z-10 flex items-center justify-between">
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: colors.primary }}
+                      >
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-xs font-bold tracking-widest" style={{ color: colors.primary }}>
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                    </div>
+
+                    {/* Bottom: title + desc */}
+                    <div className="relative z-10">
+                      {/* Accent line */}
+                      <div className="w-8 h-0.5 mb-3 rounded-full" style={{ backgroundColor: colors.primary }} />
+                      <h3 className="text-white font-bold text-base mb-1.5 leading-snug">{mission.title}</h3>
+                      <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                        {mission.desc}
                       </p>
                     </div>
                   </div>

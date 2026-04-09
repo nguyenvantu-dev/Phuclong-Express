@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { FiChevronDown, FiMenu, FiX, FiTruck, FiUser, FiLogOut } from 'react-icons/fi';
+import { FiChevronDown, FiMenu, FiX, FiUser, FiLogOut, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
+import { FaFacebook } from 'react-icons/fa';
 import { useAuth } from '@/hooks/use-auth-context';
 
 /**
@@ -280,36 +281,111 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       {/* Main Content */}
       <main className="flex-1 pt-20">{children}</main>
 
-      {/* Footer - Modern */}
-      <footer
-        className="text-white py-12"
-        style={{ background: `linear-gradient(135deg, ${colors.primaryDark} 0%, ${colors.primary} 100%)` }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-            >
-              <FiTruck className="w-8 h-8 text-white" />
+      {/* Footer */}
+      <footer style={{ backgroundColor: '#0f1f2e' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+
+            {/* Col 1: Brand */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <img src="/image1/logo3.png" alt="Phuc Long Express" className="h-12 object-contain" />
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Dịch vụ logistics uy tín — chuyên mua hộ &amp; vận chuyển hàng hóa toàn quốc từ năm 2018.
+              </p>
             </div>
-            <address className="text-center md:text-left not-italic">
-              <p className="opacity-90">
-                <span className="opacity-70">Hotline:</span>{' '}
-                <a href="tel:+840962904490" className="text-white hover:opacity-80 transition-opacity">
-                  (+84) 962.904.490
-                </a>
-              </p>
-              <p className="mt-1 opacity-90">
-                <span className="opacity-70">Email:</span>{' '}
-                <a href="mailto:cskh.plelogistics@gmail.com" className="text-white hover:opacity-80 transition-opacity">
-                  cskh.plelogistics@gmail.com
-                </a>
-              </p>
-            </address>
+
+            {/* Col 2: Quick links */}
+            <div>
+              <p className="text-white font-bold text-sm uppercase tracking-widest mb-4">Dịch vụ</p>
+              <ul className="space-y-2">
+                {[
+                  { label: 'Đặt hàng', href: '/dat-hang' },
+                  { label: 'Tra cứu đơn hàng', href: '/danh-sach-don-hang' },
+                  { label: 'Quản lý Tracking', href: '/danh-sach-tracking' },
+                  { label: 'Thông tin lô hàng', href: '/thong-tin-lo-hang' },
+                  { label: 'Báo cáo công nợ', href: '/bao-cao-cong-no' },
+                  { label: 'Hỏi đáp', href: '/hoi-dap' },
+                ].map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className="text-sm transition-colors duration-200 cursor-pointer hover:text-white"
+                      style={{ color: 'rgba(255,255,255,0.5)' }}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Col 3: Contact */}
+            <div>
+              <p className="text-white font-bold text-sm uppercase tracking-widest mb-4">Liên hệ</p>
+              <ul className="space-y-3">
+                <li>
+                  <a
+                    href="tel:+84962904490"
+                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white group"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    <FiPhone className="w-4 h-4 flex-shrink-0 group-hover:text-cyan-400 transition-colors" style={{ color: colors.primary }} />
+                    (+84) 962.904.490
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="tel:+840344415213"
+                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white group"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    <FiPhone className="w-4 h-4 flex-shrink-0" style={{ color: colors.primary }} />
+                    (+84) 344.415.213
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:cskh.plelogistics@gmail.com"
+                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    <FiMail className="w-4 h-4 flex-shrink-0" style={{ color: colors.primary }} />
+                    cskh.plelogistics@gmail.com
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.facebook.com/phuclongexpress"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    <FaFacebook className="w-4 h-4 flex-shrink-0" style={{ color: '#1877F2' }} />
+                    facebook.com/phuclongexpress
+                  </a>
+                </li>
+                <li>
+                  <span className="flex items-start gap-3 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    <FiMapPin className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors.primary }} />
+                    Hà Nội, Việt Nam
+                  </span>
+                </li>
+              </ul>
+            </div>
+
           </div>
-          <div className="mt-8 pt-8 border-t border-white/20 text-center text-sm opacity-60">
-            © {new Date().getFullYear()} Phuc Long Express. All rights reserved.
+
+          {/* Bottom bar */}
+          <div className="mt-10 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-2" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              © {new Date().getFullYear()} Phuc Long Express (PLE Logistics). All rights reserved.
+            </p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              Thành lập 2018 · Hà Nội, Việt Nam
+            </p>
           </div>
         </div>
       </footer>

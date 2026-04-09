@@ -261,6 +261,8 @@ export default function QLDatHangLietKePage() {
   // Refs for date inputs
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
+  const startFpRef = useRef<flatpickr.Instance | null>(null);
+  const endFpRef = useRef<flatpickr.Instance | null>(null);
 
   // Filter state - matching QLDatHang_LietKe.aspx default filter: status = Received
   const [filters, setFilters] = useState<QueryParams>({
@@ -388,32 +390,30 @@ export default function QLDatHangLietKePage() {
   useEffect(() => {
     if (!startDateRef.current || !endDateRef.current) return;
 
+    // ISO 8601 format required by backend
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
     const fpStart = flatpickr(startDateRef.current, {
       dateFormat: 'd/m/Y',
+      disableMobile: true,
       onChange: (dates) => {
-        if (dates[0]) {
-          const d = dates[0];
-          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-          setFilters(prev => ({ ...prev, startDate: formatted, page: 1 }));
-        }
+        setFilters(prev => ({ ...prev, startDate: dates[0] ? fmt(dates[0]) : undefined, page: 1 }));
       },
     });
 
     const fpEnd = flatpickr(endDateRef.current, {
       dateFormat: 'd/m/Y',
+      disableMobile: true,
       onChange: (dates) => {
-        if (dates[0]) {
-          const d = dates[0];
-          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-          setFilters(prev => ({ ...prev, endDate: formatted, page: 1 }));
-        }
+        setFilters(prev => ({ ...prev, endDate: dates[0] ? fmt(dates[0]) : undefined, page: 1 }));
       },
     });
 
-    return () => {
-      fpStart.destroy();
-      fpEnd.destroy();
-    };
+    startFpRef.current = fpStart as flatpickr.Instance;
+    endFpRef.current = fpEnd as flatpickr.Instance;
+
+    return () => { fpStart.destroy(); fpEnd.destroy(); };
   }, []);
 
   // Fetch orders with TanStack Query using QLDatHang API
@@ -493,7 +493,7 @@ export default function QLDatHangLietKePage() {
     setFilters((prev) => ({ ...prev, website: value || undefined, page: 1 }));
   };
 
-  // Handle search button click
+  // Handle search button click - always force refetch even if filters unchanged
   const handleSearch = () => {
     setFilters((prev) => ({
       ...prev,
@@ -501,6 +501,7 @@ export default function QLDatHangLietKePage() {
       ids: maDatHang || undefined,
       page: 1,
     }));
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
   };
 
   // Handle page change
@@ -600,7 +601,7 @@ export default function QLDatHangLietKePage() {
   const totalPages = data ? Math.ceil(data.totalItem / data.limit) : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-[1800px] space-y-4">
       {/* Tab navigation */}
       <div className="flex gap-2 border-b border-gray-200 pb-2">
         <span className="rounded bg-gray-600 px-3 py-1 text-sm text-white">
@@ -624,58 +625,58 @@ export default function QLDatHangLietKePage() {
 
       {/* Filter panel */}
       <div className="rounded-lg bg-white p-4 shadow">
-        <div className="flex flex-wrap gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
           {/* Filter */}
-          <div>
+          <div className="flex flex-col">
             <label className="mb-1 block text-xs font-medium text-gray-700">Filter</label>
             <input
               type="text"
               placeholder="Filter"
-              className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
             />
           </div>
 
           {/* Mã đặt hàng */}
-          <div>
+          <div className="flex flex-col">
             <label className="mb-1 block text-xs font-medium text-gray-700">Mã đặt hàng</label>
             <input
               type="text"
               placeholder="Mã đặt hàng"
-              className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               value={maDatHang}
               onChange={(e) => setMaDatHang(e.target.value)}
             />
           </div>
 
-          {/* Từ ngày - đến ngày */}
-          <div className="flex gap-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">Từ ngày</label>
-              <input
-                ref={startDateRef}
-                type="text"
-                placeholder="dd/mm/yyyy"
-                className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">Đến ngày</label>
-              <input
-                ref={endDateRef}
-                type="text"
-                placeholder="dd/mm/yyyy"
-                className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
+          {/* Từ ngày */}
+          <div className="flex flex-col">
+            <label className="mb-1 flex items-center justify-between text-xs font-medium text-gray-700">
+              Từ ngày
+              {filters.startDate && (
+                <button type="button" onClick={() => { startFpRef.current?.clear(); setFilters(prev => ({ ...prev, startDate: undefined, page: 1 })); }} className="text-xs text-red-500 hover:text-red-700">✕</button>
+              )}
+            </label>
+            <input ref={startDateRef} type="text" placeholder="dd/mm/yyyy" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+
+          {/* Đến ngày */}
+          <div className="flex flex-col">
+            <label className="mb-1 flex items-center justify-between text-xs font-medium text-gray-700">
+              Đến ngày
+              {filters.endDate && (
+                <button type="button" onClick={() => { endFpRef.current?.clear(); setFilters(prev => ({ ...prev, endDate: undefined, page: 1 })); }} className="text-xs text-red-500 hover:text-red-700">✕</button>
+              )}
+            </label>
+            <input ref={endDateRef} type="text" placeholder="dd/mm/yyyy" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
           </div>
 
           {/* Website */}
-          <div>
+          <div className="flex flex-col">
             <label className="mb-1 block text-xs font-medium text-gray-700">Website</label>
             <select
-              className="w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               value={filters.website || ''}
               onChange={(e) => handleWebsiteChange(e.target.value)}
             >
@@ -689,10 +690,10 @@ export default function QLDatHangLietKePage() {
           </div>
 
           {/* Quốc gia */}
-          <div>
+          <div className="flex flex-col">
             <label className="mb-1 block text-xs font-medium text-gray-700">Quốc gia</label>
             <select
-              className="w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               value={filters.quocGiaId || ''}
               onChange={(e) => handleFilterChange('quocGiaId', e.target.value)}
             >
@@ -706,10 +707,10 @@ export default function QLDatHangLietKePage() {
           </div>
 
           {/* Username */}
-          <div>
+          <div className="flex flex-col">
             <label className="mb-1 block text-xs font-medium text-gray-700">Username</label>
             <select
-              className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               value={filters.username || ''}
               onChange={(e) => handleFilterChange('username', e.target.value)}
             >
@@ -723,10 +724,10 @@ export default function QLDatHangLietKePage() {
           </div>
 
           {/* Search Button */}
-          <div className="flex items-end">
+          <div className="flex flex-col justify-end">
             <button
               onClick={handleSearch}
-              className="rounded-lg bg-gray-500 px-4 py-2 text-sm font-medium text-white hover:bg-gray-600"
+              className="w-full rounded-lg bg-gray-500 px-4 py-2 text-sm font-medium text-white hover:bg-gray-600"
             >
               Xem
             </button>
@@ -734,42 +735,47 @@ export default function QLDatHangLietKePage() {
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="rounded-lg bg-gray-50 p-4">
-        <div className="flex flex-wrap gap-6">
-          <p className="text-sm font-medium">
-            Total item: <span className="text-lg font-bold">{selectedSummary.totalItems}</span>
-          </p>
-          <p className="text-sm font-medium">
-            Tổng tiền: <span className="text-lg font-bold">{formatCurrency(selectedSummary.totalPriceUsd, 'USD')}</span>
-          </p>
-          <p className="text-sm font-medium">
-            Tổng tiền VND: <span className="text-lg font-bold">{formatCurrency(selectedSummary.totalPriceVnd, 'VND')}</span>
-          </p>
+      {/* Summary + Mass actions */}
+      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Stat cards */}
+          <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2">
+            <span className="text-xs font-medium text-blue-600">Total item</span>
+            <span className="text-xl font-bold text-blue-700">{selectedSummary.totalItems}</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2">
+            <span className="text-xs font-medium text-emerald-600">Tổng USD</span>
+            <span className="text-xl font-bold text-emerald-700">{formatCurrency(selectedSummary.totalPriceUsd, 'USD')}</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg bg-orange-50 px-4 py-2">
+            <span className="text-xs font-medium text-orange-600">Tổng VND</span>
+            <span className="text-xl font-bold text-orange-700">{formatCurrency(selectedSummary.totalPriceVnd, 'VND')}</span>
+          </div>
+          {selectedIds.length > 0 && (
+            <div className="flex items-center gap-1 rounded-full bg-slate-700 px-3 py-1 text-xs font-medium text-white">
+              {selectedIds.length} đã chọn
+            </div>
+          )}
         </div>
 
         {/* Mass actions */}
-        <div className="mt-3 flex flex-wrap gap-4 border-t border-gray-200 pt-3">
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-gray-100 pt-3">
           <button
             onClick={handleMassUpdate}
             disabled={selectedIds.length === 0}
-            className="text-sm font-medium text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Mass update
           </button>
           {isAdmin && (
-            <>
-              <span className="text-gray-400">|</span>
-              <button
-                onClick={handleMassDelete}
-                disabled={selectedIds.length === 0 || deleteMutation.isPending}
-                className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Đang xóa...' : 'Mass delete'}
-              </button>
-            </>
+            <button
+              onClick={handleMassDelete}
+              disabled={selectedIds.length === 0 || deleteMutation.isPending}
+              className="inline-flex items-center gap-1 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-40"
+            >
+              {deleteMutation.isPending ? 'Đang xóa...' : 'Mass delete'}
+            </button>
           )}
-          <span className="text-gray-400">|</span>
           <button
             onClick={() => {
               if (confirm(`Hủy ${selectedIds.length} đơn hàng đã chọn?`)) {
@@ -777,7 +783,7 @@ export default function QLDatHangLietKePage() {
               }
             }}
             disabled={selectedIds.length === 0 || handleMassCancel.isPending}
-            className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-40"
           >
             {handleMassCancel.isPending ? 'Đang hủy...' : 'Mass Cancel'}
           </button>
@@ -800,42 +806,48 @@ export default function QLDatHangLietKePage() {
 
       {/* Data table */}
       {!isLoading && !error && data && (
-        <div className="overflow-hidden rounded-lg bg-white shadow">
+        <div className="w-full overflow-hidden rounded-lg bg-white shadow">
+          <div className="flex items-center justify-between border-b border-gray-200 bg-slate-50 px-3 py-2">
+            <span className="text-xs text-gray-500">
+              Hiển thị <span className="font-semibold text-gray-700">{data.danhSachDonHang.length}</span> / <span className="font-semibold text-gray-700">{data.totalItem}</span> đơn hàng
+            </span>
+            {isFetching && <span className="text-xs text-blue-500">Đang tải...</span>}
+          </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-xs">
-              <thead className="bg-gray-100">
+            <table className="w-full divide-y divide-gray-200 text-[11px]">
+              <thead className="sticky top-0 z-10 bg-slate-700">
                 <tr>
-                  <th className="w-8 px-1 py-2 text-left">
+                  <th className="w-6 px-1 py-2 text-left">
                     <input
                       type="checkbox"
                       checked={selectedIds.length === data.danhSachDonHang.length}
                       onChange={handleSelectAll}
-                      className="rounded border-gray-300"
+                      className="rounded border-slate-400"
                     />
                   </th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Edit</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Mã ĐH</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Website</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Username</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Ngày save</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Loại tiền</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Quốc gia</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Link SP</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Hình</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Màu</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Size</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">Số lượng</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">Giá web</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">%Công</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">% sale off</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">$Phụ thu</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">$ShipUS</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">Tax</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">Công VNĐ</th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">Tổng VNĐ</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Vùng miền</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">Ghi chú</th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">user added</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Edit</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Mã ĐH</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Website</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">User</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Ngày</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Tiền</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">QG</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Link SP</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Hình</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Màu</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Size</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">SL</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">Giá web</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">%Công</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">Sale%</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">$PT</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">$Ship</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">Tax</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">Công VNĐ</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-300">Tổng VNĐ</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Vùng</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Ghi chú</th>
+                  <th className="px-1 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-300">Added by</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -843,8 +855,11 @@ export default function QLDatHangLietKePage() {
                   const usernameRed = isUsernameRed(order);
                   const linkDisabled = isLinkDisabled(order);
 
+                  const rowBg = usernameRed
+                    ? 'bg-red-50 hover:bg-red-100'
+                    : 'odd:bg-white even:bg-slate-50/60 hover:bg-blue-50/40';
                   return (
-                    <tr key={order.id} className="hover:bg-gray-50">
+                    <tr key={order.id} className={rowBg}>
                       <td className="px-1 py-1">
                         <input
                           type="checkbox"
@@ -853,7 +868,7 @@ export default function QLDatHangLietKePage() {
                           className="rounded border-gray-300"
                         />
                       </td>
-                      <td className="px-1 py-1 whitespace-nowrap">
+                      <td className="px-1 py-1 whitespace-nowrap text-[11px]">
                         {editingOrderId === order.id ? (
                           <div className="flex gap-1">
                             <button
@@ -879,25 +894,16 @@ export default function QLDatHangLietKePage() {
                           </button>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">
-                        {editingOrderId === order.id ? (
-                          <input
-                            type="text"
-                            value={editForm?.websiteName || ''}
-                            onChange={(e) => handleEditFormChange('websiteName', e.target.value)}
-                            className="w-20 rounded border border-gray-300 px-1 py-1 text-xs"
-                          />
-                        ) : (
-                          order.id
-                        )}
+                      <td className="whitespace-nowrap px-1 py-1 text-[11px] font-medium text-gray-900">
+                        {order.id}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">
+                      <td className="min-w-[120px] px-1 py-1 text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="text"
                             value={editForm?.websiteName || ''}
                             onChange={(e) => handleEditFormChange('websiteName', e.target.value)}
-                            className="w-20 rounded border border-gray-300 px-1 py-1 text-xs"
+                            className="w-28 rounded border border-gray-300 px-1 py-1 text-xs"
                           />
                         ) : (
                           order.websiteName || '-'
@@ -915,10 +921,10 @@ export default function QLDatHangLietKePage() {
                           order.username
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-[11px] text-gray-900">
                         {formatDate(order.ngaySaveLink)}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <select
                             value={editForm?.loaiTien || 'USD'}
@@ -935,7 +941,7 @@ export default function QLDatHangLietKePage() {
                           order.loaiTien || 'USD'
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <select
                             value={editForm?.quocGiaId || ''}
@@ -953,22 +959,23 @@ export default function QLDatHangLietKePage() {
                           order.tenQuocGia || '-'
                         )}
                       </td>
-                      <td className="max-w-[150px] truncate px-1 py-1">
+                      <td className="max-w-[120px] truncate px-1 py-1 text-[11px]">
                         {editingOrderId === order.id ? (
                           <input
                             type="text"
                             value={editForm?.linkWeb || ''}
                             onChange={(e) => handleEditFormChange('linkWeb', e.target.value)}
-                            className="w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                            className="w-full rounded border border-gray-300 px-1 py-1 text-[11px]"
                           />
                         ) : order.linkWeb ? (
                           <a
                             href={linkDisabled ? '#' : order.linkWeb}
                             target={linkDisabled ? '_self' : '_blank'}
                             rel="noopener noreferrer"
-                            className={linkDisabled ? 'text-gray-400 pointer-events-none' : 'text-blue-600 hover:text-blue-800'}
+                            title={order.linkWeb}
+                            className={linkDisabled ? 'pointer-events-none text-gray-400' : 'inline-flex items-center gap-0.5 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 hover:bg-blue-100'}
                           >
-                            {order.linkWeb}
+                            Xem →
                           </a>
                         ) : (
                           '-'
@@ -984,36 +991,36 @@ export default function QLDatHangLietKePage() {
                             placeholder="URL hoặc upload"
                           />
                         ) : order.linkHinh ? (
-                          <img src={order.linkHinh} alt="Product" className="h-[30px] w-auto" />
+                          <img src={order.linkHinh} alt="Product" className="h-9 w-auto rounded object-cover shadow-sm" />
                         ) : (
                           '-'
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">
+                      <td className="max-w-[80px] break-words px-1 py-1 text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="text"
                             value={editForm?.color || ''}
                             onChange={(e) => handleEditFormChange('color', e.target.value)}
-                            className="w-12 rounded border border-gray-300 px-1 py-1 text-xs"
+                            className="w-10 rounded border border-gray-300 px-1 py-1 text-xs"
                           />
                         ) : (
                           order.color || '-'
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">
+                      <td className="max-w-[50px] px-1 py-1 text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="text"
                             value={editForm?.size || ''}
                             onChange={(e) => handleEditFormChange('size', e.target.value)}
-                            className="w-12 rounded border border-gray-300 px-1 py-1 text-xs"
+                            className="w-10 rounded border border-gray-300 px-1 py-1 text-xs"
                           />
                         ) : (
                           order.size || '-'
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="number"
@@ -1025,7 +1032,7 @@ export default function QLDatHangLietKePage() {
                           order.soLuong
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="number"
@@ -1038,7 +1045,7 @@ export default function QLDatHangLietKePage() {
                           formatNumber(order.donGiaWeb)
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="number"
@@ -1051,7 +1058,7 @@ export default function QLDatHangLietKePage() {
                           formatNumber(order.cong)
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="number"
@@ -1064,7 +1071,7 @@ export default function QLDatHangLietKePage() {
                           formatNumber(order.saleOff)
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="number"
@@ -1077,7 +1084,7 @@ export default function QLDatHangLietKePage() {
                           formatNumber(order.phuThu)
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="number"
@@ -1090,7 +1097,7 @@ export default function QLDatHangLietKePage() {
                           formatNumber(order.shipUsa)
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="number"
@@ -1103,22 +1110,22 @@ export default function QLDatHangLietKePage() {
                           formatNumber(order.tax)
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right text-gray-900">{formatNumber(order.tienCongVnd)}</td>
-                      <td className="whitespace-nowrap px-1 py-1 text-right font-medium text-gray-900">{formatNumber(order.tongTienVnd)}</td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">{order.vungMien || '-'}</td>
-                      <td className="max-w-[150px] truncate px-1 py-1 text-gray-900">
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] text-gray-900">{formatNumber(order.tienCongVnd)}</td>
+                      <td className="whitespace-nowrap px-1 py-1 text-right text-[11px] font-bold text-emerald-700">{formatNumber(order.tongTienVnd)}</td>
+                      <td className="whitespace-nowrap px-1 py-1 text-[11px] text-gray-900">{order.vungMien || '-'}</td>
+                      <td className="max-w-[150px] break-words px-1 py-1 text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="text"
                             value={editForm?.ghiChu || ''}
                             onChange={(e) => handleEditFormChange('ghiChu', e.target.value)}
-                            className="w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                            className="w-full rounded border border-gray-300 px-1 py-1 text-[11px]"
                           />
                         ) : (
                           order.ghiChu || '-'
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-1 py-1 text-gray-900">{order.usernameSave || '-'}</td>
+                      <td className="whitespace-nowrap px-1 py-1 text-[11px] text-gray-900">{order.usernameSave || '-'}</td>
                     </tr>
                   );
                 })}
