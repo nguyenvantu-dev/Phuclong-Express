@@ -28,6 +28,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem('admin-sidebar-collapsed') === 'true';
+  });
   const { user, logout } = useAuth();
 
   // Navigation items with submenus
@@ -95,6 +102,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setOpenSubmenu(openSubmenu === label ? null : label);
   };
 
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((prevState) => {
+      const nextState = !prevState;
+      window.localStorage.setItem('admin-sidebar-collapsed', String(nextState));
+      return nextState;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Mobile sidebar overlay */}
@@ -107,9 +122,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-50 h-full w-64 transform bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-2xl transition-transform duration-300 ease-out lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 h-full transform bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-2xl transition-all duration-300 ease-out lg:translate-x-0 ${
+          sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+        } ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${sidebarCollapsed ? 'lg:overflow-visible' : 'overflow-hidden'}`}
       >
         {/* Close button for mobile */}
         <button
@@ -120,14 +137,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
 
         {/* Logo */}
-        <div className="flex h-16 items-center justify-center border-b border-slate-700/50 bg-slate-900/30">
+        <div className="relative flex h-16 items-center justify-center border-b border-slate-700/50 bg-slate-900/30 px-3">
           <Link href="/admin" className="inline-flex items-center justify-center" onClick={() => setSidebarOpen(false)}>
-            <Image src="/image1/logo3.png" alt="Phuc Long Express" width={160} height={48} className="h-12 w-auto object-contain" />
+            <Image
+              src="/image1/logo3.png"
+              alt="Phuc Long Express"
+              width={160}
+              height={48}
+              className={`h-12 object-contain transition-all duration-300 ${sidebarCollapsed ? 'w-10' : 'w-auto'}`}
+            />
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="mt-4 px-3 pb-4 space-y-1 overflow-y-auto max-h-[calc(100vh-8rem)]">
+        <nav
+          className={`mt-4 px-3 pb-4 space-y-1 max-h-[calc(100vh-8rem)] ${
+            sidebarCollapsed ? 'overflow-visible' : 'overflow-y-auto'
+          }`}
+        >
           {(() => {
             // Find the longest matching href across all sections to resolve prefix conflicts
             // e.g. /admin/debt-reports/by-shipment-lot should only activate VẬN CHUYỂN, not FINANCE
@@ -146,18 +173,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const isOpen = openSubmenu === item.label;
             const IconComponent = item.icon;
             return (
-              <div key={item.label}>
+              <div key={item.label} className="relative group/item">
                 <button
                   onClick={() => toggleSubmenu(item.label)}
                   className={`group flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
                     isActive
                       ? 'bg-gradient-to-r from-[#5cc6ee]/20 to-transparent text-[#5cc6ee] border-l-2 border-[#5cc6ee]'
                       : 'text-slate-300 hover:bg-slate-700/50 hover:text-white border-l-2 border-transparent'
-                  }`}
+                  } ${sidebarCollapsed ? 'justify-center lg:px-2' : ''}`}
+                  title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <IconComponent className="mr-3 h-5 w-5 flex-shrink-0" />
-                  <span className="flex-1 text-left truncate">{item.label}</span>
-                  {item.submenu && (
+                  <IconComponent className={`h-5 w-5 flex-shrink-0 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+                  {!sidebarCollapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
+                  {item.submenu && !sidebarCollapsed && (
                     <span className={`transform transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -166,7 +194,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   )}
                 </button>
                 {/* Submenu */}
-                {item.submenu && isOpen && (
+                {item.submenu && isOpen && !sidebarCollapsed && (
                   <div className="mt-1 ml-3 space-y-0.5 border-l border-slate-700 pl-3">
                     {item.submenu.map((subItem, idx) =>
                       subItem.type === 'divider' || !subItem.href ? (
@@ -191,6 +219,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     )}
                   </div>
                 )}
+                {item.submenu && sidebarCollapsed && (
+                  <div className="pointer-events-none absolute left-full top-0 z-20 hidden w-[19rem] pr-3 opacity-0 transition-all duration-200 group-hover/item:pointer-events-auto group-hover/item:opacity-100 lg:block">
+                    <div className="ml-3 rounded-2xl border border-slate-700 bg-slate-900/95 p-3 shadow-2xl">
+                      <div className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.24em] text-[#5cc6ee]">
+                        {item.label}
+                      </div>
+                      <div className="space-y-1">
+                        {item.submenu.map((subItem, idx) =>
+                          subItem.type === 'divider' || !subItem.href ? (
+                            <div key={idx} className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              {subItem.label}
+                            </div>
+                          ) : (
+                            <Link
+                              key={subItem.href}
+                              href={subItem.href}
+                              className={`flex items-center rounded-xl px-3 py-2 text-sm transition-all duration-150 ${
+                                pathname === subItem.href
+                                  ? 'bg-[#5cc6ee]/15 text-[#5cc6ee] font-medium'
+                                  : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
+                              }`}
+                              onClick={() => setSidebarOpen(false)}
+                            >
+                              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-current opacity-50" />
+                              {subItem.label}
+                            </Link>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           });
@@ -199,24 +259,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Sidebar footer */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700/50 bg-slate-900/30 p-3">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
+          <div className={`flex items-center text-xs text-slate-400 ${sidebarCollapsed ? 'justify-center' : 'gap-2'}`}>
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span>Hệ thống hoạt động</span>
+            {!sidebarCollapsed && <span>Hệ thống hoạt động</span>}
           </div>
         </div>
       </aside>
 
       {/* Main content area */}
-      <div className="lg:ml-64">
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         {/* Header */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 lg:px-6 shadow-sm">
-          {/* Mobile menu button */}
-          <button
-            className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 hover:text-[#5cc6ee] transition-colors lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <FiMenu className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Mobile menu button */}
+            <button
+              className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-[#5cc6ee] lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <FiMenu className="h-6 w-6" />
+            </button>
+            <button
+              className="hidden rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-[#5cc6ee] lg:inline-flex"
+              onClick={toggleSidebarCollapsed}
+              title={sidebarCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+            >
+              <FiMenu className="h-5 w-5" />
+            </button>
+          </div>
 
           {/* Search bar */}
           <div className="hidden flex-1 md:block md:max-w-lg">
