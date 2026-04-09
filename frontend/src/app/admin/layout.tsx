@@ -120,7 +120,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Logo */}
         <div className="flex h-16 items-center justify-center border-b border-slate-700/50 bg-slate-900/30">
-          <img src="/image1/logo3.png" alt="Phúc Long Express" className="h-12 object-contain" />
+          <img src="/image1/logo3.png" alt="Phuc Long Express" className="h-12 object-contain" />
         </div>
 
         {/* Navigation */}

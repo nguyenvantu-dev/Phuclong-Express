@@ -46,8 +46,8 @@ export default function ClientsSection() {
 
   const companyIntro = {
     logo: '/image1/logo2.png',
-    name: 'Phúc Long Express',
-    text: `Với hơn 10 năm kinh nghiệm thực tiễn trong lĩnh vực vận chuyển Quốc tế, thế mạnh về mạng lưới vận chuyển trong nước và Quốc tế, cùng đội ngũ Nhân viên chuyên nghiệp, Phúc Long Express tự hào là đơn vị vận chuyển uy tín mang đến chất lượng dịch vụ tốt nhất cho khách hàng.`,
+    name: 'Phuc Long Express',
+    text: `Với hơn 10 năm kinh nghiệm thực tiễn trong lĩnh vực vận chuyển Quốc tế, thế mạnh về mạng lưới vận chuyển trong nước và Quốc tế, cùng đội ngũ Nhân viên chuyên nghiệp, Phuc Long Express tự hào là đơn vị vận chuyển uy tín mang đến chất lượng dịch vụ tốt nhất cho khách hàng.`,
   };
 
   return (

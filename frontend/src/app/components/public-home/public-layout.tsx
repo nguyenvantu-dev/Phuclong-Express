@@ -66,7 +66,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 cursor-pointer group">
-              <img src="/image1/logo2.png" alt="Phúc Long Express" className="h-23 object-contain transition-transform group-hover:scale-105" />
+              <img src="/image1/logo2.png" alt="Phuc Long Express" className="h-23 object-contain transition-transform group-hover:scale-105" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -309,7 +309,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             </address>
           </div>
           <div className="mt-8 pt-8 border-t border-white/20 text-center text-sm opacity-60">
-            © {new Date().getFullYear()} Phúc Long Express. All rights reserved.
+            © {new Date().getFullYear()} Phuc Long Express. All rights reserved.
           </div>
         </div>
       </footer>

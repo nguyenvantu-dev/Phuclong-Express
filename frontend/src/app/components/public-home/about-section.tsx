@@ -20,7 +20,7 @@ export default function AboutSection() {
 
 Vậy nên chúng tôi đã khởi xướng ước mơ giản dị của riêng mình bằng cách xây dựng một nhà cung cấp dịch vụ logistics- mang tới dịch vụ hoàn hảo, chú trọng tính chuyên nghiệp, uy tín, tận tâm và trách nhiệm với khách hàng - điều khiến chúng tôi tạo nên tính khác biệt, cạnh tranh so với các đối thủ.
 
-Từ đó, Phúc Long Express (PLE Logistics) đã được thành lập vào năm 2018 tại Thủ đô Hà Nội. Trải qua hơn 5 năm trên chặng đường trưởng thành, từ khát vọng giản dị đó mà PLE Logistics ngày nay đã có những bước phát triển vượt bậc. Mỗi thành viên trong PLE Logistics đều trân quý bất kỳ chuyến hàng nào mà khách hàng tin tưởng giao cho chúng tôi, và chúng tôi luôn coi vấn đề của khách hàng là của chính mình để nỗ lực và đưa ra các giải pháp phù hợp, tư vấn cho khách hàng để tối ưu hóa chuỗi giá trị.
+Từ đó, Phuc Long Express (PLE Logistics) đã được thành lập vào năm 2018 tại Thủ đô Hà Nội. Trải qua hơn 5 năm trên chặng đường trưởng thành, từ khát vọng giản dị đó mà PLE Logistics ngày nay đã có những bước phát triển vượt bậc. Mỗi thành viên trong PLE Logistics đều trân quý bất kỳ chuyến hàng nào mà khách hàng tin tưởng giao cho chúng tôi, và chúng tôi luôn coi vấn đề của khách hàng là của chính mình để nỗ lực và đưa ra các giải pháp phù hợp, tư vấn cho khách hàng để tối ưu hóa chuỗi giá trị.
 
 Trong tương lai gần, PLE Logistics định hướng sẽ tiếp tục phát triển mở rộng mạng lưới toàn quốc tế và cung cấp dịch vụ chuyển phát hàng hóa toàn cầu với chất lượng chuyên nghiệp, tận tâm nhất đến khách hàng.`;
 

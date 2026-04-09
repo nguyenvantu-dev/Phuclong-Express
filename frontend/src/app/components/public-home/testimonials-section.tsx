@@ -22,19 +22,19 @@ export default function TestimonialsSection() {
 
   const testimonials = [
     {
-      quote: 'Tôi rất hài lòng khi đã tin và sử dụng các dịch vụ của Phúc Long Express trong thời gian qua. Tôi sẽ tiếp tục sử dụng các DV của Phúc Long Express và sẽ giới thiệu Phúc Long Express với những người thân của tôi!',
+      quote: 'Tôi rất hài lòng khi đã tin và sử dụng các dịch vụ của Phuc Long Express trong thời gian qua. Tôi sẽ tiếp tục sử dụng các DV của Phuc Long Express và sẽ giới thiệu Phuc Long Express với những người thân của tôi!',
       avatar: '/image1/user-1.png',
       name: 'Chị Thúy Diễm',
       role: 'Khách hàng',
     },
     {
-      quote: 'Sản phẩm vẫn ổn, vận chuyển nhanh, giá cũng hợp lý. Nếu ai có nhu cầu mua hàng ở nước ngoài thì Phúc Long Express đáng tin cậy, nếu có dịp sẽ ủng hộ tiếp.',
+      quote: 'Sản phẩm vẫn ổn, vận chuyển nhanh, giá cũng hợp lý. Nếu ai có nhu cầu mua hàng ở nước ngoài thì Phuc Long Express đáng tin cậy, nếu có dịp sẽ ủng hộ tiếp.',
       avatar: '/image1/user-2.png',
       name: 'Anh Minh Quân',
       role: 'Khách hàng',
     },
     {
-      quote: 'Đầu tiên mình chúc công ty Phúc Long Express ngày một phát triển và dịch vụ có thêm nhiều điều mới, tạo thêm lợi ích cho khách hàng. Đã từng sử dụng qua dịch và rất hài lòng.',
+      quote: 'Đầu tiên mình chúc công ty Phuc Long Express ngày một phát triển và dịch vụ có thêm nhiều điều mới, tạo thêm lợi ích cho khách hàng. Đã từng sử dụng qua dịch và rất hài lòng.',
       avatar: '/image1/user-3.png',
       name: 'Chị Thu Hương',
       role: 'Khách hàng',

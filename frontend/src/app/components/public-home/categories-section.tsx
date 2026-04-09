@@ -36,7 +36,7 @@ export default function CategoriesSection() {
           className="text-3xl md:text-4xl font-bold text-center mb-4"
           style={{ color: colors.text }}
         >
-          <span style={{ color: colors.primary }}>Phúc Long Express</span> HỖ TRỢ MUA ĐA DẠNG NGÀNH HÀNG
+          <span style={{ color: colors.primary }}>Phuc Long Express</span> HỖ TRỢ MUA ĐA DẠNG NGÀNH HÀNG
         </h2>
         <p
           className="text-center mb-12 max-w-2xl mx-auto"
