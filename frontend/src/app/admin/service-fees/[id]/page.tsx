@@ -22,7 +22,7 @@ interface FormData {
   khachBuon: boolean;
 }
 
-const API_BASE = '/api/admin/service-fees';
+const API_BASE = '/api/service-fees';
 
 /**
  * Edit Service Fee Page

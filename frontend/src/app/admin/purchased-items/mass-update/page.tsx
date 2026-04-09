@@ -9,7 +9,7 @@ interface FormData {
   totalItem: string;
 }
 
-const API_BASE = '/api/admin/purchased-items';
+const API_BASE = '/api/purchased-items';
 
 /**
  * Mass Update Purchased Items Page

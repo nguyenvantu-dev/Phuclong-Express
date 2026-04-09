@@ -12,7 +12,7 @@ interface CreateServiceFeeDto {
   khachBuon: boolean;
 }
 
-const API_BASE = '/api/admin/service-fees';
+const API_BASE = '/api/service-fees';
 
 /**
  * Create Service Fee Page

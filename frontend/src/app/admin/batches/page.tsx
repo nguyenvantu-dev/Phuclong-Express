@@ -4,210 +4,316 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import axios from 'axios';
+import {
+  KPICard,
+  FilterBar,
+  FilterField,
+  DataTable,
+  EmptyState,
+  TableLoadingSkeleton,
+} from '@/app/components/admin';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
-/**
- * Batches List Page
- *
- * Converted from admin/LoHang_LietKe.aspx
- * Features:
- * - Filter panel: username, date range
- * - Data table with batches
- * - Pagination
- */
-interface Batch {
-  ID: number;
+interface LoHang {
+  LoHangID: number;
   UserName: string;
-  TrackingNumber: string;
-  OrderNumber: string;
-  NgayDatHang: string;
+  NgayLoHang: string;
   TenLoHang: string;
-  TinhTrang: string;
-  LoaiTien: string;
-  TyGia: number;
-  NgayDenDuKien: string;
-  NgayDenThucTe: string;
-  GhiChu: string;
+  TienLoHangA: number | null;
+  TienPhiHaiQuanB: number | null;
+  TongTienLoHang: number | null;
 }
 
-interface PaginatedResponse<T> {
-  data: T[];
+interface User {
+  UserName: string;
+}
+
+interface BatchesResponse {
+  data: LoHang[];
   total: number;
   page: number;
-  limit: number;
+  pageSize: number;
 }
 
-const getBatches = async (params: Record<string, any>) => {
-  const response = await axios.get<PaginatedResponse<Batch>>(`${API_URL}/batches`, { params });
+function getDefaultDates() {
+  const today = new Date();
+  const from = new Date(today);
+  from.setMonth(from.getMonth() - 1);
+  return {
+    tuNgay: from.toISOString().slice(0, 10),
+    denNgay: today.toISOString().slice(0, 10),
+  };
+}
+
+const formatCurrency = (val: number | null) => {
+  if (val == null) return '-';
+  return val.toLocaleString('vi-VN');
+};
+
+const getBatches = async (params: Record<string, any>): Promise<BatchesResponse> => {
+  const response = await axios.get<BatchesResponse>(`${API_URL}/batches`, { params });
   return response.data;
 };
 
-const formatDate = (date: string | null) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('vi-VN');
+const getUsers = async (): Promise<User[]> => {
+  const response = await axios.get<User[]>(`${API_URL}/users`);
+  return response.data;
 };
 
 export default function BatchesPage() {
-  const [filters, setFilters] = useState({
-    page: 1,
-    limit: 20,
+  const defaults = getDefaultDates();
+
+  const [committed, setCommitted] = useState({
     username: '',
-    startDate: '',
-    endDate: '',
+    tuNgay: defaults.tuNgay,
+    denNgay: defaults.denNgay,
+    page: 1,
+    pageSize: 200,
+  });
+
+  const [draft, setDraft] = useState({
+    username: '',
+    tuNgay: defaults.tuNgay,
+    denNgay: defaults.denNgay,
   });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['batches', filters],
-    queryFn: () => getBatches(filters),
+    queryKey: ['batches', committed],
+    queryFn: () => getBatches(committed),
   });
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+  const { data: users = [] } = useQuery({
+    queryKey: ['users-list'],
+    queryFn: getUsers,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleSearch = () => {
+    setCommitted({ ...draft, page: 1, pageSize: 200 });
+  };
+
+  const handleReset = () => {
+    setDraft({
+      username: '',
+      tuNgay: defaults.tuNgay,
+      denNgay: defaults.denNgay,
+    });
+    setCommitted({
+      username: '',
+      tuNgay: defaults.tuNgay,
+      denNgay: defaults.denNgay,
+      page: 1,
+      pageSize: 200,
+    });
   };
 
   const handlePageChange = (newPage: number) => {
-    setFilters((prev) => ({ ...prev, page: newPage }));
+    setCommitted((prev) => ({ ...prev, page: newPage }));
   };
 
-  const totalPages = data ? Math.ceil(data.total / data.limit) : 0;
+  const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
+  const totalValue = data?.data?.reduce((sum, item) => sum + (item.TongTienLoHang || 0), 0) || 0;
+
+  const columns = [
+    {
+      key: 'UserName',
+      label: 'Username',
+      width: '150px',
+      align: 'left' as const,
+    },
+    {
+      key: 'TenLoHang',
+      label: 'Mã lô ngày',
+      width: '140px',
+      align: 'left' as const,
+    },
+    {
+      key: 'TienLoHangA',
+      label: 'Tiền Lô Hàng (A)',
+      width: '150px',
+      align: 'right' as const,
+      render: (value: number | null) => <span className="text-cyan-700 font-medium">{formatCurrency(value)}</span>,
+    },
+    {
+      key: 'TienPhiHaiQuanB',
+      label: 'Tiền phí hải quan (B)',
+      width: '150px',
+      align: 'right' as const,
+      render: (value: number | null) => <span className="text-blue-700 font-medium">{formatCurrency(value)}</span>,
+    },
+    {
+      key: 'TongTienLoHang',
+      label: 'Tổng tiền (A + B)',
+      width: '150px',
+      align: 'right' as const,
+      render: (value: number | null) => <span className="text-green-700 font-bold">{formatCurrency(value)}</span>,
+    },
+    {
+      key: 'LoHangID',
+      label: 'Hành động',
+      width: '120px',
+      align: 'center' as const,
+      render: (_: any, row: LoHang) => (
+        <Link
+          href={`/admin/batches/${row.LoHangID}`}
+          className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 transition-colors"
+        >
+          Chi tiết
+        </Link>
+      ),
+    },
+  ];
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Danh sách lô hàng</h1>
-        <Link
-          href="/admin/batches/new"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Thêm mới lô hàng
-        </Link>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
-            <input
-              type="text"
-              value={filters.username}
-              onChange={(e) => handleFilterChange('username', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              placeholder="Tìm theo username"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Từ ngày</label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange('startDate', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Đến ngày</label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange('endDate', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
-          <div className="flex items-end">
-            <button
-              onClick={() => setFilters({ page: 1, limit: 20, username: '', startDate: '', endDate: '' })}
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 mr-2"
-            >
-              Reset
-            </button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-cyan-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-cyan-900 mb-2">Danh sách lô hàng</h1>
+          <p className="text-gray-600">Quản lý và theo dõi các lô hàng nhập khẩu</p>
         </div>
-      </div>
 
-      {/* Data Table */}
-      <div className="bg-white rounded shadow overflow-hidden">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <KPICard
+            label="Tổng lô hàng (30 ngày)"
+            value={data?.total || 0}
+            unit="lô"
+          />
+          <KPICard
+            label="Tổng giá trị"
+            value={(totalValue / 1_000_000).toFixed(1)}
+            unit="triệu VND"
+          />
+          <KPICard
+            label="Trung bình/lô"
+            value={data?.data?.length ? (totalValue / data.data.length / 1_000_000).toFixed(1) : 0}
+            unit="triệu VND"
+          />
+        </div>
+
+        {/* Filter Bar */}
+        <FilterBar onReset={handleReset}>
+          <FilterField label="Từ ngày">
+            <input
+              type="date"
+              value={draft.tuNgay}
+              onChange={(e) => setDraft((p) => ({ ...p, tuNgay: e.target.value }))}
+              className="w-full px-3 py-2 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            />
+          </FilterField>
+          <FilterField label="Đến ngày">
+            <input
+              type="date"
+              value={draft.denNgay}
+              onChange={(e) => setDraft((p) => ({ ...p, denNgay: e.target.value }))}
+              className="w-full px-3 py-2 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            />
+          </FilterField>
+          <FilterField label="Username">
+            <select
+              value={draft.username}
+              onChange={(e) => setDraft((p) => ({ ...p, username: e.target.value }))}
+              className="w-full px-3 py-2 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            >
+              <option value="">--Tất cả--</option>
+              {users
+                .slice()
+                .sort((a, b) => a.UserName.localeCompare(b.UserName))
+                .map((u) => (
+                  <option key={u.UserName} value={u.UserName}>
+                    {u.UserName}
+                  </option>
+                ))}
+            </select>
+          </FilterField>
+          <button
+            onClick={handleSearch}
+            className="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium"
+          >
+            Tìm kiếm
+          </button>
+        </FilterBar>
+
+        {/* Data Table */}
         {isLoading ? (
-          <div className="p-4 text-center">Đang tải...</div>
+          <TableLoadingSkeleton />
         ) : error ? (
-          <div className="p-4 text-center text-red-500">Lỗi tải dữ liệu</div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+            Có lỗi khi tải dữ liệu. Vui lòng thử lại.
+          </div>
+        ) : data?.data?.length === 0 ? (
+          <EmptyState
+            title="Không có lô hàng"
+            description="Không tìm thấy lô hàng nào khớp với bộ lọc của bạn"
+            action={{
+              label: 'Thêm lô hàng mới',
+              onClick: () => (window.location.href = '/admin/batches/new'),
+            }}
+          />
         ) : (
           <>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã lô hàng</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tracking Number</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày đặt</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày dự kiến</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày thực tế</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tình trạng</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data?.data.map((batch) => (
-                  <tr key={batch.ID} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">{batch.ID}</td>
-                    <td className="px-4 py-3 text-sm">{batch.UserName}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <Link href={`/batches/${batch.ID}`} className="text-blue-600 hover:underline">
-                        {batch.TenLoHang}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm">{batch.TrackingNumber}</td>
-                    <td className="px-4 py-3 text-sm">{formatDate(batch.NgayDatHang)}</td>
-                    <td className="px-4 py-3 text-sm">{formatDate(batch.NgayDenDuKien)}</td>
-                    <td className="px-4 py-3 text-sm">{formatDate(batch.NgayDenThucTe)}</td>
-                    <td className="px-4 py-3 text-sm">{batch.TinhTrang}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <Link
-                        href={`/batches/${batch.ID}/edit`}
-                        className="text-blue-600 hover:underline mr-2"
-                      >
-                        Sửa
-                      </Link>
-                      <Link
-                        href={`/batches/${batch.ID}/costs`}
-                        className="text-green-600 hover:underline"
-                      >
-                        Chi phí
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable columns={columns} data={data?.data || []} rowKey="LoHangID" />
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="px-4 py-3 flex items-center justify-between border-t">
-                <div className="text-sm text-gray-700">
-                  Trang {data?.page} / {totalPages} (Tổng: {data?.total} bản ghi)
+              <div className="mt-6 flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  Hiển thị <span className="font-semibold">{(committed.page - 1) * committed.pageSize + 1}</span> đến{' '}
+                  <span className="font-semibold">
+                    {Math.min(committed.page * committed.pageSize, data?.total || 0)}
+                  </span>{' '}
+                  trong <span className="font-semibold">{data?.total}</span> kết quả
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handlePageChange(filters.page - 1)}
-                    disabled={filters.page === 1}
-                    className="px-3 py-1 border rounded disabled:opacity-50"
+                    onClick={() => handlePageChange(committed.page - 1)}
+                    disabled={committed.page === 1}
+                    className="px-4 py-2 border border-cyan-300 rounded-lg text-cyan-700 hover:bg-cyan-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Trước
+                    ← Trước
                   </button>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`w-10 h-10 rounded-lg transition-colors ${
+                            committed.page === pageNum
+                              ? 'bg-cyan-600 text-white font-bold'
+                              : 'border border-cyan-300 text-cyan-700 hover:bg-cyan-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <button
-                    onClick={() => handlePageChange(filters.page + 1)}
-                    disabled={filters.page >= totalPages}
-                    className="px-3 py-1 border rounded disabled:opacity-50"
+                    onClick={() => handlePageChange(committed.page + 1)}
+                    disabled={committed.page >= totalPages}
+                    className="px-4 py-2 border border-cyan-300 rounded-lg text-cyan-700 hover:bg-cyan-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Sau
+                    Sau →
                   </button>
                 </div>
               </div>
             )}
           </>
         )}
+
+        {/* Add New Button */}
+        <div className="mt-8 flex justify-end">
+          <Link
+            href="/admin/batches/new"
+            className="inline-flex items-center px-6 py-3 rounded-lg text-white bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 transition-colors font-semibold shadow-lg"
+          >
+            + Thêm lô hàng mới
+          </Link>
+        </div>
       </div>
     </div>
   );

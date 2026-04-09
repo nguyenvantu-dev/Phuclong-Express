@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
-import { Sequelize } from 'sequelize';
+import { Sequelize, QueryTypes } from 'sequelize';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateBatchDto } from './dto/update-batch.dto';
 import { QueryBatchDto } from './dto/query-batch.dto';
@@ -15,52 +15,81 @@ export class BatchesService {
 
   /**
    * Find all batches with filters and pagination
+   *
+   * Replicates SP_Lay_LoHang logic using two separate parameterized queries.
+   * Sequelize with MSSQL/tedious only returns the first result set from a SP,
+   * so we avoid the SP and query directly.
+   *
+   * Columns match SP_Lay_LoHang output:
+   *   LoHangID, UserName, NgayLoHang (= NgayDatHang), TenLoHang,
+   *   LoaiTien, TyGia, NgayDenDuKien, NgayDenThucTe, NguoiTao, NgayTao,
+   *   TienLoHangA (sum PhiShipVeVN), TienPhiHaiQuanB (sum ThueHaiQuan), TongTienLoHang (A+B)
    */
-  async findAll(query: QueryBatchDto): Promise<{ data: any[]; total: number; page: number; limit: number }> {
-    const { username, startDate, endDate, page = 1, limit = 20 } = query;
+  async findAll(query: QueryBatchDto): Promise<{ data: any[]; total: number; page: number; pageSize: number }> {
+    const { username = '', tuNgay, denNgay, page = 1, pageSize = 200 } = query;
+    const offset = (page - 1) * pageSize;
+
+    // Build parameterized WHERE clause matching SP_Lay_LoHang filter logic
+    const replacements: Record<string, any> = { offset, pageSize };
+    const conditions: string[] = [];
+
+    if (username) {
+      conditions.push(`lh.UserName = :username`);
+      replacements.username = username;
+    }
+    if (tuNgay) {
+      conditions.push(`lh.NgayLoHang >= :tuNgay`);
+      replacements.tuNgay = tuNgay;
+    }
+    if (denNgay) {
+      // Include full end day (23:59:59) — mirrors C# DenNgay with time 23:59:59
+      conditions.push(`lh.NgayLoHang <= DATEADD(second, 86399, CAST(:denNgay AS datetime))`);
+      replacements.denNgay = denNgay;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     try {
-      const offset = (page - 1) * limit;
-      let whereClause = 'WHERE 1=1';
-
-      if (username) {
-        whereClause += ` AND UserName LIKE '%${username}%'`;
-      }
-      if (startDate) {
-        whereClause += ` AND NgayDatHang >= '${startDate}'`;
-      }
-      if (endDate) {
-        whereClause += ` AND NgayDatHang <= '${endDate}'`;
-      }
-
-      // Get total count
-      const [countResult]: any[] = await this.sequelize.query(
-        `SELECT COUNT(*) as total FROM dbo.tbLoHang ${whereClause}`
+      // 1. Total count
+      const [countResult] = await this.sequelize.query<{ total: number }>(
+        `SELECT COUNT(*) as total FROM dbo.tbLoHang lh ${whereClause}`,
+        { replacements, type: QueryTypes.SELECT }
       );
-      const total = Number(countResult[0]?.total) || 0;
+      const total = Number((countResult as any)?.total) || 0;
 
-      // Get paginated data
-      const [data] = await this.sequelize.query(`
-        SELECT * FROM (
-          SELECT ROW_NUMBER() OVER (ORDER BY ID DESC) as RowNum, * FROM dbo.tbLoHang ${whereClause}
-        ) AS Paginated
-        WHERE RowNum BETWEEN ${offset + 1} AND ${offset + limit}
-      `);
+      // 2. Paginated data — mirrors LoHang entity from RtnRowLoHang:
+      //    aliases ID→LoHangID, NgayDatHang→NgayLoHang
+      //    computes TienLoHangA, TienPhiHaiQuanB, TongTienLoHang via subqueries
+      const data = await this.sequelize.query(
+        `SELECT paged.*
+        FROM (
+          SELECT
+            ROW_NUMBER() OVER (ORDER BY lh.LoHangID DESC) AS RowNum,
+            lh.LoHangID AS LoHangID,
+            lh.UserName,
+            lh.NgayLoHang,
+            lh.TenLoHang,
+            lh.LoaiTien,
+            lh.TyGia,
+            lh.NgayDenDuKien,
+            lh.NgayDenThucTe,
+            lh.NguoiTao,
+            lh.NgayTao,
+            ISNULL((SELECT SUM(sv.TongTienShipVeVN_VND) FROM dbo.tbLoHang_PhiShipVeVN sv WHERE sv.LoHangID = lh.LoHangID), 0) AS TienLoHangA,
+            ISNULL((SELECT SUM(hq.TongTienThueHaiQuan_VND) FROM dbo.tbLoHang_ThueHaiQuan hq WHERE hq.LoHangID = lh.LoHangID), 0) AS TienPhiHaiQuanB,
+            ISNULL((SELECT SUM(sv.TongTienShipVeVN_VND) FROM dbo.tbLoHang_PhiShipVeVN sv WHERE sv.LoHangID = lh.LoHangID), 0)
+              + ISNULL((SELECT SUM(hq.TongTienThueHaiQuan_VND) FROM dbo.tbLoHang_ThueHaiQuan hq WHERE hq.LoHangID = lh.LoHangID), 0) AS TongTienLoHang
+          FROM dbo.tbLoHang lh
+          ${whereClause}
+        ) paged
+        WHERE paged.RowNum BETWEEN :offset + 1 AND :offset + :pageSize`,
+        { replacements, type: QueryTypes.SELECT }
+      );
 
-      return {
-        data: data || [],
-        total,
-        page,
-        limit,
-      };
+      return { data: data || [], total, page, pageSize };
     } catch (error) {
       console.error('Error in findAll batches:', error.message);
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-      };
+      return { data: [], total: 0, page, pageSize };
     }
   }
 
@@ -173,7 +202,7 @@ export class BatchesService {
 
     try {
       const [result]: any[] = await this.sequelize.query(`
-        INSERT INTO dbo.tbLoHang (UserName, TrackingNumber, OrderNumber, NgayDatHang, NhaVanChuyenID, TenLoHang, TinhTrang, GhiChu, LoaiTien, TyGia, NgayDenDuKien, NgayDenThucTe, NguoiTao, DaXoa, NgayTao)
+        INSERT INTO dbo.tbLoHang (UserName, TrackingNumber, OrderNumber, NgayLoHang, NhaVanChuyenID, TenLoHang, TinhTrang, GhiChu, LoaiTien, TyGia, NgayDenDuKien, NgayDenThucTe, NguoiTao, DaXoa, NgayTao)
         VALUES (N'${username || ''}', N'${trackingNumber || ''}', N'${orderNumber || ''}', ${ngayDatHang ? `'${ngayDatHang}'` : 'GETDATE()'}, ${nhaVanChuyenId || 'NULL'}, N'${generatedTenLoHang}', N'${tinhTrang || 'Mới tạo'}', N'${ghiChu || ''}', N'${loaiTien || 'USD'}', ${tyGia || 1}, ${ngayDenDuKien ? `'${ngayDenDuKien}'` : 'NULL'}, ${ngayDenThucTe ? `'${ngayDenThucTe}'` : 'NULL'}, N'${nguoiTao || ''}', 0, GETDATE());
         SELECT SCOPE_IDENTITY() as ID;
       `);
@@ -204,7 +233,7 @@ export class BatchesService {
       updates.push(`OrderNumber = N'${updateBatchDto.orderNumber}'`);
     }
     if (updateBatchDto.ngayDatHang !== undefined) {
-      updates.push(`NgayDatHang = '${updateBatchDto.ngayDatHang}'`);
+      updates.push(`NgayLoHang = '${updateBatchDto.ngayDatHang}'`);
     }
     if (updateBatchDto.nhaVanChuyenId !== undefined) {
       updates.push(`NhaVanChuyenID = ${updateBatchDto.nhaVanChuyenId}`);
@@ -275,7 +304,7 @@ export class BatchesService {
         SELECT lhcl.*, lcl.TenLoaiChiPhiLoHang
         FROM dbo.tbLoHang_ChiPhiLoHang lhcl
         LEFT JOIN dbo.LoaiChiPhiLoHang lcl ON lhcl.LoaiChiPhiLoHangID = lcl.ID
-        WHERE lhcl.LoHangID = (SELECT ID FROM dbo.tbLoHang WHERE TenLoHang = '${batchId}')
+        WHERE lhcl.LoHangID = ${batchId}
         ORDER BY lhcl.ID DESC
       `);
       return data || [];
@@ -380,7 +409,7 @@ export class BatchesService {
   async findCustoms(batchId: number): Promise<any[]> {
     try {
       const [data] = await this.sequelize.query(`
-        SELECT lhthq.*, lhthq.TenLoaiHangThueHaiQuan
+        SELECT lhthq.*, lhthq2.TenLoaiHangThueHaiQuan
         FROM dbo.tbLoHang_ThueHaiQuan lhthq
         LEFT JOIN dbo.LoaiHangThueHaiQuan lhthq2 ON lhthq.LoaiHangThueHaiQuanID = lhthq2.ID
         WHERE lhthq.LoHangID = ${batchId}

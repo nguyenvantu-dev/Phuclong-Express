@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsNumber, Min, Max, IsDateString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 /**
  * Query Tracking DTO
@@ -31,10 +31,12 @@ export class QueryTrackingDto {
   quocGiaId?: number;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
   startDate?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
   endDate?: string;
 
@@ -48,6 +50,6 @@ export class QueryTrackingDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  @Max(100)
-  limit?: number = 20;
+  @Max(500)
+  limit?: number = 200;
 }

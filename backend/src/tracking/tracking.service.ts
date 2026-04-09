@@ -6,6 +6,7 @@ import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { QueryTrackingDto } from './dto/query-tracking.dto';
 import { MassUpdateTrackingDto } from './dto/mass-update-tracking.dto';
+import { SystemLogsService } from '../system-logs/system-logs.service';
 
 /**
  * Tracking Service
@@ -14,7 +15,10 @@ import { MassUpdateTrackingDto } from './dto/mass-update-tracking.dto';
  */
 @Injectable()
 export class TrackingService {
-  constructor(@Inject('SEQUELIZE') private sequelize: Sequelize) {}
+  constructor(
+    @Inject('SEQUELIZE') private sequelize: Sequelize,
+    private readonly systemLogsService: SystemLogsService,
+  ) {}
 
   /**
    * Find all tracking with filters and pagination
@@ -25,13 +29,12 @@ export class TrackingService {
 
     try {
       // Build comma-separated status list for SP
-      const tinhTrang = statuses ? statuses.replace(/,/g, "','") : '';
-
+      const tinhTrang = statuses ?  `N'${statuses.split(',').map(x => `''${x.trim()}''`).join(',')}'` : `''`;
       // Use SP_Lay_Tracking
       const results = await this.sequelize.query(
         `EXEC dbo.SP_Lay_Tracking
           @UserName = :username,
-          @TinhTrang = :tinhTrang,
+          @TinhTrang = ${tinhTrang},
           @NoiDungTim = :search,
           @TimTheo = -1,
           @TrackingNumber = :trackingNumber,
@@ -45,7 +48,7 @@ export class TrackingService {
         {
           replacements: {
             username: username || '',
-            tinhTrang,
+            // tinhTrang,
             search: search || '',
             trackingNumber: trackingNumber || '',
             tenLoHang: tenLoHang || '',
@@ -71,7 +74,7 @@ export class TrackingService {
         limit,
       };
     } catch (error) {
-      console.error('Error in findAll tracking:', error.message);
+      console.error('Error in findAll tracking:', error);
       return {
         data: [],
         total: 0,
@@ -142,15 +145,15 @@ export class TrackingService {
 
   /**
    * Get tracking counts by status
+   * Uses: SP_Lay_SoLuongTracking (same as C# dBConnect.LaySoLuongTracking(""))
    */
   async getCounts(): Promise<any> {
     try {
-      const [data] = await this.sequelize.query(`
-        SELECT TinhTrang, COUNT(*) as SL
-        FROM dbo.tbTracking
-        WHERE DaXoa = 0
-        GROUP BY TinhTrang
-      `);
+      // SP returns rows: { TinhTrang, SL }
+      const data = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_SoLuongTracking @UserName = :username`,
+        { replacements: { username: '' }, type: QueryTypes.SELECT }
+      );
 
       const counts: Record<string, number> = {
         Received: 0,
@@ -183,18 +186,20 @@ export class TrackingService {
 
   /**
    * Find tracking by ID
+   * Uses: SP_Lay_TrackingByID (same as C# BLL.LayTrackingByID)
    */
   async findOne(id: number): Promise<any> {
     try {
-      const [result]: any[] = await this.sequelize.query(
-        `SELECT * FROM dbo.tbTracking WHERE ID = ${id}`
+      const results = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_TrackingByID @TrackingID = :id`,
+        { replacements: { id }, type: QueryTypes.SELECT }
       );
 
-      if (!result || result.length === 0) {
+      if (!results || results.length === 0) {
         throw new NotFoundException(`Tracking with ID ${id} not found`);
       }
 
-      return result[0];
+      return results[0];
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -206,19 +211,62 @@ export class TrackingService {
 
   /**
    * Create new tracking
+   * Uses: SP_Them_Tracking (same as C# DBConnect.ThemTracking)
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:ThemTracking', hanhDong='ThemMoi'
    */
   async create(createTrackingDto: CreateTrackingDto): Promise<any> {
     const { username, trackingNumber, orderNumber, ngayDatHang, nhaVanChuyenId, quocGiaId, tinhTrang, ghiChu, kien, mawb, hawb, nguoiTao } = createTrackingDto;
 
     try {
+      // SP_Them_Tracking returns: { ID: newTrackingId }
       const [result]: any[] = await this.sequelize.query(`
-        INSERT INTO dbo.Tracking (UserName, TrackingNumber, OrderNumber, NgayDatHang, NhaVanChuyenID, QuocGiaID, TinhTrang, GhiChu, Kien, Mawb, Hawb, NguoiTao, DaXoa, NgayTao)
-        VALUES (N'${username || ''}', N'${trackingNumber || ''}', N'${orderNumber || ''}', ${ngayDatHang ? `'${ngayDatHang}'` : 'GETDATE()'}, ${nhaVanChuyenId || 'NULL'}, ${quocGiaId || 'NULL'}, N'${tinhTrang || 'Received'}', N'${ghiChu || ''}', N'${kien || ''}', N'${mawb || ''}', N'${hawb || ''}', N'${nguoiTao || ''}', 0, GETDATE());
-        SELECT SCOPE_IDENTITY() as ID;
-      `);
+        EXEC dbo.SP_Them_Tracking
+          @UserName = :username,
+          @TrackingNumber = :trackingNumber,
+          @OrderNumber = :orderNumber,
+          @NgayDatHang = :ngayDatHang,
+          @NhaVanChuyenID = :nhaVanChuyenId,
+          @QuocGiaID = :quocGiaId,
+          @TinhTrang = :tinhTrang,
+          @GhiChu = :ghiChu,
+          @NguoiTao = :nguoiTao,
+          @Kien = :kien,
+          @Mawb = :mawb,
+          @Hawb = :hawb,
+          @CoTaoLoHang = 0,
+          @GhiChuLoHang = ''
+      `,
+      {
+        replacements: {
+          username: username || '',
+          trackingNumber: trackingNumber || '',
+          orderNumber: orderNumber || '',
+          ngayDatHang: ngayDatHang || new Date().toISOString().split('T')[0],
+          nhaVanChuyenId: nhaVanChuyenId || null,
+          quocGiaId: quocGiaId || null,
+          tinhTrang: tinhTrang || 'Received',
+          ghiChu: ghiChu || '',
+          nguoiTao: nguoiTao || '',
+          kien: kien || '',
+          mawb: mawb || '',
+          hawb: hawb || '',
+        },
+        type: QueryTypes.SELECT,
+      });
 
-      const insertId = result[0]?.ID;
-      return this.findOne(insertId);
+      const insertedTracking = result && result.length > 0 ? result[0] : null;
+      const insertId = insertedTracking?.ID || insertedTracking?.TrackingID;
+
+      // Log system operation
+      await this.systemLogsService.create({
+        nguoiTao: nguoiTao || '',
+        nguon: 'Tracking_ThemSua:ThemTracking',
+        hanhDong: 'ThemMoi',
+        doiTuong: insertId?.toString() || '',
+        noiDung: `TrackingNumber: ${trackingNumber}; OrderNumber: ${orderNumber}; TinhTrang: ${tinhTrang}`,
+      });
+
+      return;
     } catch (error) {
       console.error('Error in create tracking:', error.message);
       throw error;
@@ -227,146 +275,278 @@ export class TrackingService {
 
   /**
    * Update tracking
+   * Uses: SP_CapNhat_Tracking (same as C# DBConnect.CapNhatTracking)
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatTracking', hanhDong='ChinhSua'
    */
-  async update(id: number, updateTrackingDto: UpdateTrackingDto): Promise<any> {
+  async update(id: number, updateTrackingDto: UpdateTrackingDto, actorUsername?: string): Promise<any> {
     await this.findOne(id);
 
-    const updates: string[] = [];
+    try {
+      // Get current tracking to provide all fields for SP (even unchanged ones)
+      const currentTracking = await this.findOne(id);
+      const allValues: Record<string, any> = {
+        id,
+        username: updateTrackingDto.username ?? currentTracking.UserName ?? '',
+        trackingNumber: updateTrackingDto.trackingNumber ?? currentTracking.TrackingNumber ?? '',
+        orderNumber: updateTrackingDto.orderNumber ?? currentTracking.OrderNumber ?? '',
+        ngayDatHang: updateTrackingDto.ngayDatHang ?? currentTracking.NgayDatHang ?? new Date().toISOString().split('T')[0],
+        nhaVanChuyenId: updateTrackingDto.nhaVanChuyenId ?? currentTracking.NhaVanChuyenID ?? null,
+        quocGiaId: updateTrackingDto.quocGiaId ?? currentTracking.QuocGiaID ?? null,
+        tinhTrang: updateTrackingDto.tinhTrang ?? currentTracking.TinhTrang ?? 'Received',
+        ghiChu: updateTrackingDto.ghiChu ?? currentTracking.GhiChu ?? '',
+        nguoiTao: actorUsername ?? updateTrackingDto.nguoiTao ?? currentTracking.NguoiTao ?? '',
+        kien: updateTrackingDto.kien ?? currentTracking.Kien ?? '',
+        mawb: updateTrackingDto.mawb ?? currentTracking.Mawb ?? '',
+        hawb: updateTrackingDto.hawb ?? currentTracking.Hawb ?? '',
+        coTaoLoHang: 0,
+        ghiChuLoHang: '',
+        udUserName: 1,
+        udTrackingNumber: 1,
+        udOrderNumber: 1,
+        udNgayDatHang: 1,
+        udNhaVanChuyenID: 1,
+        udQuocGiaID: 1,
+        udTinhTrang: 1,
+        udGhiChu: 1,
+        udKien: 1,
+        udMawb: 1,
+        udHawb: 1,
+        udGhiChuLoHang: 0,
+      };
 
-    if (updateTrackingDto.username !== undefined) {
-      updates.push(`UserName = N'${updateTrackingDto.username}'`);
-    }
-    if (updateTrackingDto.trackingNumber !== undefined) {
-      updates.push(`TrackingNumber = N'${updateTrackingDto.trackingNumber}'`);
-    }
-    if (updateTrackingDto.orderNumber !== undefined) {
-      updates.push(`OrderNumber = N'${updateTrackingDto.orderNumber}'`);
-    }
-    if (updateTrackingDto.ngayDatHang !== undefined) {
-      updates.push(`NgayDatHang = '${updateTrackingDto.ngayDatHang}'`);
-    }
-    if (updateTrackingDto.nhaVanChuyenId !== undefined) {
-      updates.push(`NhaVanChuyenID = ${updateTrackingDto.nhaVanChuyenId}`);
-    }
-    if (updateTrackingDto.quocGiaId !== undefined) {
-      updates.push(`QuocGiaID = ${updateTrackingDto.quocGiaId}`);
-    }
-    if (updateTrackingDto.tinhTrang !== undefined) {
-      updates.push(`TinhTrang = N'${updateTrackingDto.tinhTrang}'`);
-    }
-    if (updateTrackingDto.ghiChu !== undefined) {
-      updates.push(`GhiChu = N'${updateTrackingDto.ghiChu}'`);
-    }
-    if (updateTrackingDto.kien !== undefined) {
-      updates.push(`Kien = N'${updateTrackingDto.kien}'`);
-    }
-    if (updateTrackingDto.mawb !== undefined) {
-      updates.push(`Mawb = N'${updateTrackingDto.mawb}'`);
-    }
-    if (updateTrackingDto.hawb !== undefined) {
-      updates.push(`Hawb = N'${updateTrackingDto.hawb}'`);
-    }
+      const paramMap: Array<{ spParam: string; replacementKey: string }> = [
+        { spParam: 'TrackingID', replacementKey: 'id' },
+        { spParam: 'UserName', replacementKey: 'username' },
+        { spParam: 'TrackingNumber', replacementKey: 'trackingNumber' },
+        { spParam: 'OrderNumber', replacementKey: 'orderNumber' },
+        { spParam: 'NgayDatHang', replacementKey: 'ngayDatHang' },
+        { spParam: 'NhaVanChuyenID', replacementKey: 'nhaVanChuyenId' },
+        { spParam: 'QuocGiaID', replacementKey: 'quocGiaId' },
+        { spParam: 'TinhTrang', replacementKey: 'tinhTrang' },
+        { spParam: 'GhiChu', replacementKey: 'ghiChu' },
+        { spParam: 'NguoiTao', replacementKey: 'nguoiTao' },
+        { spParam: 'Kien', replacementKey: 'kien' },
+        { spParam: 'Mawb', replacementKey: 'mawb' },
+        { spParam: 'Hawb', replacementKey: 'hawb' },
+        { spParam: 'CoTaoLoHang', replacementKey: 'coTaoLoHang' },
+        { spParam: 'GhiChuLoHang', replacementKey: 'ghiChuLoHang' },
+        { spParam: 'udUserName', replacementKey: 'udUserName' },
+        { spParam: 'udTrackingNumber', replacementKey: 'udTrackingNumber' },
+        { spParam: 'udOrderNumber', replacementKey: 'udOrderNumber' },
+        { spParam: 'udNgayDatHang', replacementKey: 'udNgayDatHang' },
+        { spParam: 'udNhaVanChuyenID', replacementKey: 'udNhaVanChuyenID' },
+        { spParam: 'udQuocGiaID', replacementKey: 'udQuocGiaID' },
+        { spParam: 'udTinhTrang', replacementKey: 'udTinhTrang' },
+        { spParam: 'udGhiChu', replacementKey: 'udGhiChu' },
+        { spParam: 'udKien', replacementKey: 'udKien' },
+        { spParam: 'udMawb', replacementKey: 'udMawb' },
+        { spParam: 'udHawb', replacementKey: 'udHawb' },
+        { spParam: 'udGhiChuLoHang', replacementKey: 'udGhiChuLoHang' },
+      ];
 
-    if (updates.length > 0) {
-      await this.sequelize.query(`
-        UPDATE dbo.Tracking SET ${updates.join(', ')} WHERE ID = ${id}
-      `);
-    }
+      const spParams = await this.getProcedureParams('dbo.SP_CapNhat_Tracking');
+      const selectedParams = paramMap.filter((p) => spParams.has(p.spParam.toLowerCase()));
 
-    return this.findOne(id);
+      const execSql = `EXEC dbo.SP_CapNhat_Tracking\n${selectedParams
+        .map((p) => `  @${p.spParam} = :${p.replacementKey}`)
+        .join(',\n')}`;
+      const replacements = selectedParams.reduce((acc, p) => {
+        acc[p.replacementKey] = allValues[p.replacementKey];
+        return acc;
+      }, {} as Record<string, any>);
+
+      await this.sequelize.query(execSql, {
+        replacements,
+        type: QueryTypes.RAW,
+      });
+
+      // Log system operation
+      const updatedFields = Object.keys(updateTrackingDto).filter(k => updateTrackingDto[k] !== undefined);
+      await this.systemLogsService.create({
+        nguoiTao: currentTracking.NguoiTao || '',
+        nguon: 'Tracking_ThemSua:CapNhatTracking',
+        hanhDong: 'ChinhSua',
+        doiTuong: id.toString(),
+        noiDung: `Fields: ${updatedFields.join(', ')}`,
+      });
+
+      return this.findOne(id);
+    } catch (error) {
+      console.error('Error in update tracking:', (error as any).message);
+      throw error;
+    }
+  }
+
+  private async getProcedureParams(procedureName: string): Promise<Set<string>> {
+    const rows = await this.sequelize.query(
+      `
+        SELECT p.name AS parameterName
+        FROM sys.parameters p
+        WHERE p.object_id = OBJECT_ID(:procedureName)
+      `,
+      {
+        replacements: { procedureName },
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    return new Set(
+      (rows as Array<{ parameterName: string }>)
+        .map((x) => (x.parameterName || '').replace(/^@/, '').toLowerCase())
+        .filter(Boolean),
+    );
   }
 
   /**
    * Soft delete tracking
+   * Uses: SP_Xoa_Tracking (same as C# DBConnect.XoaTracking)
    */
   async remove(id: number): Promise<void> {
+    // Verify tracking exists first
     await this.findOne(id);
 
-    await this.sequelize.query(`
-      UPDATE dbo.Tracking SET DaXoa = 1 WHERE ID = ${id}
-    `);
+    try {
+      await this.sequelize.query(
+        `EXEC dbo.SP_Xoa_Tracking @TrackingID = :id`,
+        { replacements: { id }, type: QueryTypes.RAW }
+      );
+    } catch (error) {
+      console.error('Error in remove tracking:', (error as any).message);
+      throw error;
+    }
   }
 
   /**
    * Mass delete tracking
+   * Uses: SP_Xoa_MassDeleteTracking (same as C# dBConnect.MassDeleteTracking(idList))
+   * Logs: ThemSystemLogs(nguoiTao, "Tracking_LietKe:MassDelete", "Xoa", "", "ID: ...")
    */
-  async massDelete(ids: number[]): Promise<{ deleted: number }> {
+  async massDelete(ids: number[], nguoiTao = ''): Promise<{ deleted: number }> {
     const idList = ids.join(',');
 
-    await this.sequelize.query(`
-      UPDATE dbo.Tracking SET DaXoa = 1 WHERE ID IN (${idList})
-    `);
+    await this.sequelize.query(
+      `EXEC dbo.SP_Xoa_MassDeleteTracking @id = :id`,
+      { replacements: { id: idList }, type: QueryTypes.RAW }
+    );
+
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'Tracking_LietKe:MassDelete',
+      hanhDong: 'Xoa',
+      doiTuong: '',
+      noiDung: `ID: ${idList}`,
+    });
 
     return { deleted: ids.length };
   }
 
   /**
    * Mass update status
+   * Uses: SP_CapNhat_MassStatusTracking (same as C# dBConnect.MassStatusTracking(idList, tinhTrang, null, nguoiTao))
+   * Logs: ThemSystemLogs(nguoiTao, "Tracking_LietKe:MassXxx", "Chinh sua", "", "ID: ...")
    */
   async massStatus(massUpdateDto: MassUpdateTrackingDto): Promise<{ updated: number }> {
-    const { ids, tinhTrang } = massUpdateDto;
+    const { ids, tinhTrang, nguoiTao = '' } = massUpdateDto;
     const idList = ids.join(',');
 
-    await this.sequelize.query(`
-      UPDATE dbo.Tracking SET TinhTrang = N'${tinhTrang}' WHERE ID IN (${idList})
-    `);
+    await this.sequelize.query(
+      `EXEC dbo.SP_CapNhat_MassStatusTracking
+        @id = :id,
+        @TinhTrang = :tinhTrang,
+        @NgayChuyenTinhTrang = NULL,
+        @NguoiTao = :nguoiTao`,
+      { replacements: { id: idList, tinhTrang, nguoiTao }, type: QueryTypes.RAW }
+    );
+
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: `Tracking_LietKe:Mass${tinhTrang}`,
+      hanhDong: 'Chinh sua',
+      doiTuong: '',
+      noiDung: `ID: ${idList}`,
+    });
 
     return { updated: ids.length };
   }
 
   /**
    * Mass complete tracking
+   * Uses: SP_CapNhat_MassStatusTracking with TinhTrang='Completed'
    */
-  async massComplete(ids: number[]): Promise<{ updated: number }> {
+  async massComplete(ids: number[], nguoiTao = ''): Promise<{ updated: number }> {
     const idList = ids.join(',');
 
-    await this.sequelize.query(`
-      UPDATE dbo.Tracking SET TinhTrang = 'Completed' WHERE ID IN (${idList})
-    `);
+    await this.sequelize.query(
+      `EXEC dbo.SP_CapNhat_MassStatusTracking
+        @id = :id,
+        @TinhTrang = 'Completed',
+        @NgayChuyenTinhTrang = NULL,
+        @NguoiTao = :nguoiTao`,
+      { replacements: { id: idList, nguoiTao }, type: QueryTypes.RAW }
+    );
+
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'Tracking_LietKe:MassComplete',
+      hanhDong: 'Chinh sua',
+      doiTuong: '',
+      noiDung: `ID: ${idList}`,
+    });
 
     return { updated: ids.length };
   }
 
   /**
    * Mass complete tracking with filters
+   * Uses: SP_CapNhat_MassStatusAllTrackingWithFilter (same as C# dBConnect.MassStatusAllTrackingWithFilter(...))
+   * Logs: ThemSystemLogs with full filter details
    */
-  async massCompleteAll(query: QueryTrackingDto): Promise<{ updated: number }> {
-    const { username, statuses, search, trackingNumber, tenLoHang, quocGiaId, startDate, endDate } = query;
+  async massCompleteAll(query: QueryTrackingDto, nguoiTao = ''): Promise<{ updated: number }> {
+    const { username = '', statuses = '', search = '', trackingNumber = '', tenLoHang = '', quocGiaId, startDate = '', endDate = '' } = query;
 
-    let whereClause = 'WHERE DaXoa = 0';
+    // Build comma-separated status filter same as C# (e.g. "'Received','InTransit'")
+    const tinhTrangFilter = statuses ? statuses.replace(/,/g, "','") : '';
 
-    if (username) {
-      whereClause += ` AND UserName LIKE '%${username}%'`;
-    }
-    if (statuses) {
-      const statusList = statuses.split(',').map(s => `'${s.trim()}'`).join(',');
-      whereClause += ` AND TinhTrang IN (${statusList})`;
-    }
-    if (search) {
-      whereClause += ` AND (TrackingNumber LIKE '%${search}%' OR OrderNumber LIKE '%${search}%')`;
-    }
-    if (trackingNumber) {
-      whereClause += ` AND TrackingNumber LIKE '%${trackingNumber}%'`;
-    }
-    if (tenLoHang) {
-      whereClause += ` AND TenLoHang LIKE '%${tenLoHang}%'`;
-    }
-    if (quocGiaId && quocGiaId > 0) {
-      whereClause += ` AND QuocGiaID = ${quocGiaId}`;
-    }
-    if (startDate) {
-      whereClause += ` AND NgayDatHang >= '${startDate}'`;
-    }
-    if (endDate) {
-      whereClause += ` AND NgayDatHang <= '${endDate}'`;
-    }
+    await this.sequelize.query(
+      `EXEC dbo.SP_CapNhat_MassStatusAllTrackingWithFilter
+        @UserName = :username,
+        @TinhTrangFilter = :tinhTrangFilter,
+        @NoiDungTim = :search,
+        @TimTheo = -1,
+        @TrackingNumber = :trackingNumber,
+        @TenLoHang = :tenLoHang,
+        @QuocGiaID = :quocGiaId,
+        @DaXoa = 0,
+        @TuNgay = :startDate,
+        @DenNgay = :endDate,
+        @TinhTrang = 'Completed',
+        @NgayChuyenTinhTrang = NULL,
+        @NguoiTao = :nguoiTao`,
+      {
+        replacements: {
+          username,
+          tinhTrangFilter,
+          search,
+          trackingNumber,
+          tenLoHang,
+          quocGiaId: quocGiaId && quocGiaId > 0 ? quocGiaId : -1,
+          startDate,
+          endDate,
+          nguoiTao,
+        },
+        type: QueryTypes.RAW,
+      }
+    );
 
-    const [result]: any[] = await this.sequelize.query(`
-      UPDATE dbo.Tracking SET TinhTrang = 'Completed' ${whereClause};
-      SELECT @@ROWCOUNT as updated;
-    `);
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'Tracking_LietKe:MassCompleteAllWithFilter',
+      hanhDong: 'Chinh sua',
+      doiTuong: '',
+      noiDung: `UserName: ${username}; TinhTrangFilter: ${tinhTrangFilter}; NoiDungTim: ${search}; Tracking number: ${trackingNumber}; QuocGiaID: ${quocGiaId ?? -1}; Từ ngày: ${startDate}; Đến ngày: ${endDate}`,
+    });
 
-    return { updated: result[0]?.updated || 0 };
+    return { updated: 0 };
   }
 
   /**
@@ -377,7 +557,7 @@ export class TrackingService {
 
     // Get chi tiet tracking
     const [chiTiet] = await this.sequelize.query(`
-      SELECT * FROM dbo.ChiTietTracking WHERE TrackingID = ${id} ORDER BY ID DESC
+      SELECT * FROM dbo.tbChiTietTracking WHERE TrackingID = ${id} ORDER BY TrackingID DESC
     `);
 
     // Get lich su tracking
@@ -395,48 +575,221 @@ export class TrackingService {
    */
   async findHistory(id: number): Promise<any[]> {
     try {
-      const [data] = await this.sequelize.query(`
-        SELECT * FROM dbo.tbTinhTrangTracking WHERE TrackingID = ${id} ORDER BY ID DESC
-      `);
-      return data || [];
+      const data = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_DanhSachTinhTrangTrackingByID @TrackingID = :id`,
+        { replacements: { id }, type: QueryTypes.SELECT },
+      );
+      return (Array.isArray(data) ? data : []) as any[];
     } catch (error) {
-      console.error('Error in findHistory:', error.message);
+      console.error('Error in findHistory:', (error as any).message);
       return [];
     }
   }
 
   /**
    * Add tracking status
+   * Note: No dedicated SP in C#, uses direct INSERT
    */
   async addHistory(id: number, ghiChu: string): Promise<any> {
     await this.findOne(id);
 
-    await this.sequelize.query(`
-      INSERT INTO dbo.TinhTrangTracking (TrackingID, GhiChu, NgayTao)
-      VALUES (${id}, N'${ghiChu}', GETDATE())
-    `);
+    try {
+      await this.sequelize.query(`
+        INSERT INTO dbo.tbTinhTrangTracking (TrackingID, GhiChu, NgayTao)
+        VALUES (:id, :ghiChu, GETDATE())
+      `,
+      { replacements: { id, ghiChu }, type: QueryTypes.RAW });
 
-    return this.findOne(id);
+      return this.findOne(id);
+    } catch (error) {
+      console.error('Error in addHistory:', (error as any).message);
+      throw error;
+    }
   }
 
   /**
    * Update tracking status
+   * Uses: SP_CapNhat_TinhTrangTracking
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatTinhTrangTracking', hanhDong='ChinhSua'
    */
   async updateHistory(historyId: number, ghiChu: string): Promise<any> {
-    await this.sequelize.query(`
-      UPDATE dbo.TinhTrangTracking SET GhiChu = N'${ghiChu}' WHERE ID = ${historyId}
-    `);
+    try {
+      await this.sequelize.query(`
+        EXEC dbo.SP_CapNhat_TinhTrangTracking
+          @TinhTrangTrackingID = :historyId,
+          @GhiChu = :ghiChu
+      `,
+      { replacements: { historyId, ghiChu }, type: QueryTypes.RAW });
 
-    return { id: historyId };
+      await this.systemLogsService.create({
+        nguoiTao: '',
+        nguon: 'Tracking_ThemSua:CapNhatTinhTrangTracking',
+        hanhDong: 'ChinhSua',
+        doiTuong: historyId.toString(),
+        noiDung: `GhiChu: ${ghiChu}`,
+      });
+
+      return { id: historyId };
+    } catch (error) {
+      console.error('Error in updateHistory:', (error as any).message);
+      throw error;
+    }
   }
 
   /**
    * Delete tracking status
+   * Uses: SP_Xoa_TinhTrangTracking
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:XoaTinhTrangTracking', hanhDong='Xoa'
    */
   async deleteHistory(historyId: number): Promise<void> {
-    await this.sequelize.query(`
-      DELETE FROM dbo.tbTinhTrangTracking WHERE ID = ${historyId}
-    `);
+    try {
+      await this.sequelize.query(`
+        EXEC dbo.SP_Xoa_TinhTrangTracking @TinhTrangTrackingID = :historyId
+      `,
+      { replacements: { historyId }, type: QueryTypes.RAW });
+
+      await this.systemLogsService.create({
+        nguoiTao: '',
+        nguon: 'Tracking_ThemSua:XoaTinhTrangTracking',
+        hanhDong: 'Xoa',
+        doiTuong: historyId.toString(),
+        noiDung: `TinhTrangTrackingID: ${historyId}`,
+      });
+    } catch (error) {
+      console.error('Error in deleteHistory:', (error as any).message);
+      throw error;
+    }
+  }
+
+  /**
+   * Add chi tiet tracking
+   * Uses: SP_Them_ChiTietTracking
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:ThemChiTietTracking', hanhDong='ThemMoi'
+   */
+  async addChiTiet(trackingId: number, linkHinh: string, soLuong: number, gia: number, ghiChu: string, nguoiTao: string = ''): Promise<any> {
+    try {
+      await this.sequelize.query(`
+        EXEC dbo.SP_Them_ChiTietTracking
+          @TrackingID = :trackingId,
+          @LinkHinh = :linkHinh,
+          @SoLuong = :soLuong,
+          @Gia = :gia,
+          @GhiChu = :ghiChu
+      `,
+      {
+        replacements: { trackingId, linkHinh, soLuong, gia, ghiChu },
+        type: QueryTypes.RAW,
+      });
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'Tracking_ThemSua:ThemChiTietTracking',
+        hanhDong: 'ThemMoi',
+        doiTuong: trackingId.toString(),
+        noiDung: `TrackingID: ${trackingId}; LinkHinh: ${linkHinh}; SoLuong: ${soLuong}; Gia: ${gia}; GhiChu: ${ghiChu}`,
+      });
+
+      return this.findDetails(trackingId);
+    } catch (error) {
+      console.error('Error in addChiTiet:', (error as any).message);
+      throw error;
+    }
+  }
+
+  /**
+   * Update chi tiet tracking
+   * Uses: SP_CapNhat_ChiTietTracking
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatChiTietTracking', hanhDong='ChinhSua'
+   */
+  async updateChiTiet(chiTietTrackingId: number, linkHinh: string, soLuong: number, gia: number, ghiChu: string, trackingId: number, nguoiTao: string = ''): Promise<any> {
+    try {
+      await this.sequelize.query(`
+        EXEC dbo.SP_CapNhat_ChiTietTracking
+          @ChiTietTrackingID = :chiTietTrackingId,
+          @LinkHinh = :linkHinh,
+          @SoLuong = :soLuong,
+          @Gia = :gia,
+          @GhiChu = :ghiChu
+      `,
+      {
+        replacements: { chiTietTrackingId, linkHinh, soLuong, gia, ghiChu },
+        type: QueryTypes.RAW,
+      });
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'Tracking_ThemSua:CapNhatChiTietTracking',
+        hanhDong: 'ChinhSua',
+        doiTuong: chiTietTrackingId.toString(),
+        noiDung: `LinkHinh: ${linkHinh}; SoLuong: ${soLuong}; Gia: ${gia}; GhiChu: ${ghiChu}`,
+      });
+
+      return this.findDetails(trackingId);
+    } catch (error) {
+      console.error('Error in updateChiTiet:', (error as any).message);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete chi tiet tracking
+   * Uses: SP_Xoa_ChiTietTracking
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:XoaChiTietTracking', hanhDong='Xoa'
+   */
+  async deleteChiTiet(chiTietTrackingId: number, trackingId: number, nguoiTao: string = ''): Promise<any> {
+    try {
+      await this.sequelize.query(`
+        EXEC dbo.SP_Xoa_ChiTietTracking @ChiTietTrackingID = :chiTietTrackingId
+      `,
+      { replacements: { chiTietTrackingId }, type: QueryTypes.RAW });
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'Tracking_ThemSua:XoaChiTietTracking',
+        hanhDong: 'Xoa',
+        doiTuong: chiTietTrackingId.toString(),
+        noiDung: `ChiTietTrackingID: ${chiTietTrackingId}`,
+      });
+
+      return this.findDetails(trackingId);
+    } catch (error) {
+      console.error('Error in deleteChiTiet:', (error as any).message);
+      throw error;
+    }
+  }
+
+  /**
+   * Get users for dropdown (Tracking_ThemSua form)
+   * Mirrors C# code: userManager.Users.OrderBy(u => u.UserName)
+   */
+  async getUsers(): Promise<any[]> {
+    try {
+      const users = await this.sequelize.query(
+        `SELECT UserName FROM AspNetUsers ORDER BY UserName`,
+        { type: QueryTypes.SELECT }
+      );
+      return (Array.isArray(users) ? users : []) as any[];
+    } catch (error) {
+      console.error('Error in getUsers:', (error as any).message);
+      return [];
+    }
+  }
+
+  /**
+   * Get shipping providers for dropdown (Tracking_ThemSua form)
+   * Uses: SP_Lay_NhaVanChuyen (same as C# DBConnect.LayDanhSachNhaVanChuyen)
+   */
+  async getNhaVanChuyen(): Promise<any[]> {
+    try {
+      const providers = await this.sequelize.query(
+        `EXEC dbo.SP_Lay_NhaVanChuyen`,
+        { type: QueryTypes.SELECT }
+      );
+      return (Array.isArray(providers) ? providers : []) as any[];
+    } catch (error) {
+      console.error('Error in getNhaVanChuyen:', (error as any).message);
+      return [];
+    }
   }
 
   /**
@@ -450,7 +803,7 @@ export class TrackingService {
       const sheets = workbook.worksheets.map(ws => ws.name);
       return { sheets };
     } catch (error) {
-      console.error('Error reading Excel sheets:', error.message);
+      console.error('Error reading Excel sheets:', (error as any).message);
       return { sheets: [] };
     }
   }

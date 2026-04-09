@@ -1,25 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import axios from 'axios';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+import { useAuth } from '@/hooks/use-auth-context';
+import {
+  FiPlus, FiCalendar, FiUser, FiPackage,
+  FiTrash2, FiCheck, FiX, FiChevronLeft, FiChevronRight,
+  FiEye, FiEdit2,
+} from 'react-icons/fi';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
-/**
- * Tracking List Page
- *
- * Converted from admin/Tracking_LietKe.aspx
- * Features:
- * - Filter panel: status, search, tracking number, username, date range, country
- * - Status counts
- * - Mass actions: delete, cancel, complete, update status
- * - Data table
- * - Pagination
- */
 interface Tracking {
-  ID: number;
+  TrackingID: number;
   UserName: string;
   TrackingNumber: string;
   OrderNumber: string;
@@ -66,27 +63,26 @@ const formatDate = (date: string | null) => {
   return new Date(date).toLocaleDateString('vi-VN');
 };
 
-const statusColors: Record<string, string> = {
-  Received: 'bg-blue-100 text-blue-800',
-  InTransit: 'bg-yellow-100 text-yellow-800',
-  InVN: 'bg-orange-100 text-orange-800',
-  VNTransit: 'bg-purple-100 text-purple-800',
-  Completed: 'bg-green-100 text-green-800',
-  Cancelled: 'bg-red-100 text-red-800',
+// Status config: label, badge classes, card classes
+const statusConfig: Record<string, { badge: string; card: string; dot: string }> = {
+  Received:  { badge: 'bg-blue-50 text-blue-700 border border-blue-200',   card: 'border-l-4 border-blue-400 bg-blue-50',   dot: 'bg-blue-400' },
+  InTransit: { badge: 'bg-amber-50 text-amber-700 border border-amber-200', card: 'border-l-4 border-amber-400 bg-amber-50', dot: 'bg-amber-400' },
+  InVN:      { badge: 'bg-orange-50 text-orange-700 border border-orange-200', card: 'border-l-4 border-orange-400 bg-orange-50', dot: 'bg-orange-400' },
+  VNTransit: { badge: 'bg-violet-50 text-violet-700 border border-violet-200', card: 'border-l-4 border-violet-400 bg-violet-50', dot: 'bg-violet-400' },
+  Completed: { badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200', card: 'border-l-4 border-emerald-400 bg-emerald-50', dot: 'bg-emerald-400' },
+  Cancelled: { badge: 'bg-rose-50 text-rose-700 border border-rose-200',   card: 'border-l-4 border-rose-400 bg-rose-50',   dot: 'bg-rose-400' },
 };
+
+const inputCls = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 focus:outline-none transition-all placeholder:text-slate-400 bg-white';
 
 export default function TrackingPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const nguoiTao = user?.username || '';
+
   const [filters, setFilters] = useState({
-    page: 1,
-    limit: 20,
-    username: '',
-    statuses: '',
-    search: '',
-    trackingNumber: '',
-    startDate: '',
-    endDate: '',
-    quocGiaId: 0,
+    page: 1, limit: 200, username: '', statuses: 'Received,InTransit,InVN,VNTransit',
+    search: '', trackingNumber: '', startDate: '', endDate: '', quocGiaId: 0,
   });
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
@@ -100,9 +96,8 @@ export default function TrackingPage() {
     queryFn: getTrackingCounts,
   });
 
-  // Mass delete mutation
   const deleteMutation = useMutation({
-    mutationFn: (ids: number[]) => axios.post(`${API_URL}/tracking/mass-delete`, { ids }),
+    mutationFn: (ids: number[]) => axios.post(`${API_URL}/tracking/mass-delete`, { ids, nguoiTao }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracking'] });
       queryClient.invalidateQueries({ queryKey: ['tracking-counts'] });
@@ -110,10 +105,9 @@ export default function TrackingPage() {
     },
   });
 
-  // Mass status mutation
   const statusMutation = useMutation({
     mutationFn: (data: { ids: number[]; tinhTrang: string }) =>
-      axios.post(`${API_URL}/tracking/mass-status`, data),
+      axios.post(`${API_URL}/tracking/mass-status`, { ...data, nguoiTao }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracking'] });
       queryClient.invalidateQueries({ queryKey: ['tracking-counts'] });
@@ -121,224 +115,253 @@ export default function TrackingPage() {
     },
   });
 
-  const handleFilterChange = (key: string, value: string | number) => {
+  const completeAllMutation = useMutation({
+    mutationFn: () => axios.post(`${API_URL}/tracking/mass-complete-all`, { query: filters, nguoiTao }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tracking'] });
+      queryClient.invalidateQueries({ queryKey: ['tracking-counts'] });
+    },
+  });
+
+  const handleFilterChange = (key: string, value: string | number) =>
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
-  };
-
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = (newPage: number) =>
     setFilters((prev) => ({ ...prev, page: newPage }));
-  };
 
-  const handleSelectAll = () => {
-    if (selectedIds.length === data?.data.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(data?.data.map((t) => t.ID) || []);
-    }
-  };
+  const totalRows = data?.data.length ?? 0;
+  const allSelected = totalRows > 0 && selectedIds.length === totalRows;
+  const someSelected = selectedIds.length > 0 && selectedIds.length < totalRows;
 
-  const handleSelect = (id: number) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
+  const handleSelectAll = () =>
+    setSelectedIds(allSelected ? [] : data?.data.map((t) => t.TrackingID) ?? []);
+  const handleSelect = (id: number) =>
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
+
+  // Initialize flatpickr for date range inputs
+  useEffect(() => {
+    if (!startDateRef.current || !endDateRef.current) return;
+    const fpStart = flatpickr(startDateRef.current, {
+      dateFormat: 'd/m/Y',
+      onChange: (dates) => {
+        if (dates[0]) {
+          const d = dates[0];
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          handleFilterChange('startDate', `${yyyy}-${mm}-${dd}`);
+        } else {
+          handleFilterChange('startDate', '');
+        }
+      },
+    });
+    const fpEnd = flatpickr(endDateRef.current, {
+      dateFormat: 'd/m/Y',
+      onChange: (dates) => {
+        if (dates[0]) {
+          const d = dates[0];
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          handleFilterChange('endDate', `${yyyy}-${mm}-${dd}`);
+        } else {
+          handleFilterChange('endDate', '');
+        }
+      },
+    });
+    return () => { fpStart.destroy(); fpEnd.destroy(); };
+  }, []);
+
+  // Sync indeterminate state on the header checkbox (can't be set via JSX prop)
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected;
+  }, [someSelected]);
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 0;
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Danh sách tracking</h1>
+    <div className="space-y-4">
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Danh sách Tracking</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Quản lý toàn bộ mã tracking vận chuyển</p>
+        </div>
         <Link
           href="/admin/tracking/new"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="flex items-center gap-2 bg-[#5cc6ee] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer shadow-sm shadow-cyan-300/40"
         >
+          <FiPlus className="h-4 w-4" />
           Thêm mới tracking
         </Link>
       </div>
 
-      {/* Status Counts */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
-        {Object.entries(counts || {}).map(([status, count]) => (
-          <button
-            key={status}
-            onClick={() => handleFilterChange('statuses', status)}
-            className={`px-3 py-2 rounded text-sm ${statusColors[status] || 'bg-gray-100'} ${filters.statuses === status ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
-          >
-            {status} ({count})
-          </button>
-        ))}
+      {/* Status count cards */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+        {Object.entries(counts || {}).map(([status, count]) => {
+          const cfg = statusConfig[status];
+          const selectedStatuses = filters.statuses ? filters.statuses.split(',') : [];
+          const isActive = selectedStatuses.includes(status);
+          const toggleStatus = () => {
+            const next = isActive
+              ? selectedStatuses.filter((s) => s !== status)
+              : [...selectedStatuses, status];
+            handleFilterChange('statuses', next.join(','));
+          };
+          return (
+            <button
+              key={status}
+              onClick={toggleStatus}
+              className={`rounded-xl px-3 py-3 text-left transition-all cursor-pointer ${cfg?.card || 'bg-slate-50 border-l-4 border-slate-300'} ${isActive ? 'ring-2 ring-offset-1 ring-[#5cc6ee]' : 'hover:brightness-95'}`}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`h-2 w-2 rounded-full ${cfg?.dot || 'bg-slate-400'}`} />
+                <span className="text-xs font-semibold text-slate-600 truncate">{status}</span>
+              </div>
+              <span className="text-lg font-bold text-slate-800">{count as number}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
-            <input
-              type="text"
-              value={filters.username}
-              onChange={(e) => handleFilterChange('username', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              placeholder="Tìm theo username"
-            />
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="relative">
+            <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input type="text" value={filters.username} onChange={(e) => handleFilterChange('username', e.target.value)}
+              className={`${inputCls} pl-9`} placeholder="Tìm theo username" />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Tracking Number</label>
-            <input
-              type="text"
-              value={filters.trackingNumber}
-              onChange={(e) => handleFilterChange('trackingNumber', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              placeholder="Tìm theo tracking"
-            />
+          <div className="relative">
+            <FiPackage className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input type="text" value={filters.trackingNumber} onChange={(e) => handleFilterChange('trackingNumber', e.target.value)}
+              className={`${inputCls} pl-9`} placeholder="Tìm theo tracking" />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Từ ngày</label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange('startDate', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
+          <div className="relative">
+            <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input ref={startDateRef} type="text" readOnly
+              className={`${inputCls} pl-9`} placeholder="Từ ngày (dd/mm/yyyy)" />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Đến ngày</label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange('endDate', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
+          <div className="relative">
+            <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input ref={endDateRef} type="text" readOnly
+              className={`${inputCls} pl-9`} placeholder="Đến ngày (dd/mm/yyyy)" />
           </div>
         </div>
       </div>
 
-      {/* Mass Actions */}
-      {selectedIds.length > 0 && (
-        <div className="bg-blue-50 p-3 rounded mb-4 flex gap-2 flex-wrap">
-          <span className="text-sm self-center mr-2">Đã chọn: {selectedIds.length}</span>
-          <button
-            onClick={() => statusMutation.mutate({ ids: selectedIds, tinhTrang: 'Received' })}
-            className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-          >
-            Set Received
-          </button>
-          <button
-            onClick={() => statusMutation.mutate({ ids: selectedIds, tinhTrang: 'InTransit' })}
-            className="px-3 py-1 bg-yellow-500 text-white rounded text-sm"
-          >
-            Set InTransit
-          </button>
-          <button
-            onClick={() => statusMutation.mutate({ ids: selectedIds, tinhTrang: 'InVN' })}
-            className="px-3 py-1 bg-orange-500 text-white rounded text-sm"
-          >
-            Set InVN
-          </button>
-          <button
-            onClick={() => statusMutation.mutate({ ids: selectedIds, tinhTrang: 'Completed' })}
-            className="px-3 py-1 bg-green-500 text-white rounded text-sm"
-          >
-            Set Completed
-          </button>
-          <button
-            onClick={() => statusMutation.mutate({ ids: selectedIds, tinhTrang: 'Cancelled' })}
-            className="px-3 py-1 bg-red-500 text-white rounded text-sm"
-          >
-            Set Cancelled
-          </button>
-          <button
-            onClick={() => deleteMutation.mutate(selectedIds)}
-            className="px-3 py-1 bg-red-700 text-white rounded text-sm"
-          >
-            Xóa
-          </button>
-        </div>
-      )}
+      {/* Action bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm shadow-sm w-full md:w-auto">
+            <span className="font-medium text-slate-300 mr-1">Đã chọn: <span className="text-white">{selectedIds.length}</span></span>
+            <Link href={`/admin/tracking/ngay-lo-hang?id=${selectedIds.join(',')}`}
+              className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 rounded-lg text-xs font-medium transition-colors cursor-pointer">Lô hàng</Link>
+            {(['Received','InTransit','InVN','VNTransit','Completed','Cancelled'] as const).map((s) => (
+              <button key={s} onClick={() => statusMutation.mutate({ ids: selectedIds, tinhTrang: s })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${statusConfig[s]?.badge}`}>
+                {s}
+              </button>
+            ))}
+            <button onClick={() => deleteMutation.mutate(selectedIds)}
+              className="flex items-center gap-1 px-3 py-1.5 bg-rose-500 hover:bg-rose-600 rounded-lg text-xs font-medium text-white transition-colors cursor-pointer">
+              <FiTrash2 className="h-3.5 w-3.5" /> Xóa
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => { if (confirm('Xác nhận Complete tất cả tracking theo bộ lọc hiện tại?')) completeAllMutation.mutate(); }}
+          disabled={completeAllMutation.isPending}
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+        >
+          <FiCheck className="h-4 w-4" />
+          {completeAllMutation.isPending ? 'Đang xử lý...' : 'Complete All (theo filter)'}
+        </button>
+      </div>
 
-      {/* Data Table */}
-      <div className="bg-white rounded shadow overflow-hidden">
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="p-4 text-center">Đang tải...</div>
+          <div className="flex items-center justify-center py-16">
+            <div className="h-8 w-8 border-2 border-[#5cc6ee] border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : error ? (
-          <div className="p-4 text-center text-red-500">Lỗi tải dữ liệu</div>
+          <div className="flex items-center justify-center gap-2 py-16 text-rose-500">
+            <FiX className="h-5 w-5" />
+            <span>Lỗi tải dữ liệu</span>
+          </div>
         ) : (
           <>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.length === data?.data.length}
-                      onChange={handleSelectAll}
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tracking Number</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Number</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lô hàng</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày đặt</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tình trạng</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data?.data.map((tracking) => (
-                  <tr key={tracking.ID} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(tracking.ID)}
-                        onChange={() => handleSelect(tracking.ID)}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-sm">{tracking.ID}</td>
-                    <td className="px-4 py-3 text-sm">{tracking.UserName}</td>
-                    <td className="px-4 py-3 text-sm">{tracking.TrackingNumber}</td>
-                    <td className="px-4 py-3 text-sm">{tracking.OrderNumber}</td>
-                    <td className="px-4 py-3 text-sm">{tracking.TenLoHang}</td>
-                    <td className="px-4 py-3 text-sm">{formatDate(tracking.NgayDatHang)}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className={`px-2 py-1 rounded text-xs ${statusColors[tracking.TinhTrang] || 'bg-gray-100'}`}>
-                        {tracking.TinhTrang}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <Link href={`/tracking/${tracking.ID}/edit`} className="text-blue-600 hover:underline mr-2">
-                        Sửa
-                      </Link>
-                      <Link href={`/tracking/${tracking.ID}`} className="text-green-600 hover:underline">
-                        Chi tiết
-                      </Link>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-4 py-3 w-10">
+                      <input ref={selectAllRef} type="checkbox" checked={allSelected}
+                        onChange={handleSelectAll}
+                        className="h-4 w-4 rounded border-slate-300 accent-[#5cc6ee] cursor-pointer" />
+                    </th>
+                    {['ID', 'Username', 'Tracking Number', 'Order Number', 'Lô hàng', 'Ngày đặt', 'Tình trạng', 'Thao tác'].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {data?.data.map((tracking) => (
+                    <tr key={tracking.TrackingID} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-4 py-3">
+                        <input type="checkbox" checked={selectedIds.includes(tracking.TrackingID)} onChange={() => handleSelect(tracking.TrackingID)}
+                          className="h-4 w-4 rounded border-slate-300 accent-[#5cc6ee] cursor-pointer" />
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-500">{tracking.TrackingID}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-800">{tracking.UserName}</td>
+                      <td className="px-4 py-3 text-sm font-mono text-slate-700">{tracking.TrackingNumber}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600">{tracking.OrderNumber || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600">{tracking.TenLoHang || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-slate-500">{formatDate(tracking.NgayDatHang)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig[tracking.TinhTrang]?.badge || 'bg-slate-100 text-slate-600'}`}>
+                          {tracking.TinhTrang}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <Link href={`/admin/tracking/${tracking.TrackingID}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 text-xs font-medium transition-colors cursor-pointer border border-cyan-100">
+                            <FiEye className="h-3.5 w-3.5" />
+                            Chi tiết
+                          </Link>
+                          <Link href={`/admin/tracking/${tracking.TrackingID}/edit`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors cursor-pointer border border-blue-100">
+                            <FiEdit2 className="h-3.5 w-3.5" />
+                            Sửa
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="px-4 py-3 flex items-center justify-between border-t">
-                <div className="text-sm text-gray-700">
-                  Trang {data?.page} / {totalPages} (Tổng: {data?.total} bản ghi)
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handlePageChange(filters.page - 1)}
-                    disabled={filters.page === 1}
-                    className="px-3 py-1 border rounded disabled:opacity-50"
-                  >
-                    Trước
+              <div className="px-4 py-3 flex items-center justify-between border-t border-slate-100 bg-slate-50/50">
+                <span className="text-sm text-slate-500">
+                  Trang <strong className="text-slate-700">{data?.page}</strong> / {totalPages}
+                  <span className="ml-2 text-slate-400">({data?.total} bản ghi)</span>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => handlePageChange(filters.page - 1)} disabled={filters.page === 1}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer">
+                    <FiChevronLeft className="h-4 w-4" /> Trước
                   </button>
-                  <button
-                    onClick={() => handlePageChange(filters.page + 1)}
-                    disabled={filters.page >= totalPages}
-                    className="px-3 py-1 border rounded disabled:opacity-50"
-                  >
-                    Sau
+                  <button onClick={() => handlePageChange(filters.page + 1)} disabled={filters.page >= totalPages}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer">
+                    Sau <FiChevronRight className="h-4 w-4" />
                   </button>
                 </div>
               </div>

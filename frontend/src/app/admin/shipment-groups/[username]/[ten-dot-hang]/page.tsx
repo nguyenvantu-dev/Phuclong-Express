@@ -26,7 +26,7 @@ interface ShipmentsGroup {
 
 const getShipmentsGroup = async (username: string, tenDotHang: string) => {
   const response = await axios.get<ShipmentsGroup>(
-    `${API_URL}/admin/shipment-groups/${encodeURIComponent(username)}/${encodeURIComponent(tenDotHang)}`
+    `${API_URL}/shipment-groups/${encodeURIComponent(username)}/${encodeURIComponent(tenDotHang)}`
   );
   return response.data;
 };
@@ -66,7 +66,7 @@ export default function ShipmentsGroupDetailPage() {
   const updateShipMutation = useMutation({
     mutationFn: (data: { shipperId: number; ngayGuiHang: string; soVanDon: string; phiShipTrongNuoc: number }) =>
       axios.put(
-        `${API_URL}/admin/shipment-groups/${encodeURIComponent(username!)}/${encodeURIComponent(tenDotHang!)}/ship`,
+        `${API_URL}/shipment-groups/${encodeURIComponent(username!)}/${encodeURIComponent(tenDotHang!)}/ship`,
         data
       ),
     onSuccess: () => {
@@ -79,7 +79,7 @@ export default function ShipmentsGroupDetailPage() {
   const completeMutation = useMutation({
     mutationFn: () =>
       axios.put(
-        `${API_URL}/admin/shipment-groups/${encodeURIComponent(username!)}/${encodeURIComponent(tenDotHang!)}/complete`
+        `${API_URL}/shipment-groups/${encodeURIComponent(username!)}/${encodeURIComponent(tenDotHang!)}/complete`
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipment-group', username, tenDotHang] });

@@ -292,10 +292,10 @@ export default function DebtReportsByLotPage() {
                     UserName
                   </th>
                   <th className="px-2 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                    Ngày lô hàng
+                    Lô hàng ngày
                   </th>
                   <th className="px-2 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                    Tên lô
+                    Mã lô ngày
                   </th>
                   <th className="px-2 py-3 text-left text-xs font-medium uppercase text-gray-500">
                     Loại tiền

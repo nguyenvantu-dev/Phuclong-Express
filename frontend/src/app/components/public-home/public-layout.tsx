@@ -66,15 +66,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 cursor-pointer group">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
-                style={{ backgroundColor: colors.primary }}
-              >
-                <FiTruck className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-lg font-bold hidden sm:block" style={{ color: colors.text }}>
-                Phúc Long Express
-              </span>
+              <img src="/image1/logo2.png" alt="Phúc Long Express" className="h-23 object-contain transition-transform group-hover:scale-105" />
             </Link>
 
             {/* Desktop Navigation */}

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -49,7 +48,7 @@ interface BatchDetails extends Batch {
 }
 
 const getBatchDetails = async (id: number) => {
-  const response = await axios.get<BatchDetails>(`${API_URL}/admin/batches/${id}/details`);
+  const response = await axios.get<BatchDetails>(`${API_URL}/batches/${id}/details`);
   return response.data;
 };
 
@@ -75,34 +74,18 @@ export default function BatchDetailPage() {
   });
 
   // Ship costs mutation
-  const addShipCostMutation = useMutation({
-    mutationFn: (data: { loaiHangShipId: number; canNang: number; donGia: number; tongTienShipVnd: number }) =>
-      axios.post(`${API_URL}/admin/batches/${id}/ship-costs`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['batch', id] });
-    },
-  });
-
   const deleteShipCostMutation = useMutation({
     mutationFn: (shipCostId: number) =>
-      axios.delete(`${API_URL}/admin/batches/${id}/ship-costs/${shipCostId}`),
+      axios.delete(`${API_URL}/batches/${id}/ship-costs/${shipCostId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batch', id] });
     },
   });
 
   // Customs mutation
-  const addCustomsMutation = useMutation({
-    mutationFn: (data: { loaiHangThueHaiQuanId: number; canNangSoLuongGiaTri: number; donGia: number; tongTienThueHaiQuanVnd: number }) =>
-      axios.post(`${API_URL}/admin/batches/${id}/customs`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['batch', id] });
-    },
-  });
-
   const deleteCustomsMutation = useMutation({
     mutationFn: (customsId: number) =>
-      axios.delete(`${API_URL}/admin/batches/${id}/customs/${customsId}`),
+      axios.delete(`${API_URL}/batches/${id}/customs/${customsId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batch', id] });
     },

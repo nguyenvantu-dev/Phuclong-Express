@@ -29,7 +29,7 @@ interface ChiTietItem {
 }
 
 interface HistoryItem {
-  ID: number;
+  TinhTrangTrackingID: number;
   nguoiTao: string;
   ngayChuyenTinhTrang: string;
   tinhTrang: string;
@@ -357,7 +357,7 @@ export default function SuaTrackingPage() {
               </thead>
               <tbody>
                 {(tracking.lichSuTracking || []).map((item) => (
-                  <tr key={item.ID} className="bg-white">
+                  <tr key={item.TinhTrangTrackingID} className="bg-white">
                     <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">{item.nguoiTao}</td>
                     <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
                       {item.ngayChuyenTinhTrang

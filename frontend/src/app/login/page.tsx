@@ -53,14 +53,7 @@ export default function LoginPage() {
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-[#5cc6ee]/20 p-8">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#5cc6ee] to-[#0EA5E9] rounded-full flex items-center justify-center mb-4 shadow-lg shadow-[#5cc6ee]/30">
-              <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="1" y="3" width="15" height="13" />
-                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                <circle cx="5.5" cy="18.5" r="2.5" />
-                <circle cx="18.5" cy="18.5" r="2.5" />
-              </svg>
-            </div>
+            <img src="/image1/logo3.png" alt="Phúc Long Express" className="h-16 object-contain mb-4" />
             <h1 className="text-2xl font-bold text-[#1E293B]">Phúc Long Express</h1>
             <p className="text-sm text-[#5cc6ee]/70 mt-1">Vận chuyển & Logistics</p>
           </div>

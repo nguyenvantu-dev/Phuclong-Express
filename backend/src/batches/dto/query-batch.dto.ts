@@ -1,36 +1,37 @@
-import { IsOptional, IsString, IsNumber, Min, Max, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
  * Query Batch DTO
+ * Maps to SP_Lay_LoHang parameters: @UserName, @TuNgay, @DenNgay, @PageSize, @PageNum
  */
 export class QueryBatchDto {
+  /** @UserName — empty string means all users */
   @IsOptional()
   @IsString()
-  username?: string;
+  username?: string = '';
 
+  /** @TuNgay — ISO date string (YYYY-MM-DD) */
   @IsOptional()
   @IsString()
-  search?: string;
+  tuNgay?: string;
 
+  /** @DenNgay — ISO date string (YYYY-MM-DD) */
   @IsOptional()
-  @IsDateString()
-  startDate?: string;
+  @IsString()
+  denNgay?: string;
 
-  @IsOptional()
-  @IsDateString()
-  endDate?: string;
-
+  /** @PageNum */
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
   page?: number = 1;
 
+  /** @PageSize */
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  @Max(100)
-  limit?: number = 20;
+  pageSize?: number = 200;
 }

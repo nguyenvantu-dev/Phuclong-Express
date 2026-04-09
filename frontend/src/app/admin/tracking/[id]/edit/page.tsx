@@ -1,17 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
-import { useAuth } from '@/hooks/use-auth-context';
 import {
   FiArrowLeft, FiPackage, FiUser, FiHash, FiCalendar,
   FiTruck, FiGlobe, FiTag, FiFileText, FiSave,
-} from 'react-icons/fi';
+} from 'react-icons/fi'; // FiUser needed for username dropdown
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+interface TrackingData {
+  TrackingID: number;
+  UserName: string;
+  TrackingNumber: string;
+  OrderNumber: string;
+  NgayDatHang: string;
+  NhaVanChuyenID: number;
+  QuocGiaID: number;
+  TinhTrang: string;
+  GhiChu: string;
+  Kien: string;
+  Mawb: string;
+  Hawb: string;
+}
 
 interface FormData {
   username: string;
@@ -41,17 +55,49 @@ function FieldWithIcon({ icon: Icon, children }: { icon: React.ComponentType<{ c
   );
 }
 
-export default function NewTrackingPage() {
+export default function EditTrackingPage() {
+  const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const id = Number(params.id);
+
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const [formData, setFormData] = useState<FormData>({
     username: '', trackingNumber: '', orderNumber: '',
-    ngayDatHang: new Date().toISOString().split('T')[0],
+    ngayDatHang: '',
     nhaVanChuyenId: '', quocGiaId: '', tinhTrang: 'Received',
     ghiChu: '', kien: '', mawb: '', hawb: '',
+  });
+
+  // Fetch tracking data
+  const { isLoading: isFetching, error: fetchError } = useQuery({
+    queryKey: ['tracking', id, 'details'],
+    queryFn: async () => {
+      const response = await axios.get<TrackingData>(`${API_URL}/tracking/${id}/details`);
+      const data = response.data;
+
+      // Convert date format from ISO to yyyy-MM-dd for input
+      const ngayDatHang = data.NgayDatHang
+        ? new Date(data.NgayDatHang).toISOString().split('T')[0]
+        : '';
+
+      setFormData({
+        username: data.UserName || '',
+        trackingNumber: data.TrackingNumber || '',
+        orderNumber: data.OrderNumber || '',
+        ngayDatHang,
+        nhaVanChuyenId: data.NhaVanChuyenID?.toString() || '',
+        quocGiaId: data.QuocGiaID?.toString() || '',
+        tinhTrang: data.TinhTrang || 'Received',
+        ghiChu: data.GhiChu || '',
+        kien: data.Kien || '',
+        mawb: data.Mawb || '',
+        hawb: data.Hawb || '',
+      });
+
+      return data;
+    },
   });
 
   // Fetch dropdown data from API
@@ -77,15 +123,31 @@ export default function NewTrackingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation: matching C# logic (line 156-158)
+    if (!formData.trackingNumber.trim() || !formData.ngayDatHang.trim()) {
+      setError('Vui lòng nhập đầy đủ thông tin có dấu *');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
-      await axios.post(`${API_URL}/tracking`, {
-        ...formData,
+      await axios.put(`${API_URL}/tracking/${id}`, {
+        username: formData.username,
+        trackingNumber: formData.trackingNumber,
+        orderNumber: formData.orderNumber,
+        ngayDatHang: formData.ngayDatHang,
         nhaVanChuyenId: formData.nhaVanChuyenId ? Number(formData.nhaVanChuyenId) : undefined,
         quocGiaId: formData.quocGiaId ? Number(formData.quocGiaId) : undefined,
-        nguoiTao: user?.username || '',
+        tinhTrang: formData.tinhTrang,
+        ghiChu: formData.ghiChu,
+        kien: formData.kien,
+        mawb: formData.mawb,
+        hawb: formData.hawb,
       });
+      queryClient.invalidateQueries({ queryKey: ['tracking'] });
+      queryClient.invalidateQueries({ queryKey: ['tracking-counts'] });
       router.push('/admin/tracking');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Có lỗi xảy ra');
@@ -93,6 +155,27 @@ export default function NewTrackingPage() {
       setLoading(false);
     }
   };
+
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="h-8 w-8 border-2 border-[#5cc6ee] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (fetchError || !formData.trackingNumber) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-rose-500">
+        <FiPackage className="h-10 w-10 opacity-40" />
+        <p>Lỗi tải dữ liệu</p>
+        <button onClick={() => router.push('/admin/tracking')}
+          className="text-sm text-slate-500 hover:text-slate-700 underline cursor-pointer">
+          Quay lại danh sách
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl">
@@ -104,7 +187,9 @@ export default function NewTrackingPage() {
           Danh sách tracking
         </Link>
         <span className="text-slate-300">/</span>
-        <span className="text-sm font-medium text-slate-700">Thêm mới</span>
+        <span className="text-sm font-medium text-slate-700 font-mono">{formData.trackingNumber}</span>
+        <span className="text-slate-300">/</span>
+        <span className="text-sm font-medium text-slate-700">Chỉnh sửa</span>
       </div>
 
       <div className="flex items-center gap-3 mb-6">
@@ -112,8 +197,8 @@ export default function NewTrackingPage() {
           <FiPackage className="h-5 w-5 text-[#5cc6ee]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Thêm mới Tracking</h1>
-          <p className="text-sm text-slate-500">Nhập thông tin mã vận chuyển mới</p>
+          <h1 className="text-xl font-bold text-slate-900">Chỉnh sửa Tracking</h1>
+          <p className="text-sm text-slate-500">Cập nhật thông tin mã vận chuyển</p>
         </div>
       </div>
 
@@ -238,7 +323,7 @@ export default function NewTrackingPage() {
           <button type="submit" disabled={loading}
             className="flex items-center gap-2 bg-[#5cc6ee] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer disabled:opacity-50 shadow-sm shadow-cyan-300/40">
             <FiSave className="h-4 w-4" />
-            {loading ? 'Đang lưu...' : 'Lưu tracking'}
+            {loading ? 'Đang lưu...' : 'Cập nhật tracking'}
           </button>
           <button type="button" onClick={() => router.push('/admin/tracking')}
             className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors cursor-pointer">

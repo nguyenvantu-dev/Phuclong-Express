@@ -15,7 +15,7 @@ interface FormData {
   ghiChu: string;
 }
 
-const API_BASE = '/api/admin/purchased-items';
+const API_BASE = '/api/purchased-items';
 
 /**
  * Create Purchased Item Page

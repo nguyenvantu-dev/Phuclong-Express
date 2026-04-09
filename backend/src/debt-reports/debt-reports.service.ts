@@ -362,6 +362,7 @@ export class DebtReportsService {
           denNgay = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 23, 59, 59);
         } else {
           denNgay = new Date(toDate);
+          denNgay.setHours(23, 59, 59, 999);
         }
       } else {
         // Default to last day of current month

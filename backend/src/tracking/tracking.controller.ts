@@ -12,6 +12,8 @@ import {
   HttpStatus,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { TrackingService } from './tracking.service';
 import { CreateTrackingDto } from './dto/create-tracking.dto';
@@ -19,6 +21,7 @@ import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { QueryTrackingDto } from './dto/query-tracking.dto';
 import { MassUpdateTrackingDto } from './dto/mass-update-tracking.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * Tracking Controller
@@ -64,6 +67,24 @@ export class TrackingController {
   }
 
   /**
+   * GET /tracking/users
+   * Get list of users for dropdown (Tracking_ThemSua form)
+   */
+  @Get('dropdown/users')
+  async getUsers(): Promise<any> {
+    return this.trackingService.getUsers();
+  }
+
+  /**
+   * GET /tracking/nha-van-chuyen
+   * Get list of shipping providers for dropdown (Tracking_ThemSua form)
+   */
+  @Get('dropdown/nha-van-chuyen')
+  async getNhaVanChuyen(): Promise<any> {
+    return this.trackingService.getNhaVanChuyen();
+  }
+
+  /**
    * GET /tracking/search/:code
    * Public endpoint to search tracking by code
    */
@@ -94,12 +115,14 @@ export class TrackingController {
    * PUT /tracking/:id
    * Update tracking
    */
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTrackingDto: UpdateTrackingDto,
+    @Req() req: any,
   ): Promise<any> {
-    return this.trackingService.update(id, updateTrackingDto);
+    return this.trackingService.update(id, updateTrackingDto, req.user?.username);
   }
 
   /**
@@ -118,8 +141,8 @@ export class TrackingController {
    */
   @Post('mass-delete')
   @HttpCode(HttpStatus.OK)
-  async massDelete(@Body() body: { ids: number[] }): Promise<{ deleted: number }> {
-    return this.trackingService.massDelete(body.ids);
+  async massDelete(@Body() body: { ids: number[]; nguoiTao?: string }): Promise<{ deleted: number }> {
+    return this.trackingService.massDelete(body.ids, body.nguoiTao);
   }
 
   /**
@@ -138,8 +161,8 @@ export class TrackingController {
    */
   @Post('mass-complete')
   @HttpCode(HttpStatus.OK)
-  async massComplete(@Body() body: { ids: number[] }): Promise<{ updated: number }> {
-    return this.trackingService.massComplete(body.ids);
+  async massComplete(@Body() body: { ids: number[]; nguoiTao?: string }): Promise<{ updated: number }> {
+    return this.trackingService.massComplete(body.ids, body.nguoiTao);
   }
 
   /**
@@ -148,8 +171,8 @@ export class TrackingController {
    */
   @Post('mass-complete-all')
   @HttpCode(HttpStatus.OK)
-  async massCompleteAll(@Body() query: QueryTrackingDto): Promise<{ updated: number }> {
-    return this.trackingService.massCompleteAll(query);
+  async massCompleteAll(@Body() body: { query: QueryTrackingDto; nguoiTao?: string }): Promise<{ updated: number }> {
+    return this.trackingService.massCompleteAll(body.query, body.nguoiTao);
   }
 
   /**
@@ -206,6 +229,44 @@ export class TrackingController {
     @Param('historyId', ParseIntPipe) historyId: number,
   ): Promise<void> {
     return this.trackingService.deleteHistory(historyId);
+  }
+
+  /**
+   * POST /tracking/:id/chi-tiet
+   * Add chi tiet tracking
+   */
+  @Post(':id/chi-tiet')
+  async addChiTiet(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { linkHinh: string; soLuong: number; gia: number; ghiChu: string; nguoiTao?: string },
+  ): Promise<any> {
+    return this.trackingService.addChiTiet(id, body.linkHinh, body.soLuong, body.gia, body.ghiChu, body.nguoiTao);
+  }
+
+  /**
+   * PUT /tracking/:id/chi-tiet/:chiTietId
+   * Update chi tiet tracking
+   */
+  @Put(':id/chi-tiet/:chiTietId')
+  async updateChiTiet(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('chiTietId', ParseIntPipe) chiTietId: number,
+    @Body() body: { linkHinh: string; soLuong: number; gia: number; ghiChu: string; nguoiTao?: string },
+  ): Promise<any> {
+    return this.trackingService.updateChiTiet(chiTietId, body.linkHinh, body.soLuong, body.gia, body.ghiChu, id, body.nguoiTao);
+  }
+
+  /**
+   * DELETE /tracking/:id/chi-tiet/:chiTietId
+   * Delete chi tiet tracking
+   */
+  @Delete(':id/chi-tiet/:chiTietId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteChiTiet(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('chiTietId', ParseIntPipe) chiTietId: number,
+  ): Promise<void> {
+    await this.trackingService.deleteChiTiet(chiTietId, id);
   }
 
   /**

@@ -20,6 +20,22 @@
 
   --background: #FDFBF7;
   --foreground: #2C2416;
+
+  /* Admin Dashboard Design System - Data-Dense Dashboard Style */
+  --admin-primary: #5cc6ee;
+  --admin-primary-light: #7dd4f5;
+  --admin-primary-dark: #42a8cc;
+  --admin-secondary: #7dd4f5;
+  --admin-cta: #F97316;
+  --admin-cta-hover: #EA580C;
+  --admin-bg: #f0f9fc;
+  --admin-text: #0d3b4d;
+  --admin-text-muted: #5cc6ee;
+  --admin-border: #b3e5fc;
+  --admin-success: #10B981;
+  --admin-warning: #F59E0B;
+  --admin-error: #EF4444;
+  --admin-info: #3B82F6;
 }
 
 @theme inline {

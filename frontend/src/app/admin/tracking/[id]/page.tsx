@@ -2,12 +2,17 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import axios from 'axios';
+import {
+  FiArrowLeft, FiEdit2, FiPackage, FiUser, FiHash,
+  FiCalendar, FiGlobe, FiFileText, FiClock, FiImage,
+} from 'react-icons/fi';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
-interface Tracking {
-  ID: number;
+interface TrackingDetail {
+  TrackingID: number;
   UserName: string;
   TrackingNumber: string;
   OrderNumber: string;
@@ -23,15 +28,32 @@ interface Tracking {
   Hawb: string;
   NguoiTao: string;
   NgayTao: string;
+  chiTietTracking: TrackingDetailItem[];
+  lichSuTracking: TrackingHistory[];
 }
 
-interface TrackingDetail extends Tracking {
-  chiTietTracking: any[];
-  lichSuTracking: any[];
+interface TrackingDetailItem {
+  ID: number;
+  LinkHinh: string | null;
+  SoLuong: number | null;
+  Gia: number | null;
+  GhiChu: string | null;
+}
+
+interface TrackingHistory {
+  TinhTrangTrackingID: number;
+  TrackingID: number;
+  TinhTrang: string;
+  NgayChuyenTinhTrang: string | null;
+  GhiChu: string | null;
+  NgayTao: string | null;
+  NguoiTao: string | null;
+  DaXoa: boolean;
+  MoTaTinhTrang: string | null;
 }
 
 const getTrackingDetails = async (id: number) => {
-  const response = await axios.get<TrackingDetail>(`${API_URL}/admin/tracking/${id}/details`);
+  const response = await axios.get<TrackingDetail>(`${API_URL}/tracking/${id}/details`);
   return response.data;
 };
 
@@ -40,14 +62,37 @@ const formatDate = (date: string | null) => {
   return new Date(date).toLocaleDateString('vi-VN');
 };
 
-const statusColors: Record<string, string> = {
-  Received: 'bg-blue-100 text-blue-800',
-  InTransit: 'bg-yellow-100 text-yellow-800',
-  InVN: 'bg-orange-100 text-orange-800',
-  VNTransit: 'bg-purple-100 text-purple-800',
-  Completed: 'bg-green-100 text-green-800',
-  Cancelled: 'bg-red-100 text-red-800',
+const formatDateTime = (date: string | null) => {
+  if (!date) return '-';
+  return new Date(date).toLocaleString('vi-VN');
 };
+
+const statusConfig: Record<string, { badge: string; dot: string }> = {
+  Received:  { badge: 'bg-blue-50 text-blue-700 border border-blue-200',      dot: 'bg-blue-400' },
+  InTransit: { badge: 'bg-amber-50 text-amber-700 border border-amber-200',    dot: 'bg-amber-400' },
+  InVN:      { badge: 'bg-orange-50 text-orange-700 border border-orange-200', dot: 'bg-orange-400' },
+  VNTransit: { badge: 'bg-violet-50 text-violet-700 border border-violet-200', dot: 'bg-violet-400' },
+  Completed: { badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200', dot: 'bg-emerald-400' },
+  Cancelled: { badge: 'bg-rose-50 text-rose-700 border border-rose-200',       dot: 'bg-rose-400' },
+};
+
+function InfoField({ icon: Icon, label, value }: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
+        <Icon className="h-4 w-4 text-slate-500" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-medium text-slate-800 mt-0.5 break-words">{value || '-'}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function TrackingDetailPage() {
   const params = useParams();
@@ -61,152 +106,176 @@ export default function TrackingDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4">
-        <div className="text-center">Đang tải...</div>
+      <div className="flex items-center justify-center py-24">
+        <div className="h-8 w-8 border-2 border-[#5cc6ee] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error || !tracking) {
     return (
-      <div className="container mx-auto p-4">
-        <div className="text-center text-red-500">Lỗi tải dữ liệu</div>
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-rose-500">
+        <FiPackage className="h-10 w-10 opacity-40" />
+        <p>Lỗi tải dữ liệu</p>
+        <button onClick={() => router.push('/admin/tracking')}
+          className="text-sm text-slate-500 hover:text-slate-700 underline cursor-pointer">
+          Quay lại danh sách
+        </button>
       </div>
     );
   }
 
+  const statusCfg = statusConfig[tracking.TinhTrang] || { badge: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' };
+
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Chi tiết tracking: {tracking.TrackingNumber}</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => router.push(`/admin/tracking/${id}/edit`)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Sửa
-          </button>
-          <button
-            onClick={() => router.push('/admin/tracking')}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-          >
-            Quay lại
-          </button>
-        </div>
+    <div className="max-w-4xl space-y-5">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-3">
+        <Link href="/admin/tracking"
+          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#5cc6ee] transition-colors cursor-pointer">
+          <FiArrowLeft className="h-4 w-4" />
+          Danh sách tracking
+        </Link>
+        <span className="text-slate-300">/</span>
+        <span className="text-sm font-medium text-slate-700 font-mono">{tracking.TrackingNumber}</span>
       </div>
 
-      {/* Tracking Info */}
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <h2 className="text-lg font-semibold mb-3">Thông tin tracking</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <span className="text-gray-600">ID:</span> {tracking.ID}
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
+            <FiPackage className="h-5 w-5 text-[#5cc6ee]" />
           </div>
           <div>
-            <span className="text-gray-600">Username:</span> {tracking.UserName}
+            <h1 className="text-xl font-bold text-slate-900 font-mono">{tracking.TrackingNumber}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusCfg.badge}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dot}`} />
+                {tracking.TinhTrang}
+              </span>
+              <span className="text-xs text-slate-400">ID: #{tracking.TrackingID}</span>
+            </div>
           </div>
-          <div>
-            <span className="text-gray-600">Tracking Number:</span> {tracking.TrackingNumber}
-          </div>
-          <div>
-            <span className="text-gray-600">Order Number:</span> {tracking.OrderNumber}
-          </div>
-          <div>
-            <span className="text-gray-600">Ngày đặt:</span> {formatDate(tracking.NgayDatHang)}
-          </div>
-          <div>
-            <span className="text-gray-600">Lô hàng:</span> {tracking.TenLoHang}
-          </div>
-          <div>
-            <span className="text-gray-600">Tình trạng:</span>{' '}
-            <span className={`px-2 py-1 rounded text-xs ${statusColors[tracking.TinhTrang]}`}>
-              {tracking.TinhTrang}
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-600">Quốc gia:</span> {tracking.TenQuocGia}
-          </div>
-          <div>
-            <span className="text-gray-600">Kiện:</span> {tracking.Kien}
-          </div>
-          <div>
-            <span className="text-gray-600">MAWB:</span> {tracking.Mawb}
-          </div>
-          <div>
-            <span className="text-gray-600">HAWB:</span> {tracking.Hawb}
-          </div>
-          <div>
-            <span className="text-gray-600">Người tạo:</span> {tracking.NguoiTao}
-          </div>
+        </div>
+        <button onClick={() => router.push(`/admin/tracking/${id}/edit`)}
+          className="flex items-center gap-2 bg-[#5cc6ee] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer shadow-sm shadow-cyan-300/40">
+          <FiEdit2 className="h-4 w-4" />
+          Chỉnh sửa
+        </button>
+      </div>
+
+      {/* Info grid */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <h2 className="text-sm font-semibold text-slate-700 mb-4 pb-3 border-b border-slate-100">Thông tin tracking</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <InfoField icon={FiUser}     label="Username"      value={tracking.UserName} />
+          <InfoField icon={FiHash}     label="Order Number"  value={tracking.OrderNumber} />
+          <InfoField icon={FiCalendar} label="Ngày đặt"      value={formatDate(tracking.NgayDatHang)} />
+          <InfoField icon={FiPackage}  label="Lô hàng"       value={tracking.TenLoHang} />
+          <InfoField icon={FiGlobe}    label="Quốc gia"      value={tracking.TenQuocGia} />
+          <InfoField icon={FiPackage}  label="Kiện"          value={tracking.Kien} />
+          <InfoField icon={FiHash}     label="MAWB"          value={tracking.Mawb} />
+          <InfoField icon={FiHash}     label="HAWB"          value={tracking.Hawb} />
+          <InfoField icon={FiUser}     label="Người tạo"     value={tracking.NguoiTao} />
         </div>
         {tracking.GhiChu && (
-          <div className="mt-4">
-            <span className="text-gray-600">Ghi chú:</span> {tracking.GhiChu}
+          <div className="mt-5 pt-4 border-t border-slate-100 flex items-start gap-3">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
+              <FiFileText className="h-4 w-4 text-slate-500" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Ghi chú</p>
+              <p className="text-sm text-slate-700 mt-0.5">{tracking.GhiChu}</p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Status History */}
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <h2 className="text-lg font-semibold mb-3">Lịch sử tình trạng</h2>
+      {/* Status history */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+          <FiClock className="h-4 w-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-700">Lịch sử tình trạng</h2>
+          {tracking.lichSuTracking?.length > 0 && (
+            <span className="ml-auto text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+              {tracking.lichSuTracking.length} mục
+            </span>
+          )}
+        </div>
         {tracking.lichSuTracking?.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left">ID</th>
-                <th className="px-4 py-2 text-left">Ghi chú</th>
-                <th className="px-4 py-2 text-left">Ngày tạo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {tracking.lichSuTracking.map((item: any) => (
-                <tr key={item.ID}>
-                  <td className="px-4 py-2">{item.ID}</td>
-                  <td className="px-4 py-2">{item.GhiChu}</td>
-                  <td className="px-4 py-2">{formatDate(item.NgayTao)}</td>
-                </tr>
+          <div className="overflow-x-auto">
+            <div className="min-w-[820px] space-y-0.5">
+              <div className="grid grid-cols-[4rem_7rem_10rem_7rem_1fr_1fr] gap-x-3 px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              <span>ID</span>
+              <span>Người thao tác</span>
+              <span>Thời gian</span>
+              <span>Tình trạng</span>
+              <span>Mô tả</span>
+              <span>Ghi chú</span>
+              </div>
+              {tracking.lichSuTracking.map((item, idx: number) => (
+                <div key={item.TinhTrangTrackingID}
+                  className={`grid grid-cols-[4rem_7rem_10rem_7rem_1fr_1fr] gap-x-3 px-3 py-2.5 rounded-lg text-sm ${idx % 2 === 0 ? 'bg-slate-50' : ''}`}>
+                  <span className="text-slate-400 font-mono text-xs">{item.TinhTrangTrackingID}</span>
+                  <span className="text-slate-700">{item.NguoiTao || '-'}</span>
+                  <span className="text-slate-400 text-xs whitespace-nowrap">{formatDateTime(item.NgayChuyenTinhTrang)}</span>
+                  <span className="text-slate-700">{item.TinhTrang || '-'}</span>
+                  <span className="text-slate-700">{item.MoTaTinhTrang || '-'}</span>
+                  <span className="text-slate-700">{item.GhiChu || '-'}</span>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         ) : (
-          <p className="text-gray-500">Chưa có lịch sử</p>
+          <p className="text-sm text-slate-400 py-4 text-center">Chưa có lịch sử</p>
         )}
       </div>
 
-      {/* Details */}
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="text-lg font-semibold mb-3">Chi tiết tracking</h2>
+      {/* Chi tiết tracking */}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+          <FiImage className="h-4 w-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-700">Chi tiết tracking</h2>
+          {tracking.chiTietTracking?.length > 0 && (
+            <span className="ml-auto text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+              {tracking.chiTietTracking.length} mục
+            </span>
+          )}
+        </div>
         {tracking.chiTietTracking?.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left">ID</th>
-                <th className="px-4 py-2 text-left">Hình ảnh</th>
-                <th className="px-4 py-2 text-right">Số lượng</th>
-                <th className="px-4 py-2 text-right">Giá</th>
-                <th className="px-4 py-2 text-left">Ghi chú</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {tracking.chiTietTracking.map((item: any) => (
-                <tr key={item.ID}>
-                  <td className="px-4 py-2">{item.ID}</td>
-                  <td className="px-4 py-2">
-                    {item.LinkHinh && (
-                      <a href={item.LinkHinh} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        Xem hình
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-right">{item.SoLuong}</td>
-                  <td className="px-4 py-2 text-right">{item.Gia}</td>
-                  <td className="px-4 py-2">{item.GhiChu}</td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-slate-50 rounded-lg">
+                  {['ID', 'Hình ảnh', 'Số lượng', 'Giá', 'Ghi chú'].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide first:rounded-l-lg last:rounded-r-lg">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {tracking.chiTietTracking.map((item) => (
+                  <tr key={item.ID} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="px-4 py-2.5 text-sm text-slate-500 font-mono">{item.ID}</td>
+                    <td className="px-4 py-2.5 text-sm">
+                      {item.LinkHinh ? (
+                        <a href={item.LinkHinh} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[#5cc6ee] hover:text-cyan-600 transition-colors text-xs font-medium cursor-pointer">
+                          <FiImage className="h-3.5 w-3.5" /> Xem hình
+                        </a>
+                      ) : '-'}
+                    </td>
+                    <td className="px-4 py-2.5 text-sm text-right text-slate-700 font-medium">{item.SoLuong ?? '-'}</td>
+                    <td className="px-4 py-2.5 text-sm text-right text-slate-700 font-medium">{item.Gia ?? '-'}</td>
+                    <td className="px-4 py-2.5 text-sm text-slate-600">{item.GhiChu || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <p className="text-gray-500">Chưa có chi tiết</p>
+          <p className="text-sm text-slate-400 py-4 text-center">Chưa có chi tiết</p>
         )}
       </div>
     </div>

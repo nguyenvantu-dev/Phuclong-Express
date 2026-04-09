@@ -1,4 +1,4 @@
-import { IsArray, IsString, IsNumber } from 'class-validator';
+import { IsArray, IsString, IsOptional } from 'class-validator';
 
 export class MassUpdateTrackingDto {
   @IsArray()
@@ -6,4 +6,8 @@ export class MassUpdateTrackingDto {
 
   @IsString()
   tinhTrang: string;
+
+  @IsOptional()
+  @IsString()
+  nguoiTao?: string;
 }

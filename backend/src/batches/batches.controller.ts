@@ -44,8 +44,18 @@ export class BatchesController {
   @Get()
   async findAll(
     @Query() query: QueryBatchDto,
-  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+  ): Promise<{ data: any[]; total: number; page: number; pageSize: number }> {
     return this.batchesService.findAll(query);
+  }
+
+  /**
+   * GET /batches/ten/:tenLoHang
+   * Get batch details by TenLoHang (for public lot info page)
+   * MUST be defined before :id to avoid route collision
+   */
+  @Get('ten/:tenLoHang')
+  async findByTenLoHang(@Param('tenLoHang') tenLoHang: string): Promise<any> {
+    return this.batchesService.findByTenLoHang(tenLoHang);
   }
 
   /**
@@ -86,15 +96,6 @@ export class BatchesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.batchesService.remove(id);
-  }
-
-  /**
-   * GET /batches/ten/:tenLoHang
-   * Get batch details by TenLoHang (for public lot info page)
-   */
-  @Get('ten/:tenLoHang')
-  async findByTenLoHang(@Param('tenLoHang') tenLoHang: string): Promise<any> {
-    return this.batchesService.findByTenLoHang(tenLoHang);
   }
 
   /**

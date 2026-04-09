@@ -13,7 +13,7 @@ interface FormData {
   thuTu: string;
 }
 
-const API_BASE = '/api/admin/in-stock-items';
+const API_BASE = '/api/in-stock-items';
 
 /**
  * Create In-Stock Item Page

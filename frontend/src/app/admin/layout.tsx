@@ -7,13 +7,13 @@ import { useAuth } from '@/hooks/use-auth-context';
 import {
   FiShoppingCart,
   FiDollarSign,
-  FiTruck,
   FiLogOut,
   FiBell,
   FiSearch,
   FiMenu,
   FiX,
   FiInfo,
+  FiTruck,
 } from 'react-icons/fi';
 
 /**
@@ -45,6 +45,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ],
     },
     {
+      label: 'VẬN CHUYỂN',
+      icon: FiTruck,
+      submenu: [
+        { href: '/admin/tracking', label: 'Quản lý tracking' },
+        { href: '/admin/batches', label: 'Quản lý lô hàng' },
+        { href: '/admin/debt-reports/profit-loss-by-lot', label: 'BC phân tích lãi lỗ theo lô hàng' },
+        { href: '/admin/debt-reports/by-lot', label: 'BC công nợ khách hàng theo lô' },
+      ],
+    },
+    {
       label: 'FINANCE',
       icon: FiDollarSign,
       submenu: [
@@ -57,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { href: '/admin/debt-reports/debt-by-user', label: 'Báo cáo tổng công nợ theo user' },
         { href: '/admin/debt-reports/reconciliation', label: 'Báo cáo kiểm tra đơn hàng mua' },
         { href: '/admin/debt-reports/customer', label: 'Báo cáo công nợ khách hàng' },
-        { href: '/admin/debt-reports/by-lot', label: 'Báo cáo công nợ theo đợt hàng' },
+        { href: '/admin/debt-reports/by-shipment-lot', label: 'Báo cáo công nợ theo đợt hàng' },
       ],
     },
     {
@@ -110,21 +120,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Logo */}
         <div className="flex h-16 items-center justify-center border-b border-slate-700/50 bg-slate-900/30">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#5cc6ee] to-cyan-400">
-              <FiTruck className="h-5 w-5 text-slate-900" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-white tracking-wide">PHUC LONG</span>
-              <span className="text-[10px] font-medium text-[#5cc6ee] tracking-widest uppercase">Express</span>
-            </div>
-          </div>
+          <img src="/image1/logo3.png" alt="Phúc Long Express" className="h-12 object-contain" />
         </div>
 
         {/* Navigation */}
         <nav className="mt-4 px-3 pb-4 space-y-1 overflow-y-auto max-h-[calc(100vh-8rem)]">
-          {navItems.map((item) => {
-            const isActive = item.submenu?.some(sub => sub.href && sub.href !== '/' && pathname.startsWith(sub.href)) ?? false;
+          {(() => {
+            // Find the longest matching href across all sections to resolve prefix conflicts
+            // e.g. /admin/debt-reports/by-shipment-lot should only activate VẬN CHUYỂN, not FINANCE
+            let longestMatch = '';
+            let activeLabel = '';
+            for (const item of navItems) {
+              for (const sub of item.submenu ?? []) {
+                if (sub.href && sub.href !== '/' && (pathname === sub.href || pathname.startsWith(sub.href + '/')) && sub.href.length > longestMatch.length) {
+                  longestMatch = sub.href;
+                  activeLabel = item.label;
+                }
+              }
+            }
+            return navItems.map((item) => {
+            const isActive = item.label === activeLabel;
             const isOpen = openSubmenu === item.label;
             const IconComponent = item.icon;
             return (
@@ -175,7 +190,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 )}
               </div>
             );
-          })}
+          });
+          })()}
         </nav>
 
         {/* Sidebar footer */}
