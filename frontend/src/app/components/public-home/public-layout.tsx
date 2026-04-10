@@ -327,12 +327,12 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               <ul className="space-y-3">
                 <li>
                   <a
-                    href="tel:+84962904490"
-                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white group"
+                    href="mailto:phuclongexpress@gmail.com"
+                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
                     style={{ color: 'rgba(255,255,255,0.5)' }}
                   >
-                    <FiPhone className="w-4 h-4 flex-shrink-0 group-hover:text-cyan-400 transition-colors" style={{ color: colors.primary }} />
-                    (+84) 962.904.490
+                    <FiMail className="w-4 h-4 flex-shrink-0" style={{ color: colors.primary }} />
+                    phuclongexpress@gmail.com
                   </a>
                 </li>
                 <li>
@@ -343,16 +343,6 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                   >
                     <FiPhone className="w-4 h-4 flex-shrink-0" style={{ color: colors.primary }} />
                     (+84) 344.415.213
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="mailto:cskh.plelogistics@gmail.com"
-                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
-                    style={{ color: 'rgba(255,255,255,0.5)' }}
-                  >
-                    <FiMail className="w-4 h-4 flex-shrink-0" style={{ color: colors.primary }} />
-                    cskh.plelogistics@gmail.com
                   </a>
                 </li>
                 <li>

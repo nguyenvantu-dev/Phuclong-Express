@@ -53,7 +53,7 @@ export default function LoginPage() {
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-[#5cc6ee]/20 p-8">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <img src="/image1/logo3.png" alt="Phuc Long Express" className="h-16 object-contain mb-4" />
+            <img src="/image1/logo2.png" alt="Phuc Long Express" className="h-20 object-contain mb-4" />
             <h1 className="text-2xl font-bold text-[#1E293B]">Phuc Long Express</h1>
             <p className="text-sm text-[#5cc6ee]/70 mt-1">Vận chuyển & Logistics</p>
           </div>
