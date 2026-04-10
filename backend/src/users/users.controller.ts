@@ -6,7 +6,7 @@ import {
   Delete,
   Body,
   Param,
-  ParseIntPipe,
+  Query,
   UseInterceptors,
   UploadedFile,
   Req,
@@ -29,8 +29,8 @@ export class UsersController {
    * List all users
    */
   @Get()
-  async findAll(): Promise<User[]> {
-    return this.usersService.findAll();
+  async findAll(@Query('keyword') keyword?: string): Promise<User[]> {
+    return this.usersService.findAll(keyword);
   }
 
   /**
@@ -57,7 +57,7 @@ export class UsersController {
    */
   @Put(':id')
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() userData: Partial<User>,
   ): Promise<User> {
     return this.usersService.update(id, userData);
@@ -68,7 +68,7 @@ export class UsersController {
    * Delete user
    */
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async remove(@Param('id') id: string): Promise<void> {
     return this.usersService.remove(id);
   }
 
@@ -77,8 +77,8 @@ export class UsersController {
    * Clear all data for a specific user
    */
   @Post('clear-data')
-  async clearUserData(@Body() body: { username: string }) {
-    return this.usersService.clearUserData(body.username);
+  async clearUserData(@Body() body: { username: string; nguoiTao?: string }) {
+    return this.usersService.clearUserData(body.username, body.nguoiTao);
   }
 
   /**

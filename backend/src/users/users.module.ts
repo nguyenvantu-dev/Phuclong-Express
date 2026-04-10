@@ -3,6 +3,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { DatabaseModule } from '../database/database.module';
+import { SystemLogsModule } from '../system-logs/system-logs.module';
 
 /**
  * Users Module
@@ -10,6 +11,7 @@ import { DatabaseModule } from '../database/database.module';
 @Module({
   imports: [
     DatabaseModule,
+    SystemLogsModule,
     MulterModule.register({
       limits: {
         fileSize: 10 * 1024 * 1024, // 10MB

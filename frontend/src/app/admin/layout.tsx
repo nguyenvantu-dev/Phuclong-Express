@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -15,6 +15,7 @@ import {
   FiX,
   FiInfo,
   FiTruck,
+  FiUsers,
 } from 'react-icons/fi';
 
 /**
@@ -28,13 +29,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-    return window.localStorage.getItem('admin-sidebar-collapsed') === 'true';
-  });
+  useEffect(() => {
+    setSidebarCollapsed(window.localStorage.getItem('admin-sidebar-collapsed') === 'true');
+  }, []);
   const { user, logout } = useAuth();
 
   // Navigation items with submenus
@@ -76,6 +75,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { href: '/admin/debt-reports/reconciliation', label: 'Báo cáo kiểm tra đơn hàng mua' },
         { href: '/admin/debt-reports/customer', label: 'Báo cáo công nợ khách hàng' },
         { href: '/admin/debt-reports/by-shipment-lot', label: 'Báo cáo công nợ theo đợt hàng' },
+      ],
+    },
+    {
+      label: 'TÀI KHOẢN',
+      icon: FiUsers,
+      submenu: [
+        { href: '/admin/roles', label: 'Role' },
+        { href: '/admin/users', label: 'User' },
+        { href: '/admin/clear-user-data', label: 'Xóa dữ liệu theo user' },
       ],
     },
     {

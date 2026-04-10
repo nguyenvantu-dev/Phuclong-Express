@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { User, UserModel } from './entities/user.entity';
+import { SystemLogsService } from '../system-logs/system-logs.service';
 import Excel from 'exceljs';
 import bcrypt from 'bcrypt';
 
@@ -13,7 +14,10 @@ import bcrypt from 'bcrypt';
 export class UsersService {
   private userModel: typeof User;
 
-  constructor(@Inject('SEQUELIZE') private sequelize: Sequelize) {
+  constructor(
+    @Inject('SEQUELIZE') private sequelize: Sequelize,
+    private readonly systemLogsService: SystemLogsService,
+  ) {
     if (!sequelize.models.User) {
       UserModel(sequelize);
     }
@@ -23,11 +27,14 @@ export class UsersService {
   /**
    * Find all users
    */
-  async findAll(): Promise<User[]> {
-    // Only select columns that exist in the database
+  async findAll(keyword?: string): Promise<User[]> {
+    const whereClause = keyword ? `WHERE UserName LIKE '%${keyword}%'` : '';
     const [data] = await this.sequelize.query(`
-      SELECT Id, UserName, Email
+      SELECT Id, UserName, Email, PhoneNumber,
+             HoTen, DiaChi, TinhThanh, SoTaiKhoan,
+             HinhThucNhanHang, KhachBuon, LinkTaiKhoanMang, VungMien
       FROM dbo.AspNetUsers
+      ${whereClause}
       ORDER BY UserName
     `);
     return data as User[];
@@ -83,28 +90,36 @@ export class UsersService {
   /**
    * Update user
    */
-  async update(id: number, userData: Partial<User>): Promise<User> {
-    const user = await this.findOne(id);
+  async update(id: string, userData: Partial<User>): Promise<User> {
+    const user = await this.findByStringId(id);
     return user.update(userData);
   }
 
   /**
    * Delete user
    */
-  async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
+  async remove(id: string): Promise<void> {
+    const user = await this.findByStringId(id);
     await user.destroy();
   }
 
   /**
    * Clear all data for a specific user (ClearDuLieuUser)
    */
-  async clearUserData(username: string): Promise<{ success: boolean; message: string }> {
+  async clearUserData(username: string, nguoiTao?: string): Promise<{ success: boolean; message: string }> {
     try {
-      // Delete user's orders
-      await this.sequelize.query(`
-        UPDATE dbo.DonHang SET DaXoa = 1 WHERE username = '${username}'
-      `);
+      await this.sequelize.query(
+        `EXEC SP_ClearDuLieuTheoUser @UserName = :username`,
+        { replacements: { username } }
+      );
+
+      await this.systemLogsService.create({
+        nguoiTao: nguoiTao || '',
+        nguon: 'ClearDuLieuUser:ClearDuLieuTheoUser',
+        hanhDong: 'Xoa',
+        doiTuong: '',
+        noiDung: `UserName: ${username}`,
+      });
 
       return { success: true, message: 'Đã clear dữ liệu thành công' };
     } catch (error) {

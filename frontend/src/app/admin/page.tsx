@@ -73,6 +73,16 @@ const sections = [
       { href: '/', label: 'Về trang chủ public' },
     ],
   },
+  {
+    title: 'Tài khoản',
+    icon: FiUsers,
+    links: [
+      { href: '/admin/users', label: 'Danh sách user' },
+      { href: '/admin/users/new', label: 'Tạo user mới' },
+      { href: '/admin/roles', label: 'Quản lý role' },
+      { href: '/admin/clear-user-data', label: 'Xóa dữ liệu theo user' },
+    ],
+  },
 ];
 
 export const dynamic = 'force-dynamic';

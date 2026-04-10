@@ -601,7 +601,7 @@ export default function QLDatHangLietKePage() {
   const totalPages = data ? Math.ceil(data.totalItem / data.limit) : 0;
 
   return (
-    <div className="mx-auto max-w-[1800px] space-y-4">
+    <div className="w-full space-y-4">
       {/* Tab navigation */}
       <div className="flex gap-2 border-b border-gray-200 pb-2">
         <span className="rounded bg-gray-600 px-3 py-1 text-sm text-white">
