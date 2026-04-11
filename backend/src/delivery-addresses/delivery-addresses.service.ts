@@ -152,7 +152,7 @@ export class DeliveryAddressesService {
       const id = result[0]?.ID;
 
       // Log system
-      await this.logAction(nguoiTao, 'ThemMoi', 'DanhMucDiaChiNhanHang:ThemDiaChiNhanHang', id, `UserName: ${createDto.username}; DiaChi: ${createDto.diaChi}`);
+      await this.logAction(nguoiTao, 'Them moi', 'DanhMucDiaChiNhanHang:ThemDiaChiNhanHang', id, `UserName: ${createDto.username}; DiaChi: ${createDto.diaChi}`);
 
       await sequelize.close();
       return { success: true, id };
@@ -184,7 +184,7 @@ export class DeliveryAddressesService {
       );
 
       // Log system
-      await this.logAction(nguoiCapNhat, 'ChinhSua', 'DanhMucDiaChiNhanHang:CapNhatDiaChiNhanHang', updateDto.id, `UserName: ${updateDto.username}; DiaChi: ${updateDto.diaChi}`);
+      await this.logAction(nguoiCapNhat, 'Chinh sua', 'DanhMucDiaChiNhanHang:CapNhatDiaChiNhanHang', updateDto.id, `UserName: ${updateDto.username}; DiaChi: ${updateDto.diaChi}`);
 
       await sequelize.close();
       return { success: true };

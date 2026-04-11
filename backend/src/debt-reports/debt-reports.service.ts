@@ -205,7 +205,7 @@ export class DebtReportsService {
             replacements: {
               username,
               chucNang: 'ManageCongNo:CapNhatCongNo',
-              hanhDong: 'ChinhSua',
+              hanhDong: 'Chinh sua',
               ma: id.toString(),
               ghiChu: `ID:${id}; NoiDung: ${updateDto.noiDung}; DR: ${dr}; CR: ${cr}; GhiChu: ${updateDto.ghiChu}`,
             },
@@ -654,7 +654,7 @@ export class DebtReportsService {
             replacements: {
               username,
               chucNang: 'BaoCao_DoiChieuCongNo:ChuyenVeReceived',
-              hanhDong: 'ChinhSua',
+              hanhDong: 'Chinh sua',
               ma: ordernumber,
               ghiChu: `ID: ${ordernumber}`,
             },
@@ -709,7 +709,7 @@ export class DebtReportsService {
             replacements: {
               username,
               chucNang: 'BaoCao_DoiChieuCongNo:CapNhatTongTienOrderVND',
-              hanhDong: 'ChinhSua',
+              hanhDong: 'Chinh sua',
               ma: ordernumber,
               ghiChu: `OrderNumber: ${ordernumber}; TrackingNumber: ${trackingNumber}; SotienBVND: ${tongTienOrderVND}`,
             },
@@ -1327,7 +1327,7 @@ export class DebtReportsService {
             replacements: {
               username,
               chucNang: 'ManageCongNo:Insert_CongNo',
-              hanhDong: 'ThemMoi',
+              hanhDong: 'Them moi',
               ma: '',
               ghiChu: `UserName: ${dto.username}; NoiDung: ${dto.noiDung}; Ngay: ${dto.ngay}; DR: ${dr}; CR: ${cr}; GhiChu: ${ghiChu}; LoaiPhatSinh: ${dto.loaiPhatSinh || 2}`,
             },
@@ -1433,7 +1433,7 @@ export class DebtReportsService {
             replacements: {
               username,
               chucNang: 'ManageCongNo:CapNhatCongNo',
-              hanhDong: 'ChinhSua',
+              hanhDong: 'Chinh sua',
               ma: id.toString(),
               ghiChu: `ID:${id}; UserName: ${dto.username}; NoiDung: ${dto.noiDung}; DR: ${dr}; CR: ${cr}; GhiChu: ${dto.ghiChu}; status: ${status}`,
             },
@@ -1519,7 +1519,7 @@ export class DebtReportsService {
             replacements: {
               username,
               chucNang: 'ManageCongNo:ApproveCongNo',
-              hanhDong: 'ChinhSua',
+              hanhDong: 'Chinh sua',
               ma: '',
               ghiChu: `ID: ${id}`,
             },

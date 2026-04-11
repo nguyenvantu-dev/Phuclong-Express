@@ -86,7 +86,7 @@ export class ExchangeRatesService {
       );
 
       // Log system
-      await this.logAction(nguoiCapNhat, 'ChinhSua', 'TyGia', updateDto.name, `Name: ${updateDto.name}; TyGia: ${updateDto.tyGiaVND}; CongShipVeVN: ${updateDto.congShipVeVN}`);
+      await this.logAction(nguoiCapNhat, 'Chinh sua', 'TyGia', updateDto.name, `Name: ${updateDto.name}; TyGia: ${updateDto.tyGiaVND}; CongShipVeVN: ${updateDto.congShipVeVN}`);
 
       await sequelize.close();
       return { success: true };

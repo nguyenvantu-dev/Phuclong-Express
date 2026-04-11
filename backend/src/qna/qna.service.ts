@@ -82,7 +82,7 @@ export class QnaService {
             replacements: {
               username,
               chucNang: 'HoiDapAdmin:CapNhatTraLoiThacMac',
-              hanhDong: 'ChinhSua',
+              hanhDong: 'Chinh sua',
               ma: id.toString(),
               ghiChu: `ID: ${id}; TraLoi: ${traLoi}`,
             },
@@ -171,7 +171,7 @@ export class QnaService {
             replacements: {
               username,
               chucNang: 'HoiDap:ThemThacMac',
-              hanhDong: 'ThemMoi',
+              hanhDong: 'Them moi',
               ma: '',
               ghiChu: `CauHoi: ${cauHoi.trim()}`,
             },

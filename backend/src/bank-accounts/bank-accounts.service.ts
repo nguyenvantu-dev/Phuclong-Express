@@ -59,7 +59,7 @@ export class BankAccountsService {
       await this.logAction(
         nguoiTao,
         'DanhMucTaiKhoanNganHang:ThemTaiKhoanNganHang',
-        'ChinhSua',
+        'Chinh sua',
         '',
         `TaiKhoanNganHangName: ${createDto.tenTaiKhoanNganHang}; GhiChu: ${createDto.ghiChu || ''}`,
       );
@@ -86,7 +86,7 @@ export class BankAccountsService {
       await this.logAction(
         nguoiCapNhat,
         'DanhMucTaiKhoanNganHang:CapNhatTaiKhoanNganHang',
-        'ChinhSua',
+        'Chinh sua',
         String(id),
         `TaiKhoanNganHangName: ${updateDto.tenTaiKhoanNganHang}; GhiChu: ${updateDto.ghiChu || ''}`,
       );

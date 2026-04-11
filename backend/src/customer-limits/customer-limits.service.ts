@@ -159,7 +159,7 @@ export class CustomerLimitsService {
       const id = result[0]?.ID;
 
       // Log system
-      await this.logAction(nguoiTao, 'ThemMoi', 'HanMucKhachHang', id, `UserName: ${createDto.username}; DaQuaHanMuc: ${createDto.daQuaHanMuc}; LaKhachVip: ${createDto.laKhachVip}`);
+      await this.logAction(nguoiTao, 'Them moi', 'HanMucKhachHang', id, `UserName: ${createDto.username}; DaQuaHanMuc: ${createDto.daQuaHanMuc}; LaKhachVip: ${createDto.laKhachVip}`);
 
       await sequelize.close();
       return { success: true, id };
@@ -191,7 +191,7 @@ export class CustomerLimitsService {
       );
 
       // Log system
-      await this.logAction(nguoiCapNhat, 'ChinhSua', 'HanMucKhachHang', updateDto.id, `DaQuaHanMuc: ${updateDto.daQuaHanMuc}; LaKhachVip: ${updateDto.laKhachVip}`);
+      await this.logAction(nguoiCapNhat, 'Chinh sua', 'HanMucKhachHang', updateDto.id, `DaQuaHanMuc: ${updateDto.daQuaHanMuc}; LaKhachVip: ${updateDto.laKhachVip}`);
 
       await sequelize.close();
       return { success: true };

@@ -212,7 +212,7 @@ export class TrackingService {
   /**
    * Create new tracking
    * Uses: SP_Them_Tracking (same as C# DBConnect.ThemTracking)
-   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:ThemTracking', hanhDong='ThemMoi'
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:ThemTracking', hanhDong='Them moi'
    */
   async create(createTrackingDto: CreateTrackingDto): Promise<any> {
     const { username, trackingNumber, orderNumber, ngayDatHang, nhaVanChuyenId, quocGiaId, tinhTrang, ghiChu, kien, mawb, hawb, nguoiTao } = createTrackingDto;
@@ -261,7 +261,7 @@ export class TrackingService {
       await this.systemLogsService.create({
         nguoiTao: nguoiTao || '',
         nguon: 'Tracking_ThemSua:ThemTracking',
-        hanhDong: 'ThemMoi',
+        hanhDong: 'Them moi',
         doiTuong: insertId?.toString() || '',
         noiDung: `TrackingNumber: ${trackingNumber}; OrderNumber: ${orderNumber}; TinhTrang: ${tinhTrang}`,
       });
@@ -276,7 +276,7 @@ export class TrackingService {
   /**
    * Update tracking
    * Uses: SP_CapNhat_Tracking (same as C# DBConnect.CapNhatTracking)
-   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatTracking', hanhDong='ChinhSua'
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatTracking', hanhDong='Chinh sua'
    */
   async update(id: number, updateTrackingDto: UpdateTrackingDto, actorUsername?: string): Promise<any> {
     await this.findOne(id);
@@ -365,7 +365,7 @@ export class TrackingService {
       await this.systemLogsService.create({
         nguoiTao: currentTracking.NguoiTao || '',
         nguon: 'Tracking_ThemSua:CapNhatTracking',
-        hanhDong: 'ChinhSua',
+        hanhDong: 'Chinh sua',
         doiTuong: id.toString(),
         noiDung: `Fields: ${updatedFields.join(', ')}`,
       });
@@ -612,7 +612,7 @@ export class TrackingService {
   /**
    * Update tracking status
    * Uses: SP_CapNhat_TinhTrangTracking
-   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatTinhTrangTracking', hanhDong='ChinhSua'
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatTinhTrangTracking', hanhDong='Chinh sua'
    */
   async updateHistory(historyId: number, ghiChu: string, nguoiTao = ''): Promise<any> {
     try {
@@ -626,7 +626,7 @@ export class TrackingService {
       await this.systemLogsService.create({
         nguoiTao,
         nguon: 'Tracking_ThemSua:CapNhatTinhTrangTracking',
-        hanhDong: 'ChinhSua',
+        hanhDong: 'Chinh sua',
         doiTuong: historyId.toString(),
         noiDung: `GhiChu: ${ghiChu}`,
       });
@@ -666,7 +666,7 @@ export class TrackingService {
   /**
    * Add chi tiet tracking
    * Uses: SP_Them_ChiTietTracking
-   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:ThemChiTietTracking', hanhDong='ThemMoi'
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:ThemChiTietTracking', hanhDong='Them moi'
    */
   async addChiTiet(trackingId: number, linkHinh: string, soLuong: number, gia: number, ghiChu: string, nguoiTao: string = ''): Promise<any> {
     try {
@@ -686,7 +686,7 @@ export class TrackingService {
       await this.systemLogsService.create({
         nguoiTao,
         nguon: 'Tracking_ThemSua:ThemChiTietTracking',
-        hanhDong: 'ThemMoi',
+        hanhDong: 'Them moi',
         doiTuong: trackingId.toString(),
         noiDung: `TrackingID: ${trackingId}; LinkHinh: ${linkHinh}; SoLuong: ${soLuong}; Gia: ${gia}; GhiChu: ${ghiChu}`,
       });
@@ -701,7 +701,7 @@ export class TrackingService {
   /**
    * Update chi tiet tracking
    * Uses: SP_CapNhat_ChiTietTracking
-   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatChiTietTracking', hanhDong='ChinhSua'
+   * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatChiTietTracking', hanhDong='Chinh sua'
    */
   async updateChiTiet(chiTietTrackingId: number, linkHinh: string, soLuong: number, gia: number, ghiChu: string, trackingId: number, nguoiTao: string = ''): Promise<any> {
     try {
@@ -721,7 +721,7 @@ export class TrackingService {
       await this.systemLogsService.create({
         nguoiTao,
         nguon: 'Tracking_ThemSua:CapNhatChiTietTracking',
-        hanhDong: 'ChinhSua',
+        hanhDong: 'Chinh sua',
         doiTuong: chiTietTrackingId.toString(),
         noiDung: `LinkHinh: ${linkHinh}; SoLuong: ${soLuong}; Gia: ${gia}; GhiChu: ${ghiChu}`,
       });

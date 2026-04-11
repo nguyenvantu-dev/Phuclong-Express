@@ -97,7 +97,7 @@ export class ShippersService {
             replacements: {
               username,
               chucNang: 'Shipper_Them:ThemShipper',
-              hanhDong: 'ThemMoi',
+              hanhDong: 'Them moi',
               ma: '',
               ghiChu: `ShipperName: ${dto.shipperName}; ShipperPhone: ${dto.shipperPhone}; ShipperAddress: ${dto.shipperAddress || ''}`,
             },
@@ -165,7 +165,7 @@ export class ShippersService {
             replacements: {
               username,
               chucNang: 'Shipper_Them:CapNhatShipper',
-              hanhDong: 'ChinhSua',
+              hanhDong: 'Chinh sua',
               ma: id.toString(),
               ghiChu: `ID:${id}; ShipperName: ${dto.shipperName}; ShipperPhone: ${dto.shipperPhone}; ShipperAddress: ${dto.shipperAddress || ''}`,
             },

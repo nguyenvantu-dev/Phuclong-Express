@@ -124,7 +124,7 @@ export class PeriodsService {
       const code = Number((Object.values(result)[0]) ?? -1);
 
       if (code === 0) {
-        await this.logAction(nguoiTao, 'ThemMoi', 'Ky', '', `Năm: ${createDto.nam}; Tháng: ${createDto.thang}`);
+        await this.logAction(nguoiTao, 'Them moi', 'Ky', '', `Năm: ${createDto.nam}; Tháng: ${createDto.thang}`);
       }
 
       return { success: code === 0, code };
@@ -152,7 +152,7 @@ export class PeriodsService {
       const code = Number(Object.values(result)[0] ?? -1);
 
       if (code === 0) {
-        await this.logAction(nguoiCapNhat, 'ChinhSua', 'Ky', updateDto.id, `KyID: ${updateDto.id}; Năm: ${updateDto.nam}; Tháng: ${updateDto.thang}`);
+        await this.logAction(nguoiCapNhat, 'Chinh sua', 'Ky', updateDto.id, `KyID: ${updateDto.id}; Năm: ${updateDto.nam}; Tháng: ${updateDto.thang}`);
       }
 
       return { success: code === 0, code };
@@ -206,7 +206,7 @@ export class PeriodsService {
       const code = Number(Object.values(result)[0] ?? -1);
 
       if (code === 0) {
-        await this.logAction(nguoiDong, 'ChinhSua', 'Ky', id, `Đóng kỳ ID: ${id}`);
+        await this.logAction(nguoiDong, 'Chinh sua', 'Ky', id, `Đóng kỳ ID: ${id}`);
       }
 
       return { success: code === 0, code };
@@ -300,7 +300,7 @@ export class PeriodsService {
       const code = Number((result as any)?.[0] ?? -1);
 
       if (code === 0) {
-        await this.logAction(nguoiMo, 'ChinhSua', 'ChotKy', chotKyId, `Tạm mở kỳ ID: ${chotKyId}`);
+        await this.logAction(nguoiMo, 'Chinh sua', 'ChotKy', chotKyId, `Tạm mở kỳ ID: ${chotKyId}`);
       }
 
       return { success: code === 0, code };
@@ -325,7 +325,7 @@ export class PeriodsService {
       `);
 
       // Log system
-      await this.logAction(nguoiDong, 'ChinhSua', 'ChotKy', chotKyId, `Đóng kỳ mở tạm: ${chotKyId}`);
+      await this.logAction(nguoiDong, 'Chinh sua', 'ChotKy', chotKyId, `Đóng kỳ mở tạm: ${chotKyId}`);
 
       await sequelize.close();
       return { success: true, code: 0 };
