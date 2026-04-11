@@ -2,6 +2,7 @@
 
 import { useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 type ImportMode = 'create' | 'edit';
 
@@ -71,22 +72,13 @@ function ImportUsersPageContent() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const res = await fetch('/api/users/import/sheets', {
-        method: 'POST',
-        body: formData,
-      });
+      const { data } = await apiClient.post('/users/import/sheets', formData);
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setAvailableSheets(data.sheets || []);
-        if (data.sheets?.length > 0) {
-          setSelectedSheet(data.sheets[0]);
-        }
-        setStep(2);
-      } else {
-        setError(data.message || 'Có lỗi trong quá trình tải file');
+      setAvailableSheets(data.sheets || []);
+      if (data.sheets?.length > 0) {
+        setSelectedSheet(data.sheets[0]);
       }
+      setStep(2);
     } catch (err) {
       setError('Có lỗi trong quá trình tải file');
     } finally {
@@ -110,19 +102,10 @@ function ImportUsersPageContent() {
       formData.append('mode', mode);
       formData.append('editableColumns', JSON.stringify(editableColumns));
 
-      const res = await fetch('/api/users/import/validate', {
-        method: 'POST',
-        body: formData,
-      });
+      const { data } = await apiClient.post('/users/import/validate', formData);
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setValidationResult(data);
-        setStep(3);
-      } else {
-        setError(data.message || 'Có lỗi trong quá trình kiểm tra dữ liệu');
-      }
+      setValidationResult(data);
+      setStep(3);
     } catch (err) {
       setError('Có lỗi trong quá trình kiểm tra dữ liệu');
     } finally {
@@ -145,22 +128,13 @@ function ImportUsersPageContent() {
       formData.append('mode', mode);
       formData.append('editableColumns', JSON.stringify(editableColumns));
 
-      const res = await fetch('/api/users/import/execute', {
-        method: 'POST',
-        body: formData,
+      const { data } = await apiClient.post('/users/import/execute', formData);
+
+      setImportResult({
+        success: data.successCount || 0,
+        message: `Đã import thành công ${data.successCount} dòng dữ liệu`,
       });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setImportResult({
-          success: data.successCount || 0,
-          message: `Đã import thành công ${data.successCount} dòng dữ liệu`,
-        });
-        setStep(4);
-      } else {
-        setError(data.message || 'Có lỗi trong quá trình import');
-      }
+      setStep(4);
     } catch (err) {
       setError('Có lỗi trong quá trình import');
     } finally {

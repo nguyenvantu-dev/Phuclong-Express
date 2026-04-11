@@ -551,14 +551,16 @@ export class TrackingService {
 
   /**
    * Find tracking details
+   * Matches: SuaTracking.cs -> LoadDataChiTietTracking -> SP_Lay_DanhSachChiTietTrackingByID(@TrackingID)
    */
   async findDetails(id: number): Promise<any> {
     const tracking = await this.findOne(id);
 
-    // Get chi tiet tracking
-    const [chiTiet] = await this.sequelize.query(`
-      SELECT * FROM dbo.tbChiTietTracking WHERE TrackingID = ${id} ORDER BY TrackingID DESC
-    `);
+    // Get chi tiet tracking via SP (SuaTracking.cs -> SP_Lay_DanhSachChiTietTrackingByID)
+    const chiTiet = await this.sequelize.query(
+      `EXEC dbo.SP_Lay_DanhSachChiTietTrackingByID @TrackingID = :id`,
+      { replacements: { id }, type: QueryTypes.SELECT },
+    );
 
     // Get lich su tracking
     const history = await this.findHistory(id);
@@ -612,7 +614,7 @@ export class TrackingService {
    * Uses: SP_CapNhat_TinhTrangTracking
    * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatTinhTrangTracking', hanhDong='ChinhSua'
    */
-  async updateHistory(historyId: number, ghiChu: string): Promise<any> {
+  async updateHistory(historyId: number, ghiChu: string, nguoiTao = ''): Promise<any> {
     try {
       await this.sequelize.query(`
         EXEC dbo.SP_CapNhat_TinhTrangTracking
@@ -622,7 +624,7 @@ export class TrackingService {
       { replacements: { historyId, ghiChu }, type: QueryTypes.RAW });
 
       await this.systemLogsService.create({
-        nguoiTao: '',
+        nguoiTao,
         nguon: 'Tracking_ThemSua:CapNhatTinhTrangTracking',
         hanhDong: 'ChinhSua',
         doiTuong: historyId.toString(),
@@ -641,7 +643,7 @@ export class TrackingService {
    * Uses: SP_Xoa_TinhTrangTracking
    * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:XoaTinhTrangTracking', hanhDong='Xoa'
    */
-  async deleteHistory(historyId: number): Promise<void> {
+  async deleteHistory(historyId: number, nguoiTao = ''): Promise<void> {
     try {
       await this.sequelize.query(`
         EXEC dbo.SP_Xoa_TinhTrangTracking @TinhTrangTrackingID = :historyId
@@ -649,7 +651,7 @@ export class TrackingService {
       { replacements: { historyId }, type: QueryTypes.RAW });
 
       await this.systemLogsService.create({
-        nguoiTao: '',
+        nguoiTao,
         nguon: 'Tracking_ThemSua:XoaTinhTrangTracking',
         hanhDong: 'Xoa',
         doiTuong: historyId.toString(),

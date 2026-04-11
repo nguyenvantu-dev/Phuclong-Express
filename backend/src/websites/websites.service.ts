@@ -78,7 +78,7 @@ export class WebsitesService {
       const id = result?.[0]?.ID;
 
       // Log system
-      await this.logAction(nguoiTao, 'ThemMoi', 'Website', id, `WebsiteName: ${createDto.websiteName}; GhiChu: ${createDto.ghiChu || ''}`);
+      await this.logAction(nguoiTao, 'ThemMoi', 'DanhMucWebsite:ThemWebsite', id, `WebsiteName: ${createDto.websiteName}; GhiChu: ${createDto.ghiChu || ''}`);
 
       return { success: true, id };
     } catch (error: any) {
@@ -104,7 +104,7 @@ export class WebsitesService {
       );
 
       // Log system
-      await this.logAction(nguoiCapNhat, 'ChinhSua', 'Website', updateDto.id, `WebsiteName: ${updateDto.websiteName}; GhiChu: ${updateDto.ghiChu || ''}`);
+      await this.logAction(nguoiCapNhat, 'ChinhSua', 'DanhMucWebsite:CapNhatWebsite', updateDto.id, `WebsiteName: ${updateDto.websiteName}; GhiChu: ${updateDto.ghiChu || ''}`);
 
       return { success: true };
     } catch (error: any) {
@@ -127,7 +127,7 @@ export class WebsitesService {
       );
 
       // Log system
-      await this.logAction(nguoiXoa, 'Xoa', 'Website', id, `ID: ${id}`);
+      await this.logAction(nguoiXoa, 'Xoa', 'DanhMucWebsite:XoaWebsite', id, `ID: ${id}`);
 
       return { success: true };
     } catch (error: any) {

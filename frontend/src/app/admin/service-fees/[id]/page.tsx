@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import apiClient from '@/lib/api-client';
 
 interface ServiceFee {
   id: number;
@@ -22,8 +24,6 @@ interface FormData {
   khachBuon: boolean;
 }
 
-const API_BASE = '/api/service-fees';
-
 /**
  * Edit Service Fee Page
  *
@@ -32,6 +32,7 @@ const API_BASE = '/api/service-fees';
 export default function EditServiceFeePage() {
   const router = useRouter();
   const params = useParams();
+  const queryClient = useQueryClient();
   const id = Number(params.id);
 
   const [formData, setFormData] = useState<FormData>({
@@ -52,9 +53,7 @@ export default function EditServiceFeePage() {
     const fetchServiceFee = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch service fee');
-        const data: ServiceFee = await response.json();
+        const { data } = await apiClient.get<ServiceFee>(`/service-fees/${id}`);
 
         setFormData({
           loaiTien: data.loaiTien,
@@ -100,23 +99,16 @@ export default function EditServiceFeePage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          loaiTien: formData.loaiTien,
-          tuGia: Number(formData.tuGia),
-          denGia: Number(formData.denGia),
-          tienCong1Mon: Number(formData.tienCong1Mon),
-          tinhTheoPhanTram: formData.tinhTheoPhanTram,
-          khachBuon: formData.khachBuon,
-        }),
+      await apiClient.put(`/service-fees/${id}`, {
+        loaiTien: formData.loaiTien,
+        tuGia: Number(formData.tuGia),
+        denGia: Number(formData.denGia),
+        tienCong1Mon: Number(formData.tienCong1Mon),
+        tinhTheoPhanTram: formData.tinhTheoPhanTram,
+        khachBuon: formData.khachBuon,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update service fee');
-      }
-
+      await queryClient.invalidateQueries({ queryKey: ['service-fees'] });
       router.push('/admin/service-fees');
     } catch (err) {
       setError((err as Error).message);

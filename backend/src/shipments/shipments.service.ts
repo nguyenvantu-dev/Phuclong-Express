@@ -163,6 +163,67 @@ export class ShipmentsService {
     const shipment = await this.findOne(id);
     return shipment.update({ isCompleted: true });
   }
+
+  /**
+   * Get shipment batches for shipping request list (YeuCauShipHang_LietKe.aspx)
+   * Matches: YeuCauShipHang_LietKe.cs -> Page_Load -> bLL.LayDotHangYeuCauShip(username, yeuCauGuiHang)
+   * Uses: SP_Lay_DotHangShip @username, @YeuCauGuiHang
+   * Called twice: YeuCauGuiHang=0 (chờ ship) and YeuCauGuiHang=1 (đang yêu cầu)
+   */
+  async getDotHangShip(username: string, yeuCauGuiHang: number): Promise<any[]> {
+    try {
+      const [results] = await this.sequelize.query(
+        `EXEC SP_Lay_DotHangShip
+          @username = :username,
+          @YeuCauGuiHang = :yeuCauGuiHang`,
+        { replacements: { username, yeuCauGuiHang }, type: 'SELECT' as const },
+      );
+      return Array.isArray(results) ? results : [];
+    } catch (error) {
+      console.error('Error in getDotHangShip:', (error as any).message);
+      return [];
+    }
+  }
+
+  /**
+   * Update shipping request for a batch (YeuCauShipHang_LietKe.aspx - btShip_Click)
+   * Matches: YeuCauShipHang_LietKe.cs -> btShip_Click -> bLL.CapNhatYeuCauShipHang(tenDotHang, username, ghiChu)
+   * Uses: SP_CapNhat_YeuCauShipHang @TenDotHang, @UserName, @YeuCauGui_GhiChu
+   */
+  async capNhatYeuCauShipHang(tenDotHang: string, username: string, yeuCauGuiGhiChu: string = ''): Promise<{ success: boolean }> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_CapNhat_YeuCauShipHang
+          @TenDotHang = :tenDotHang,
+          @UserName = :username,
+          @YeuCauGui_GhiChu = :yeuCauGuiGhiChu`,
+        { replacements: { tenDotHang, username, yeuCauGuiGhiChu } },
+      );
+      return { success: true };
+    } catch (error) {
+      console.error('Error in capNhatYeuCauShipHang:', (error as any).message);
+      return { success: false };
+    }
+  }
+
+  /**
+   * Get shipping info by ID (ThongTinShipHang.aspx)
+   * Matches: ThongTinShipHang.cs -> Page_Load -> dBConnect.LayThongTinShipByID(id)
+   * Uses: SP_Lay_ThongTinShipByID @ID
+   */
+  async getThongTinShipByID(id: number): Promise<any> {
+    try {
+      const [results] = await this.sequelize.query(
+        `EXEC SP_Lay_ThongTinShipByID @ID = :id`,
+        { replacements: { id }, type: 'SELECT' as const },
+      );
+      const data = Array.isArray(results) ? results : [];
+      return data.length > 0 ? data[0] : null;
+    } catch (error) {
+      console.error('Error in getThongTinShipByID:', (error as any).message);
+      return null;
+    }
+  }
 }
 
 // Import Op for Sequelize operators

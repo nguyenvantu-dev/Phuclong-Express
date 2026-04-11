@@ -1572,4 +1572,30 @@ export class DebtReportsService {
       return [];
     }
   }
+
+  /**
+   * Get pending transfer list for user (ChuyenKhoan.aspx)
+   * Matches: ChuyenKhoan.cs -> bLL.LayDanhSachCongNo(username, 0, 2, ...)
+   * Uses: SP_Lay_CongNo @username, @status=0 (chờ duyệt), @style=2 (chuyển khoản)
+   */
+  async getChuyenKhoanPendingList(username: string): Promise<any[]> {
+    try {
+      const [results] = await this.sequelize.query(
+        `EXEC SP_Lay_CongNo
+          @username = :username,
+          @status = 0,
+          @style = 2,
+          @NoiDungTim = '',
+          @PageSize = 100,
+          @PageNum = 1,
+          @TuNgay = NULL,
+          @DenNgay = NULL`,
+        { replacements: { username }, type: 'SELECT' as const },
+      );
+      return Array.isArray(results) ? results : [];
+    } catch (error) {
+      console.error('Error in getChuyenKhoanPendingList:', (error as any).message);
+      return [];
+    }
+  }
 }

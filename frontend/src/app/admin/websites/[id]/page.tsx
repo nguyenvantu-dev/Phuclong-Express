@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import apiClient from '@/lib/api-client';
 
 interface Website {
   ID: number;
@@ -23,25 +22,21 @@ export default function WebsiteDetailPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const [tenThongTin, setTenThongTin] = useState('');
-  const [noiDungThongTin, setNoiDungThongTin] = useState('');
-  const [editorLoaded, setEditorLoaded] = useState(false);
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const [websiteName, setWebsiteName] = useState('');
+  const [ghiChu, setGhiChu] = useState('');
 
   useEffect(() => {
     fetchWebsite();
-    loadCKEditor();
   }, [websiteId]);
 
   const fetchWebsite = async () => {
     try {
-      const res = await fetch(`${API_URL}/websites/${websiteId}`);
-      const data = await res.json();
-
-      if (res.ok && data.data) {
-        setWebsite(data.data);
-        setTenThongTin(data.data.WebsiteName || '');
-        setNoiDungThongTin(data.data.GhiChu || '');
+      const res = await apiClient.get(`/websites/${websiteId}`);
+      const website = res.data.data;
+      if (website) {
+        setWebsite(website);
+        setWebsiteName(website.WebsiteName || '');
+        setGhiChu(website.GhiChu || '');
       }
     } catch (err) {
       console.error('Failed to load website:', err);
@@ -51,60 +46,26 @@ export default function WebsiteDetailPage() {
     }
   };
 
-  const loadCKEditor = async () => {
-    if (typeof window !== 'undefined' && !editorLoaded) {
-      const script = document.createElement('script');
-      script.src = '/ckeditor/ckeditor.js';
-      script.async = true;
-      script.onload = () => {
-        setEditorLoaded(true);
-      };
-      document.head.appendChild(script);
-    }
-  };
-
-  useEffect(() => {
-    if (editorLoaded && typeof window !== 'undefined' && (window as any).CKEDITOR && editorRef.current) {
-      const editor = (window as any).CKEDITOR.replace(editorRef.current);
-      editor.on('change', (evt: any) => {
-        setNoiDungThongTin(evt.editor.getData());
-      });
-    }
-  }, [editorLoaded]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    if (!tenThongTin.trim()) {
-      setError('Vui lòng nhập tên thông tin');
+    if (!websiteName.trim()) {
+      setError('Vui lòng nhập tên website');
       return;
     }
 
     setSaving(true);
     try {
-      const res = await fetch(`${API_URL}/websites/${websiteId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          websiteName: tenThongTin,
-          ghiChu: noiDungThongTin,
-        }),
-      });
-
-      if (res.ok) {
-        setSuccess('Cập nhật thành công');
-        setTimeout(() => {
-          router.push('/admin/websites');
-        }, 1500);
-      } else {
-        const data = await res.json();
-        setError(data.message || 'Có lỗi trong quá trình cập nhật');
-      }
-    } catch (err) {
+      await apiClient.put(`/websites/${websiteId}`, { websiteName, ghiChu });
+      setSuccess('Cập nhật thành công');
+      setTimeout(() => {
+        router.push('/admin/websites');
+      }, 1500);
+    } catch (err: any) {
       console.error('Failed to update:', err);
-      setError('Có lỗi trong quá trình cập nhật');
+      setError(err?.response?.data?.message || 'Có lỗi trong quá trình cập nhật');
     } finally {
       setSaving(false);
     }
@@ -135,7 +96,7 @@ export default function WebsiteDetailPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-800">Thông tin Website</h1>
-        <p className="text-slate-500 mt-1">Cập nhật nội dung website</p>
+        <p className="text-slate-500 mt-1">{website?.WebsiteName}</p>
       </div>
 
       {/* Error/Success Alerts */}
@@ -170,37 +131,23 @@ export default function WebsiteDetailPage() {
             </label>
             <input
               type="text"
-              id="tbTenThongTin"
-              value={tenThongTin}
-              onChange={(e) => setTenThongTin(e.target.value)}
+              value={websiteName}
+              onChange={(e) => setWebsiteName(e.target.value)}
               placeholder="Nhập tên website"
               className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5cc6ee] focus:border-[#5cc6ee] outline-none transition-colors"
             />
           </div>
 
-          {/* Content */}
+          {/* Ghi chú */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Nội dung
-            </label>
-            <div className="relative">
-              <textarea
-                id="tbNoiDungThongTin"
-                ref={editorRef}
-                value={noiDungThongTin}
-                onChange={(e) => setNoiDungThongTin(e.target.value)}
-                placeholder="Nhập nội dung..."
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5cc6ee] focus:border-[#5cc6ee] outline-none transition-colors min-h-[300px] resize-y"
-              />
-              {!editorLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-slate-50 rounded-lg pointer-events-none">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#5cc6ee]"></div>
-                    <span>Đang tải CKEditor...</span>
-                  </div>
-                </div>
-              )}
-            </div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Ghi chú</label>
+            <input
+              type="text"
+              value={ghiChu}
+              onChange={(e) => setGhiChu(e.target.value)}
+              placeholder="Nhập ghi chú"
+              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5cc6ee] focus:border-[#5cc6ee] outline-none transition-colors"
+            />
           </div>
 
           {/* Actions */}

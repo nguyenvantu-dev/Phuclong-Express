@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import apiClient from '@/lib/api-client';
 
 interface Website {
   ID: number;
@@ -9,7 +10,6 @@ interface Website {
   GhiChu: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export default function InfoPage() {
   const [websites, setWebsites] = useState<Website[]>([]);
@@ -18,8 +18,7 @@ export default function InfoPage() {
   useEffect(() => {
     async function fetchWebsites() {
       try {
-        const res = await fetch(`${API_URL}/websites`);
-        const data = await res.json();
+        const { data } = await apiClient.get('/websites');
         setWebsites(data.data || []);
       } catch (err) {
         console.error('Failed to fetch websites:', err);

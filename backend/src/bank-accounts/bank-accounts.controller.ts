@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BankAccountsService } from './bank-accounts.service';
 import type { CreateBankAccountDto, UpdateBankAccountDto } from './bank-accounts.service';
 
@@ -12,34 +13,22 @@ export class BankAccountsController {
     return { data };
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const data = await this.bankAccountsService.findOne(Number(id));
-    return { data };
-  }
-
+  @UseGuards(JwtAuthGuard)
   @Post()
   async create(
     @Body() createDto: CreateBankAccountDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.bankAccountsService.create(createDto, username || 'system');
+    return this.bankAccountsService.create(createDto, req.user?.username || 'system');
   }
 
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateBankAccountDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.bankAccountsService.update({ ...updateDto, id: Number(id) }, username || 'system');
-  }
-
-  @Delete(':id')
-  async remove(
-    @Param('id') id: string,
-    @Headers('x-username') username: string,
-  ) {
-    return this.bankAccountsService.remove(Number(id), username || 'system');
+    return this.bankAccountsService.update(Number(id), updateDto, req.user?.username || 'system');
   }
 }

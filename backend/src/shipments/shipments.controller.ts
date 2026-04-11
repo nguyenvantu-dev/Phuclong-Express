@@ -126,4 +126,40 @@ export class ShipmentsController {
   async complete(@Param('id', ParseIntPipe) id: number): Promise<Shipment> {
     return this.shipmentsService.complete(id);
   }
+
+  /**
+   * GET /shipments/user/dot-hang-ship
+   * Get shipping request list for user (YeuCauShipHang_LietKe.aspx)
+   * Matches: SP_Lay_DotHangShip @username, @YeuCauGuiHang
+   * Use yeuCauGuiHang=0 (chờ ship) or yeuCauGuiHang=1 (đang yêu cầu)
+   */
+  @Get('user/dot-hang-ship')
+  async getDotHangShip(
+    @Query('username') username: string,
+    @Query('yeuCauGuiHang') yeuCauGuiHang: string,
+  ): Promise<any[]> {
+    return this.shipmentsService.getDotHangShip(username, Number(yeuCauGuiHang));
+  }
+
+  /**
+   * POST /shipments/user/yeu-cau-ship
+   * Submit shipping request for batch(es) (YeuCauShipHang_LietKe.aspx - btShip_Click)
+   * Matches: SP_CapNhat_YeuCauShipHang @TenDotHang, @UserName, @YeuCauGui_GhiChu
+   */
+  @Post('user/yeu-cau-ship')
+  async capNhatYeuCauShipHang(
+    @Body() body: { tenDotHang: string; username: string; ghiChu?: string },
+  ): Promise<{ success: boolean }> {
+    return this.shipmentsService.capNhatYeuCauShipHang(body.tenDotHang, body.username, body.ghiChu || '');
+  }
+
+  /**
+   * GET /shipments/user/thong-tin-ship/:id
+   * Get shipping info by ID (ThongTinShipHang.aspx)
+   * Matches: SP_Lay_ThongTinShipByID @ID
+   */
+  @Get('user/thong-tin-ship/:id')
+  async getThongTinShipByID(@Param('id', ParseIntPipe) id: number): Promise<any> {
+    return this.shipmentsService.getThongTinShipByID(id);
+  }
 }

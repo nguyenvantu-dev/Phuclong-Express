@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import apiClient from '@/lib/api-client';
 
 interface Website {
   ID: number;
@@ -25,9 +23,8 @@ export default function WebsitesPage() {
   const fetchWebsites = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/websites`);
-      const data = await res.json();
-      setWebsites(data.data || []);
+      const res = await apiClient.get('/websites');
+      setWebsites(res.data.data || []);
     } catch (err) {
       console.error('Failed to fetch websites:', err);
       setError('Failed to load websites');
@@ -51,23 +48,15 @@ export default function WebsitesPage() {
 
     setSubmitting(true);
     try {
-      const method = editingId ? 'PUT' : 'POST';
-      const url = editingId ? `${API_URL}/websites/${editingId}` : `${API_URL}/websites`;
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ websiteName, ghiChu }),
-      });
-
-      if (res.ok) {
-        setWebsiteName('');
-        setGhiChu('');
-        setEditingId(null);
-        fetchWebsites();
+      if (editingId) {
+        await apiClient.put(`/websites/${editingId}`, { websiteName, ghiChu });
       } else {
-        setError('Có lỗi trong quá trình thực hiện');
+        await apiClient.post('/websites', { websiteName, ghiChu });
       }
+      setWebsiteName('');
+      setGhiChu('');
+      setEditingId(null);
+      fetchWebsites();
     } catch (err) {
       console.error('Failed to save website:', err);
       setError('Có lỗi trong quá trình thực hiện');
@@ -80,18 +69,15 @@ export default function WebsitesPage() {
     setEditingId(website.ID);
     setWebsiteName(website.WebsiteName);
     setGhiChu(website.GhiChu || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Bạn có chắc muốn xóa không?')) return;
 
     try {
-      const res = await fetch(`${API_URL}/websites/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchWebsites();
-      } else {
-        setError('Có lỗi trong quá trình thực hiện');
-      }
+      await apiClient.delete(`/websites/${id}`);
+      fetchWebsites();
     } catch (err) {
       console.error('Failed to delete website:', err);
       setError('Có lỗi trong quá trình thực hiện');
@@ -209,15 +195,15 @@ export default function WebsitesPage() {
                   <tr key={website.ID} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <Link
-                          href={`/admin/websites/${website.ID}`}
+                        <button
+                          onClick={() => handleEdit(website)}
                           className="p-1.5 text-[#5cc6ee] hover:text-[#2a9bc0] hover:bg-[#e6f7fc] rounded-lg transition-colors cursor-pointer"
                           title="Chỉnh sửa"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
-                        </Link>
+                        </button>
                         <button
                           onClick={() => handleDelete(website.ID)}
                           className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
@@ -229,14 +215,7 @@ export default function WebsitesPage() {
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/admin/websites/${website.ID}`}
-                        className="font-medium text-slate-800 hover:text-[#5cc6ee] transition-colors cursor-pointer"
-                      >
-                        {website.WebsiteName}
-                      </Link>
-                    </td>
+                    <td className="px-6 py-4 font-medium text-slate-800">{website.WebsiteName}</td>
                     <td className="px-6 py-4 text-slate-600">{website.GhiChu || '-'}</td>
                   </tr>
                 ))
@@ -247,17 +226,8 @@ export default function WebsitesPage() {
       </div>
 
       {/* Stats */}
-      <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+      <div className="mt-4 text-sm text-slate-500">
         <span>Tổng: <strong className="text-slate-700">{websites.length}</strong> website</span>
-        <Link
-          href="/admin/websites/new"
-          className="flex items-center gap-1 text-[#5cc6ee] hover:text-[#4ab5dd] transition-colors cursor-pointer"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Thêm mới
-        </Link>
       </div>
     </div>
   );

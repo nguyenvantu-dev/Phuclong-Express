@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { FiCreditCard, FiEdit2, FiCheck, FiX, FiPlus, FiRefreshCw } from 'react-icons/fi';
+import apiClient from '@/lib/api-client';
 
 interface BankAccount {
   ID: number;
@@ -13,19 +15,27 @@ export default function BankAccountsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Form state
-  const [tenTaiKhoan, setTenTaiKhoan] = useState('');
-  const [ghiChu, setGhiChu] = useState('');
+  // Inline edit state
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTen, setEditTen] = useState('');
+  const [editGhiChu, setEditGhiChu] = useState('');
+  const [editError, setEditError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Add form state
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTen, setNewTen] = useState('');
+  const [newGhiChu, setNewGhiChu] = useState('');
+  const [addError, setAddError] = useState('');
+  const [adding, setAdding] = useState(false);
 
   const fetchAccounts = useCallback(async () => {
     try {
-      const res = await fetch('/api/bank-accounts');
-      const data = await res.json();
+      const { data } = await apiClient.get<{ data: BankAccount[] }>('/bank-accounts');
       setAccounts(data.data || []);
     } catch (err) {
       console.error('Failed to fetch bank accounts:', err);
-      setError('Failed to load bank accounts');
+      setError('Không thể tải danh sách tài khoản ngân hàng');
     } finally {
       setLoading(false);
     }
@@ -35,166 +45,289 @@ export default function BankAccountsPage() {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!tenTaiKhoan.trim()) {
-      setError('Vui lòng nhập tên tài khoản');
+  // --- Add ---
+  const handleAdd = async () => {
+    if (!newTen.trim()) {
+      setAddError('Vui lòng nhập tên tài khoản');
       return;
     }
-
+    setAdding(true);
+    setAddError('');
     try {
-      const method = editingId ? 'PUT' : 'POST';
-      const url = editingId ? `/api/bank-accounts/${editingId}` : '/api/bank-accounts';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenTaiKhoanNganHang: tenTaiKhoan, ghiChu }),
-      });
-
-      if (res.ok) {
-        setTenTaiKhoan('');
-        setGhiChu('');
-        setEditingId(null);
-        fetchAccounts();
-      } else {
-        setError('Có lỗi trong quá trình thực hiện');
-      }
+      await apiClient.post('/bank-accounts', { tenTaiKhoanNganHang: newTen.trim(), ghiChu: newGhiChu.trim() });
+      setNewTen('');
+      setNewGhiChu('');
+      setShowAddForm(false);
+      fetchAccounts();
     } catch (err) {
-      console.error('Failed to save bank account:', err);
-      setError('Có lỗi trong quá trình thực hiện');
+      console.error('Failed to add bank account:', err);
+      setAddError('Có lỗi trong quá trình thực hiện');
+    } finally {
+      setAdding(false);
     }
   };
 
-  const handleEdit = (account: BankAccount) => {
+  const cancelAdd = () => {
+    setShowAddForm(false);
+    setNewTen('');
+    setNewGhiChu('');
+    setAddError('');
+  };
+
+  // --- Edit ---
+  const startEdit = (account: BankAccount) => {
     setEditingId(account.ID);
-    setTenTaiKhoan(account.TenTaiKhoanNganHang);
-    setGhiChu(account.GhiChu || '');
+    setEditTen(account.TenTaiKhoanNganHang);
+    setEditGhiChu(account.GhiChu || '');
+    setEditError('');
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Bạn có chắc muốn xóa không?')) return;
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTen('');
+    setEditGhiChu('');
+    setEditError('');
+  };
 
+  const handleSave = async () => {
+    if (!editTen.trim()) {
+      setEditError('Tên tài khoản không được để trống');
+      return;
+    }
+    setSaving(true);
+    setEditError('');
     try {
-      const res = await fetch(`/api/bank-accounts/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchAccounts();
-      } else {
-        alert('Có lỗi trong quá trình thực hiện');
-      }
+      await apiClient.put(`/bank-accounts/${editingId}`, {
+        tenTaiKhoanNganHang: editTen.trim(),
+        ghiChu: editGhiChu.trim(),
+      });
+      setAccounts(prev =>
+        prev.map(a =>
+          a.ID === editingId ? { ...a, TenTaiKhoanNganHang: editTen.trim(), GhiChu: editGhiChu.trim() } : a,
+        ),
+      );
+      cancelEdit();
     } catch (err) {
-      console.error('Failed to delete bank account:', err);
-      alert('Có lỗi trong quá trình thực hiện');
+      console.error('Failed to update bank account:', err);
+      setEditError('Cập nhật thất bại, vui lòng thử lại');
+    } finally {
+      setSaving(false);
     }
   };
-
-  const handleCancel = () => {
-    setEditingId(null);
-    setTenTaiKhoan('');
-    setGhiChu('');
-  };
-
-  if (loading) {
-    return <div>Đang tải...</div>;
-  }
 
   return (
-    <div>
-      <h1 className="titlead">Danh sách Tài Khoản Ngân Hàng</h1>
-      <hr />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
+            <FiCreditCard className="h-5 w-5 text-[#5cc6ee]" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800">Danh mục tài khoản ngân hàng</h1>
+            {!loading && (
+              <p className="text-sm text-slate-500">
+                Tổng <span className="font-semibold text-slate-700">{accounts.length}</span> tài khoản
+              </p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={() => { setShowAddForm(true); setEditingId(null); }}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#5cc6ee] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#4ab5dd] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/30"
+        >
+          <FiPlus className="h-4 w-4" />
+          Thêm mới
+        </button>
+      </div>
 
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span className="h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+          {error}
+        </div>
+      )}
 
-      {/* Form */}
-      <form onSubmit={handleSubmit}>
-        <table>
-          <tbody>
-            <tr>
-              <td style={{ width: '150px' }}>Tên Tài khoản</td>
-              <td>
+      {/* Add Form */}
+      {showAddForm && (
+        <div className="overflow-hidden rounded-2xl border border-[#5cc6ee]/30 bg-white shadow-sm">
+          <div className="border-b border-slate-100 bg-slate-50/60 px-6 py-3">
+            <h2 className="text-sm font-semibold text-slate-700">Thêm tài khoản mới</h2>
+          </div>
+          <div className="space-y-4 px-6 py-4">
+            {addError && (
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-500" />
+                {addError}
+              </div>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600">
+                  Tên tài khoản <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  value={tenTaiKhoan}
-                  onChange={(e) => setTenTaiKhoan(e.target.value)}
-                  style={{ width: '100%' }}
+                  value={newTen}
+                  onChange={e => setNewTen(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') cancelAdd(); }}
+                  autoFocus
+                  placeholder="Nhập tên tài khoản..."
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Ghi chú</td>
-              <td>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600">Ghi chú</label>
                 <input
                   type="text"
-                  value={ghiChu}
-                  onChange={(e) => setGhiChu(e.target.value)}
-                  style={{ width: '100%' }}
+                  value={newGhiChu}
+                  onChange={e => setNewGhiChu(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') cancelAdd(); }}
+                  placeholder="Ghi chú (tùy chọn)..."
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
                 />
-              </td>
-            </tr>
-            <tr>
-              <td colSpan={2} style={{ textAlign: 'center' }}>
-                <button type="submit" className="btn btn-default">
-                  {editingId ? 'Cập nhật' : 'Lưu'}
-                </button>
-                {editingId && (
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="btn btn-default"
-                    style={{ marginLeft: '5px' }}
-                  >
-                    Hủy
-                  </button>
-                )}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={handleAdd}
+                disabled={adding}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#5cc6ee] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#4ab5dd] disabled:opacity-50"
+              >
+                {adding ? <FiRefreshCw className="h-3.5 w-3.5 animate-spin" /> : <FiCheck className="h-3.5 w-3.5" />}
+                Lưu
+              </button>
+              <button
+                onClick={cancelAdd}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+              >
+                <FiX className="h-3.5 w-3.5" />
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit error */}
+      {editError && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          <span className="h-2 w-2 flex-shrink-0 rounded-full bg-amber-500" />
+          {editError}
+        </div>
+      )}
 
       {/* Table */}
-      <div style={{ marginTop: '20px' }}>
-        <table className="table table-bordered table-hover">
-          <thead>
-            <tr className="myGridHeader">
-              <th style={{ width: '80px' }}>Thao tác</th>
-              <th>Tên tài khoản</th>
-              <th>Ghi chú</th>
-            </tr>
-          </thead>
-          <tbody>
-            {accounts.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="text-center">Không có dữ liệu</td>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {loading ? (
+          <div className="divide-y divide-slate-100">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-6 py-4">
+                <div className="h-4 w-48 animate-pulse rounded bg-slate-100" />
+                <div className="h-4 w-64 animate-pulse rounded bg-slate-100 ml-4" />
+                <div className="h-6 w-14 animate-pulse rounded bg-slate-100 ml-auto" />
+              </div>
+            ))}
+          </div>
+        ) : accounts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+              <FiCreditCard className="h-8 w-8 text-slate-400" />
+            </div>
+            <p className="text-sm font-medium text-slate-600">Chưa có tài khoản ngân hàng nào</p>
+            <p className="mt-1 text-xs text-slate-400">Nhấn &quot;Thêm mới&quot; để bắt đầu</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/60">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Tên tài khoản
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Ghi chú
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Thao tác
+                </th>
               </tr>
-            ) : (
-              accounts.map((account) => (
-                <tr key={account.ID}>
-                  <td>
-                    <button
-                      onClick={() => handleEdit(account)}
-                      className="btn-link"
-                      style={{ marginRight: '5px' }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(account.ID)}
-                      className="btn-link"
-                      style={{ color: 'red' }}
-                    >
-                      Delete
-                    </button>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {accounts.map(account => (
+                <tr key={account.ID} className="group transition-colors hover:bg-[#5cc6ee]/5">
+                  {/* Tên tài khoản */}
+                  <td className="px-6 py-3">
+                    {editingId === account.ID ? (
+                      <input
+                        type="text"
+                        value={editTen}
+                        onChange={e => setEditTen(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') cancelEdit(); }}
+                        autoFocus
+                        className="w-full max-w-xs rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                      />
+                    ) : (
+                      <span className="font-medium text-slate-800">{account.TenTaiKhoanNganHang}</span>
+                    )}
                   </td>
-                  <td>{account.TenTaiKhoanNganHang}</td>
-                  <td>{account.GhiChu}</td>
+
+                  {/* Ghi chú */}
+                  <td className="px-6 py-3">
+                    {editingId === account.ID ? (
+                      <input
+                        type="text"
+                        value={editGhiChu}
+                        onChange={e => setEditGhiChu(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') cancelEdit(); }}
+                        className="w-full max-w-sm rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                      />
+                    ) : (
+                      <span className="text-slate-500">{account.GhiChu || '—'}</span>
+                    )}
+                  </td>
+
+                  {/* Thao tác */}
+                  <td className="px-6 py-3">
+                    <div className="flex items-center justify-center gap-1.5">
+                      {editingId === account.ID ? (
+                        <>
+                          <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+                          >
+                            {saving ? (
+                              <FiRefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <FiCheck className="h-3.5 w-3.5" />
+                            )}
+                            Lưu
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100"
+                          >
+                            <FiX className="h-3.5 w-3.5" />
+                            Huỷ
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => startEdit(account)}
+                          className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                        >
+                          <FiEdit2 className="h-3.5 w-3.5" />
+                          Sửa
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

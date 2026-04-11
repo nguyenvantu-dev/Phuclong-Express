@@ -4,6 +4,7 @@ import { ServiceFee, ServiceFeeModel } from './entities/service-fee.entity';
 import { CreateServiceFeeDto } from './dto/create-service-fee.dto';
 import { UpdateServiceFeeDto } from './dto/update-service-fee.dto';
 import { QueryServiceFeeDto } from './dto/query-service-fee.dto';
+import { SystemLogsService } from '../system-logs/system-logs.service';
 
 /**
  * Service Fees Service
@@ -15,7 +16,10 @@ import { QueryServiceFeeDto } from './dto/query-service-fee.dto';
 export class ServiceFeesService {
   private serviceFeeModel: typeof ServiceFee;
 
-  constructor(@Inject('SEQUELIZE') private sequelize: Sequelize) {
+  constructor(
+    @Inject('SEQUELIZE') sequelize: Sequelize,
+    private readonly systemLogsService: SystemLogsService,
+  ) {
     if (!sequelize.models.ServiceFee) {
       ServiceFeeModel(sequelize);
     }
@@ -58,7 +62,7 @@ export class ServiceFeesService {
         page,
         limit,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in findAll:', error.message);
       return {
         data: [],
@@ -89,12 +93,22 @@ export class ServiceFeesService {
    *
    * Converted from GiaTienCong_Them.cs - btCapNhat_Click()
    */
-  async create(createServiceFeeDto: CreateServiceFeeDto): Promise<ServiceFee> {
-    return this.serviceFeeModel.create({
+  async create(createServiceFeeDto: CreateServiceFeeDto, nguoiTao = 'system'): Promise<ServiceFee> {
+    const serviceFee = await this.serviceFeeModel.create({
       ...createServiceFeeDto,
       tinhTheoPhanTram: createServiceFeeDto.tinhTheoPhanTram || false,
       khachBuon: createServiceFeeDto.khachBuon || false,
     } as any);
+
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'GiaTienCong_Them:ThemGiaTienCong',
+      hanhDong: 'Them moi',
+      doiTuong: serviceFee.id.toString(),
+      noiDung: `ID: ${serviceFee.id}; LoaiTien: ${createServiceFeeDto.loaiTien}; TuGia: ${createServiceFeeDto.tuGia}; DenGia: ${createServiceFeeDto.denGia}; TienCong1Mon: ${createServiceFeeDto.tienCong1Mon}`,
+    });
+
+    return serviceFee;
   }
 
   /**
@@ -105,10 +119,20 @@ export class ServiceFeesService {
   async update(
     id: number,
     updateServiceFeeDto: UpdateServiceFeeDto,
+    nguoiTao = 'system',
   ): Promise<ServiceFee> {
     const serviceFee = await this.findOne(id);
+    const updated = await serviceFee.update(updateServiceFeeDto as any);
 
-    return serviceFee.update(updateServiceFeeDto as any);
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'GiaTienCong_Them:CapNhatGiaTienCong',
+      hanhDong: 'Chinh sua',
+      doiTuong: id.toString(),
+      noiDung: `ID: ${id}; LoaiTien: ${updateServiceFeeDto.loaiTien}; TuGia: ${updateServiceFeeDto.tuGia}; DenGia: ${updateServiceFeeDto.denGia}; TienCong1Mon: ${updateServiceFeeDto.tienCong1Mon}`,
+    });
+
+    return updated;
   }
 
   /**
@@ -116,9 +140,17 @@ export class ServiceFeesService {
    *
    * Converted from GiaTienCong_LietKe.cs - gvGiaTienCong_RowDeleting()
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number, nguoiTao = 'system'): Promise<void> {
     const serviceFee = await this.findOne(id);
-    // Soft delete - set DaXoa flag if exists, otherwise hard delete
+
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'GiaTienCong_LietKe:XoaGiaTienCong',
+      hanhDong: 'Xoa',
+      doiTuong: id.toString(),
+      noiDung: `ID: ${id}`,
+    });
+
     await serviceFee.destroy();
   }
 }

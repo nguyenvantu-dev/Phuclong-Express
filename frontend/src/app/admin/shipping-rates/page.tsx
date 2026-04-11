@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface ShippingRate {
   ID: number;
@@ -19,8 +20,7 @@ export default function ShippingRatesListPage() {
   useEffect(() => {
     async function loadRates() {
       try {
-        const res = await fetch('/api/shipping-fees/cong-ship-ve-vn');
-        const data = await res.json();
+        const { data } = await apiClient.get('/shipping-fees/cong-ship-ve-vn');
         if (Array.isArray(data)) {
           setRates(data);
         }
@@ -35,15 +35,8 @@ export default function ShippingRatesListPage() {
     if (!confirm('Bạn có chắc muốn xóa không?')) return;
 
     try {
-      const res = await fetch(`/api/shipping-fees/cong-ship-ve-vn/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setRates(rates.filter(r => r.ID !== id));
-      } else {
-        alert('Xóa thất bại');
-      }
+      await apiClient.delete(`/shipping-fees/cong-ship-ve-vn/${id}`);
+      setRates(rates.filter(r => r.ID !== id));
     } catch (error) {
       alert('Xóa thất bại');
     }

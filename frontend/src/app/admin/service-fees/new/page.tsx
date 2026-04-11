@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface CreateServiceFeeDto {
   loaiTien: string;
@@ -12,7 +13,6 @@ interface CreateServiceFeeDto {
   khachBuon: boolean;
 }
 
-const API_BASE = '/api/service-fees';
 
 /**
  * Create Service Fee Page
@@ -62,22 +62,14 @@ export default function NewServiceFeePage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          loaiTien: formData.loaiTien,
-          tuGia: Number(formData.tuGia),
-          denGia: Number(formData.denGia),
-          tienCong1Mon: Number(formData.tienCong1Mon),
-          tinhTheoPhanTram: formData.tinhTheoPhanTram,
-          khachBuon: formData.khachBuon,
-        }),
+      await apiClient.post('/service-fees', {
+        loaiTien: formData.loaiTien,
+        tuGia: Number(formData.tuGia),
+        denGia: Number(formData.denGia),
+        tienCong1Mon: Number(formData.tienCong1Mon),
+        tinhTheoPhanTram: formData.tinhTheoPhanTram,
+        khachBuon: formData.khachBuon,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create service fee');
-      }
 
       router.push('/admin/service-fees');
     } catch (err) {

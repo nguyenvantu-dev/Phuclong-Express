@@ -7,6 +7,8 @@ import {
   Body,
   Param,
   Query,
+  Request,
+  UseGuards,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
@@ -16,6 +18,7 @@ import { ServiceFee } from './entities/service-fee.entity';
 import { CreateServiceFeeDto } from './dto/create-service-fee.dto';
 import { UpdateServiceFeeDto } from './dto/update-service-fee.dto';
 import { QueryServiceFeeDto } from './dto/query-service-fee.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * Service Fees Controller
@@ -59,34 +62,40 @@ export class ServiceFeesController {
    * POST /service-fees
    * Create new service fee
    */
+  @UseGuards(JwtAuthGuard)
   @Post()
   async create(
     @Body() createServiceFeeDto: CreateServiceFeeDto,
+    @Request() req: any,
   ): Promise<ServiceFee> {
-    return this.serviceFeesService.create(createServiceFeeDto);
+    return this.serviceFeesService.create(createServiceFeeDto, req.user?.username);
   }
 
   /**
    * PUT /service-fees/:id
    * Update service fee
    */
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateServiceFeeDto: UpdateServiceFeeDto,
+    @Request() req: any,
   ): Promise<ServiceFee> {
-    return this.serviceFeesService.update(id, updateServiceFeeDto);
+    return this.serviceFeesService.update(id, updateServiceFeeDto, req.user?.username);
   }
 
   /**
    * DELETE /service-fees/:id
    * Delete service fee
    */
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
   ): Promise<void> {
-    return this.serviceFeesService.remove(id);
+    return this.serviceFeesService.remove(id, req.user?.username);
   }
 }

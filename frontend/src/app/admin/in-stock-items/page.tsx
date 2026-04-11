@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import apiClient from '@/lib/api-client';
 
 interface InStockItem {
   id: number;
@@ -29,17 +30,13 @@ interface PaginatedResponse<T> {
   limit: number;
 }
 
-const API_BASE = '/api/in-stock-items';
-
 const getInStockItems = async (params: QueryParams): Promise<PaginatedResponse<InStockItem>> => {
-  const response = await fetch(`${API_BASE}?${new URLSearchParams(params as any)}`);
-  if (!response.ok) throw new Error('Failed to fetch in-stock items');
-  return response.json();
+  const { data } = await apiClient.get('/in-stock-items', { params });
+  return data;
 };
 
 const deleteInStockItem = async (id: number) => {
-  const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-  if (!response.ok) throw new Error('Failed to delete item');
+  await apiClient.delete(`/in-stock-items/${id}`);
 };
 
 /**

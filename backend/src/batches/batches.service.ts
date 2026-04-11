@@ -15,80 +15,39 @@ export class BatchesService {
 
   /**
    * Find all batches with filters and pagination
-   *
-   * Replicates SP_Lay_LoHang logic using two separate parameterized queries.
-   * Sequelize with MSSQL/tedious only returns the first result set from a SP,
-   * so we avoid the SP and query directly.
-   *
-   * Columns match SP_Lay_LoHang output:
-   *   LoHangID, UserName, NgayLoHang (= NgayDatHang), TenLoHang,
-   *   LoaiTien, TyGia, NgayDenDuKien, NgayDenThucTe, NguoiTao, NgayTao,
-   *   TienLoHangA (sum PhiShipVeVN), TienPhiHaiQuanB (sum ThueHaiQuan), TongTienLoHang (A+B)
+   * Matches: ThongTinLoHang.cs / LoHang_LietKe.cs -> bLL.LayDanhSachLoHang(username, tuNgay, denNgay, pageSize, pageNum)
+   * Uses: SP_Lay_LoHang @UserName, @TuNgay, @DenNgay, @PageSize, @PageNum
+   * SP returns first resultset: paginated rows with TOTALROW in each row
    */
   async findAll(query: QueryBatchDto): Promise<{ data: any[]; total: number; page: number; pageSize: number }> {
     const { username = '', tuNgay, denNgay, page = 1, pageSize = 200 } = query;
-    const offset = (page - 1) * pageSize;
-
-    // Build parameterized WHERE clause matching SP_Lay_LoHang filter logic
-    const replacements: Record<string, any> = { offset, pageSize };
-    const conditions: string[] = [];
-
-    if (username) {
-      conditions.push(`lh.UserName = :username`);
-      replacements.username = username;
-    }
-    if (tuNgay) {
-      conditions.push(`lh.NgayLoHang >= :tuNgay`);
-      replacements.tuNgay = tuNgay;
-    }
-    if (denNgay) {
-      // Include full end day (23:59:59) — mirrors C# DenNgay with time 23:59:59
-      conditions.push(`lh.NgayLoHang <= DATEADD(second, 86399, CAST(:denNgay AS datetime))`);
-      replacements.denNgay = denNgay;
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     try {
-      // 1. Total count
-      const [countResult] = await this.sequelize.query<{ total: number }>(
-        `SELECT COUNT(*) as total FROM dbo.tbLoHang lh ${whereClause}`,
-        { replacements, type: QueryTypes.SELECT }
-      );
-      const total = Number((countResult as any)?.total) || 0;
-
-      // 2. Paginated data — mirrors LoHang entity from RtnRowLoHang:
-      //    aliases ID→LoHangID, NgayDatHang→NgayLoHang
-      //    computes TienLoHangA, TienPhiHaiQuanB, TongTienLoHang via subqueries
-      const data = await this.sequelize.query(
-        `SELECT paged.*
-        FROM (
-          SELECT
-            ROW_NUMBER() OVER (ORDER BY lh.LoHangID DESC) AS RowNum,
-            lh.LoHangID AS LoHangID,
-            lh.UserName,
-            lh.NgayLoHang,
-            lh.TenLoHang,
-            lh.LoaiTien,
-            lh.TyGia,
-            lh.NgayDenDuKien,
-            lh.NgayDenThucTe,
-            lh.NguoiTao,
-            lh.NgayTao,
-            ISNULL((SELECT SUM(sv.TongTienShipVeVN_VND) FROM dbo.tbLoHang_PhiShipVeVN sv WHERE sv.LoHangID = lh.LoHangID), 0) AS TienLoHangA,
-            ISNULL((SELECT SUM(hq.TongTienThueHaiQuan_VND) FROM dbo.tbLoHang_ThueHaiQuan hq WHERE hq.LoHangID = lh.LoHangID), 0) AS TienPhiHaiQuanB,
-            ISNULL((SELECT SUM(sv.TongTienShipVeVN_VND) FROM dbo.tbLoHang_PhiShipVeVN sv WHERE sv.LoHangID = lh.LoHangID), 0)
-              + ISNULL((SELECT SUM(hq.TongTienThueHaiQuan_VND) FROM dbo.tbLoHang_ThueHaiQuan hq WHERE hq.LoHangID = lh.LoHangID), 0) AS TongTienLoHang
-          FROM dbo.tbLoHang lh
-          ${whereClause}
-        ) paged
-        WHERE paged.RowNum BETWEEN :offset + 1 AND :offset + :pageSize`,
-        { replacements, type: QueryTypes.SELECT }
+      const results = await this.sequelize.query(
+        `EXEC SP_Lay_LoHang
+          @UserName = :username,
+          @TuNgay = :tuNgay,
+          @DenNgay = :denNgay,
+          @PageSize = :pageSize,
+          @PageNum = :page`,
+        {
+          replacements: {
+            username,
+            tuNgay: tuNgay || null,
+            denNgay: denNgay || null,
+            pageSize,
+            page,
+          },
+          type: QueryTypes.SELECT,
+        },
       );
 
-      return { data: data || [], total, page, pageSize };
+      const rows = Array.isArray(results) ? results as any[] : [];
+      const total = rows.length > 0 ? (rows[0].TOTALROW ?? 0) : 0;
+      const data = rows.slice(1);
+      return { data, total, page, pageSize };
     } catch (error) {
-      console.error('Error in findAll batches:', error.message);
+      console.error('Error in findAll batches:', (error as any).message);
       return { data: [], total: 0, page, pageSize };
     }
   }

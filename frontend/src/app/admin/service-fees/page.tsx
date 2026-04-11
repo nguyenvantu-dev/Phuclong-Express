@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import apiClient from '@/lib/api-client';
 
 interface ServiceFee {
   id: number;
@@ -28,17 +29,13 @@ interface PaginatedResponse<T> {
   limit: number;
 }
 
-const API_BASE = '/api/service-fees';
-
 const getServiceFees = async (params: QueryParams): Promise<PaginatedResponse<ServiceFee>> => {
-  const response = await fetch(`${API_BASE}?${new URLSearchParams(params as any)}`);
-  if (!response.ok) throw new Error('Failed to fetch service fees');
-  return response.json();
+  const { data } = await apiClient.get<PaginatedResponse<ServiceFee>>('/service-fees', { params });
+  return data;
 };
 
 const deleteServiceFee = async (id: number) => {
-  const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-  if (!response.ok) throw new Error('Failed to delete service fee');
+  await apiClient.delete(`/service-fees/${id}`);
 };
 
 /**
@@ -159,7 +156,7 @@ export default function ServiceFeesPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-center">
                     <Link
-                      href={`/service-fees/${fee.id}`}
+                      href={`/admin/service-fees/${fee.id}`}
                       className="mr-2 text-blue-600 hover:text-blue-800"
                     >
                       Edit

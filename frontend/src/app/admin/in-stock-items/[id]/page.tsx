@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface InStockItem {
   id: number;
@@ -25,7 +26,6 @@ interface FormData {
   thuTu: string;
 }
 
-const API_BASE = '/api/in-stock-items';
 
 /**
  * Edit In-Stock Item Page
@@ -56,9 +56,7 @@ export default function EditInStockItemPage() {
     const fetchItem = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch item');
-        const data: InStockItem = await response.json();
+        const { data } = await apiClient.get<InStockItem>(`/in-stock-items/${id}`);
 
         setFormData({
           maSoHang: data.maSoHang,
@@ -96,24 +94,16 @@ export default function EditInStockItemPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          maSoHang: formData.maSoHang,
-          tenHang: formData.tenHang,
-          linkHang: formData.linkHang,
-          giaTien: formData.giaTien ? Number(formData.giaTien) : 0,
-          moTa: formData.moTa,
-          soSao: formData.soSao ? Number(formData.soSao) : 0,
-          thuTu: formData.thuTu ? Number(formData.thuTu) : 0,
-          noiDungTimKiem: `${formData.tenHang} ${formData.moTa}`,
-        }),
+      await apiClient.put(`/in-stock-items/${id}`, {
+        maSoHang: formData.maSoHang,
+        tenHang: formData.tenHang,
+        linkHang: formData.linkHang,
+        giaTien: formData.giaTien ? Number(formData.giaTien) : 0,
+        moTa: formData.moTa,
+        soSao: formData.soSao ? Number(formData.soSao) : 0,
+        thuTu: formData.thuTu ? Number(formData.thuTu) : 0,
+        noiDungTimKiem: `${formData.tenHang} ${formData.moTa}`,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update item');
-      }
 
       router.push('/admin/in-stock-items');
     } catch (err) {

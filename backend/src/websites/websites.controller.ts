@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WebsitesService } from './websites.service';
 import type { CreateWebsiteDto, UpdateWebsiteDto } from './websites.service';
 
@@ -18,28 +19,34 @@ export class WebsitesController {
     return { data };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   async create(
     @Body() createDto: CreateWebsiteDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.websitesService.create(createDto, username || 'system');
+    const username = req.user?.username || 'system';
+    return this.websitesService.create(createDto, username);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateWebsiteDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.websitesService.update({ ...updateDto, id: Number(id) }, username || 'system');
+    const username = req.user?.username || 'system';
+    return this.websitesService.update({ ...updateDto, id: Number(id) }, username);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(
     @Param('id') id: string,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.websitesService.remove(Number(id), username || 'system');
+    const username = req.user?.username || 'system';
+    return this.websitesService.remove(Number(id), username);
   }
 }

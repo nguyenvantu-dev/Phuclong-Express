@@ -553,4 +553,61 @@ export class OrdersController {
   async getTotals(@Query() query: QueryOrderDto): Promise<{ totalCount: number; totalPrice: number; totalVnd: number }> {
     return this.ordersService.getTotals(query);
   }
+
+  /**
+   * GET /orders/user-status-counts
+   * Get order badge counts by status for user (DanhSachDonHang.aspx)
+   * Matches: DanhSachDonHang.cs -> SP_Lay_SoLuongDonHang(@username, @HangKhoan=-1, @DaXoa=false)
+   */
+  @Get('user-status-counts')
+  async getUserStatusCounts(
+    @Query('username') username: string,
+    @Query('hangKhoan') hangKhoan?: string,
+  ): Promise<any[]> {
+    return this.ordersService.getUserStatusCounts(username, hangKhoan !== undefined ? Number(hangKhoan) : -1);
+  }
+
+  /**
+   * DELETE /orders/:id/sp-xoa
+   * Delete order via SP (DanhSachDonHang.aspx - only Received, non-HangKhoan)
+   * Matches: DanhSachDonHang.cs -> lbtDelete_Click -> SP_Xoa_DonHang(@ID, @NguoiTao)
+   */
+  @Delete(':id/sp-xoa')
+  async xoaDonHangSP(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('nguoiTao') nguoiTao: string,
+  ): Promise<{ success: boolean }> {
+    return this.ordersService.xoaDonHangSP(id, nguoiTao);
+  }
+
+  /**
+   * PUT /orders/:id/user-update
+   * Update order for user (SuaDonHang.aspx)
+   * Matches: SuaDonHang.cs -> btCapNhat_Click -> SP_CapNhatDonHangSimple
+   * Different from PUT /orders/:id which uses SP_CapNhatDonHangSimpleCoTamTinh (admin)
+   */
+  @Put(':id/user-update')
+  async updateForUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: {
+      websiteName: string;
+      username: string;
+      linkWeb: string;
+      linkHinh: string;
+      color: string;
+      size: string;
+      soLuong: number;
+      donGiaWeb: number;
+      loaiTien: string;
+      ghiChu: string;
+      tyGia: number;
+      saleOff: number;
+      loaiHangId?: number | null;
+      maSoHang?: string;
+      quocGiaId?: number | null;
+      nguoiTao: string;
+    },
+  ): Promise<{ success: boolean }> {
+    return this.ordersService.updateForUser(id, body);
+  }
 }

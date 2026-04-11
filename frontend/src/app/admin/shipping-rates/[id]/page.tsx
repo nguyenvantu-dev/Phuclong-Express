@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface ProductType {
   LoaiHangID: number;
@@ -33,23 +34,20 @@ export default function ShippingRatesEditPage() {
     async function loadData() {
       try {
         // Load product types
-        const ptRes = await fetch('/api/shipping-fees/product-types');
-        const ptData = await ptRes.json();
+        const { data: ptData } = await apiClient.get('/shipping-fees/product-types');
         if (Array.isArray(ptData)) {
           setProductTypes(ptData);
         }
 
         // Load currencies (TyGia)
-        const curRes = await fetch('/api/shipping-fees/currencies');
-        const curData = await curRes.json();
+        const { data: curData } = await apiClient.get('/shipping-fees/currencies');
         if (Array.isArray(curData)) {
           setCurrencies(curData);
         }
 
         // Load existing data if editing
         if (id) {
-          const rateRes = await fetch(`/api/shipping-fees/cong-ship-ve-vn/${id}`);
-          const rateData = await rateRes.json();
+          const { data: rateData } = await apiClient.get(`/shipping-fees/cong-ship-ve-vn/${id}`);
           if (rateData) {
             setFormData({
               loaiHangID: rateData.LoaiHangID?.toString() || '',
@@ -84,28 +82,20 @@ export default function ShippingRatesEditPage() {
     setLoading(true);
 
     try {
-      const url = isEdit
-        ? `/api/shipping-fees/cong-ship-ve-vn/${id}`
-        : '/api/shipping-fees/cong-ship-ve-vn';
+      const payload = {
+        loaiHangID: parseInt(formData.loaiHangID),
+        loaiTien: formData.loaiTien,
+        tienCongShipVeVN: tien,
+        khachBuon: formData.khachBuon,
+      };
 
-      const method = isEdit ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          loaiHangID: parseInt(formData.loaiHangID),
-          loaiTien: formData.loaiTien,
-          tienCongShipVeVN: tien,
-          khachBuon: formData.khachBuon,
-        }),
-      });
-
-      if (res.ok) {
-        router.push('/admin/shipping-rates');
+      if (isEdit) {
+        await apiClient.put(`/shipping-fees/cong-ship-ve-vn/${id}`, payload);
       } else {
-        setError('Có lỗi trong quá trình thao tác');
+        await apiClient.post('/shipping-fees/cong-ship-ve-vn', payload);
       }
+
+      router.push('/admin/shipping-rates');
     } catch (error) {
       setError('Có lỗi trong quá trình thao tác');
     } finally {

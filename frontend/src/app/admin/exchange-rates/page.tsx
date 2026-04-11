@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { FiTrendingUp, FiEdit2, FiCheck, FiX, FiRefreshCw } from 'react-icons/fi';
+import apiClient from '@/lib/api-client';
 
 interface ExchangeRate {
   Name: string;
@@ -13,19 +15,21 @@ export default function ExchangeRatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Editing state
+  // Inline edit state
   const [editingName, setEditingName] = useState<string | null>(null);
   const [editTyGiaVND, setEditTyGiaVND] = useState('');
   const [editCongShipVeVN, setEditCongShipVeVN] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   const fetchRates = useCallback(async () => {
+    setError('');
     try {
-      const res = await fetch('/api/exchange-rates');
-      const data = await res.json();
+      const { data } = await apiClient.get<{ data: ExchangeRate[] }>('/exchange-rates');
       setRates(data.data || []);
     } catch (err) {
       console.error('Failed to fetch exchange rates:', err);
-      setError('Failed to load exchange rates');
+      setError('Không thể tải danh sách tỷ giá');
     } finally {
       setLoading(false);
     }
@@ -35,138 +39,228 @@ export default function ExchangeRatesPage() {
     fetchRates();
   }, [fetchRates]);
 
-  const handleEdit = (rate: ExchangeRate) => {
+  const startEdit = (rate: ExchangeRate) => {
     setEditingName(rate.Name);
     setEditTyGiaVND(rate.TyGiaVND?.toString() || '');
     setEditCongShipVeVN(rate.CongShipVeVN?.toString() || '');
+    setEditError('');
   };
 
-  const handleUpdate = async () => {
+  const cancelEdit = () => {
+    setEditingName(null);
+    setEditTyGiaVND('');
+    setEditCongShipVeVN('');
+    setEditError('');
+  };
+
+  const handleSave = async () => {
     if (!editingName) return;
 
     const tyGia = parseFloat(editTyGiaVND);
     const congShip = parseFloat(editCongShipVeVN);
 
     if (isNaN(tyGia)) {
-      setError('Tỷ giá phải là kiểu số');
+      setEditError('Tỷ giá phải là kiểu số');
       return;
     }
     if (isNaN(congShip)) {
-      setError('Công ship về VN phải là kiểu số');
+      setEditError('Công ship về VN phải là kiểu số');
       return;
     }
 
+    setSaving(true);
+    setEditError('');
     try {
-      const res = await fetch(`/api/exchange-rates/${editingName}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editingName,
-          tyGiaVND: tyGia,
-          congShipVeVN: congShip,
-        }),
+      await apiClient.put(`/exchange-rates/${editingName}`, {
+        name: editingName,
+        tyGiaVND: tyGia,
+        congShipVeVN: congShip,
       });
-
-      if (res.ok) {
-        setEditingName(null);
-        setEditTyGiaVND('');
-        setEditCongShipVeVN('');
-        fetchRates();
-      } else {
-        setError('Có lỗi trong quá trình thực hiện');
-      }
+      setRates(prev =>
+        prev.map(r =>
+          r.Name === editingName ? { ...r, TyGiaVND: tyGia, CongShipVeVN: congShip } : r,
+        ),
+      );
+      cancelEdit();
     } catch (err) {
       console.error('Failed to update exchange rate:', err);
-      setError('Có lỗi trong quá trình thực hiện');
+      setEditError('Cập nhật thất bại, vui lòng thử lại');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    setEditingName(null);
-    setEditTyGiaVND('');
-    setEditCongShipVeVN('');
-  };
-
   const formatNumber = (num: number) => {
-    if (!num) return '0';
+    if (!num && num !== 0) return '—';
     return num.toLocaleString('vi-VN');
   };
 
-  if (loading) {
-    return <div>Đang tải...</div>;
-  }
-
   return (
-    <div>
-      <h1 className="titlead">Danh sách Tỷ giá</h1>
-      <hr />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
+            <FiTrendingUp className="h-5 w-5 text-[#5cc6ee]" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800">Danh mục tỷ giá</h1>
+            {!loading && (
+              <p className="text-sm text-slate-500">
+                Tổng <span className="font-semibold text-slate-700">{rates.length}</span> loại tiền
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span className="h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+          {error}
+        </div>
+      )}
+
+      {/* Edit error */}
+      {editError && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          <span className="h-2 w-2 flex-shrink-0 rounded-full bg-amber-500" />
+          {editError}
+        </div>
+      )}
 
       {/* Table */}
-      <table className="table table-bordered table-hover">
-        <thead>
-          <tr className="myGridHeader">
-            <th style={{ width: '80px' }}>Thao tác</th>
-            <th>Loại tiền</th>
-            <th>Tỷ giá VND</th>
-            <th>Công ship về VN</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rates.length === 0 ? (
-            <tr>
-              <td colSpan={4} className="text-center">Không có dữ liệu</td>
-            </tr>
-          ) : (
-            rates.map((rate) => (
-              <tr key={rate.Name}>
-                <td>
-                  {editingName === rate.Name ? (
-                    <>
-                      <button onClick={handleUpdate} className="btn-link" style={{ marginRight: '5px' }}>
-                        Update
-                      </button>
-                      <button onClick={handleCancel} className="btn-link">
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <button onClick={() => handleEdit(rate)} className="btn-link">
-                      Edit
-                    </button>
-                  )}
-                </td>
-                <td>{rate.Name}</td>
-                <td>
-                  {editingName === rate.Name ? (
-                    <input
-                      type="text"
-                      value={editTyGiaVND}
-                      onChange={(e) => setEditTyGiaVND(e.target.value)}
-                      style={{ width: '150px' }}
-                    />
-                  ) : (
-                    formatNumber(rate.TyGiaVND)
-                  )}
-                </td>
-                <td>
-                  {editingName === rate.Name ? (
-                    <input
-                      type="text"
-                      value={editCongShipVeVN}
-                      onChange={(e) => setEditCongShipVeVN(e.target.value)}
-                      style={{ width: '150px' }}
-                    />
-                  ) : (
-                    formatNumber(rate.CongShipVeVN)
-                  )}
-                </td>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {loading ? (
+          <div className="divide-y divide-slate-100">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-6 py-4">
+                <div className="h-4 w-16 animate-pulse rounded bg-slate-100" />
+                <div className="h-4 w-32 animate-pulse rounded bg-slate-100 ml-8" />
+                <div className="h-4 w-28 animate-pulse rounded bg-slate-100 ml-8" />
+                <div className="h-6 w-14 animate-pulse rounded bg-slate-100 ml-auto" />
+              </div>
+            ))}
+          </div>
+        ) : rates.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+              <FiTrendingUp className="h-8 w-8 text-slate-400" />
+            </div>
+            <p className="text-sm font-medium text-slate-600">Chưa có dữ liệu tỷ giá</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/60">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Loại tiền
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Tỷ giá VND
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Công ship về VN
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Thao tác
+                </th>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rates.map(rate => (
+                <tr key={rate.Name} className="group transition-colors hover:bg-[#5cc6ee]/5">
+                  {/* Loại tiền */}
+                  <td className="px-6 py-3">
+                    <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                      {rate.Name}
+                    </span>
+                  </td>
+
+                  {/* Tỷ giá VND */}
+                  <td className="px-6 py-3 text-right">
+                    {editingName === rate.Name ? (
+                      <input
+                        type="text"
+                        value={editTyGiaVND}
+                        onChange={e => setEditTyGiaVND(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleSave();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        autoFocus
+                        className="w-36 rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-right text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                      />
+                    ) : (
+                      <span className="font-medium tabular-nums text-slate-800">
+                        {formatNumber(rate.TyGiaVND)}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Công ship về VN */}
+                  <td className="px-6 py-3 text-right">
+                    {editingName === rate.Name ? (
+                      <input
+                        type="text"
+                        value={editCongShipVeVN}
+                        onChange={e => setEditCongShipVeVN(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleSave();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        className="w-36 rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-right text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                      />
+                    ) : (
+                      <span className="font-medium tabular-nums text-slate-800">
+                        {formatNumber(rate.CongShipVeVN)}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Thao tác */}
+                  <td className="px-6 py-3">
+                    <div className="flex items-center justify-center gap-1.5">
+                      {editingName === rate.Name ? (
+                        <>
+                          <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+                          >
+                            {saving ? (
+                              <FiRefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <FiCheck className="h-3.5 w-3.5" />
+                            )}
+                            Lưu
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100"
+                          >
+                            <FiX className="h-3.5 w-3.5" />
+                            Huỷ
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => startEdit(rate)}
+                          className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                        >
+                          <FiEdit2 className="h-3.5 w-3.5" />
+                          Sửa
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

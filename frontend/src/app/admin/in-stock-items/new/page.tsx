@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface FormData {
   maSoHang: string;
@@ -13,7 +14,6 @@ interface FormData {
   thuTu: string;
 }
 
-const API_BASE = '/api/in-stock-items';
 
 /**
  * Create In-Stock Item Page
@@ -51,24 +51,16 @@ export default function NewInStockItemPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          maSoHang: formData.maSoHang,
-          tenHang: formData.tenHang,
-          linkHang: formData.linkHang,
-          giaTien: formData.giaTien ? Number(formData.giaTien) : 0,
-          moTa: formData.moTa,
-          soSao: formData.soSao ? Number(formData.soSao) : 0,
-          thuTu: formData.thuTu ? Number(formData.thuTu) : 0,
-          noiDungTimKiem: `${formData.tenHang} ${formData.moTa}`,
-        }),
+      await apiClient.post('/in-stock-items', {
+        maSoHang: formData.maSoHang,
+        tenHang: formData.tenHang,
+        linkHang: formData.linkHang,
+        giaTien: formData.giaTien ? Number(formData.giaTien) : 0,
+        moTa: formData.moTa,
+        soSao: formData.soSao ? Number(formData.soSao) : 0,
+        thuTu: formData.thuTu ? Number(formData.thuTu) : 0,
+        noiDungTimKiem: `${formData.tenHang} ${formData.moTa}`,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create item');
-      }
 
       router.push('/admin/in-stock-items');
     } catch (err) {

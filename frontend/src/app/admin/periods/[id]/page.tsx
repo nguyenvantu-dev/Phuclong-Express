@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface PeriodDetail {
   ChotKyID: number;
@@ -53,8 +54,7 @@ export default function PeriodDetailPage() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch('/api/users');
-      const data = await res.json();
+      const { data } = await apiClient.get('/users');
       if (data.users) {
         setUsers(data.users);
       }
@@ -66,8 +66,7 @@ export default function PeriodDetailPage() {
   const fetchPeriod = useCallback(async () => {
     if (!kyId) return;
     try {
-      const res = await fetch(`/api/periods/${kyId}`);
-      const data = await res.json();
+      const { data } = await apiClient.get(`/periods/${kyId}`);
       if (data.data) {
         setPeriod(data.data);
       }
@@ -85,8 +84,7 @@ export default function PeriodDetailPage() {
       if (usernameFilter) params.append('username', usernameFilter);
       if (trangThaiFilter && trangThaiFilter !== '-1') params.append('trangThai', trangThaiFilter);
 
-      const res = await fetch(`/api/periods/details/list?${params.toString()}`);
-      const data = await res.json();
+      const { data } = await apiClient.get('/periods/details/list', { params: Object.fromEntries(params) });
       setDetails(data.data || []);
       setTotal(data.total || 0);
     } catch (err) {
@@ -115,10 +113,7 @@ export default function PeriodDetailPage() {
     if (!confirm('Bạn có chắc muốn tạm mở kỳ cho user này không?')) return;
 
     try {
-      const res = await fetch(`/api/periods/details/${chotKyId}/temp-open`, {
-        method: 'POST',
-      });
-      const data = await res.json();
+      const { data } = await apiClient.post(`/periods/details/${chotKyId}/temp-open`);
 
       if (data.code === 0) {
         fetchDetails();
@@ -137,10 +132,7 @@ export default function PeriodDetailPage() {
     if (!confirm('Bạn có chắc muốn đóng kỳ cho user này không?')) return;
 
     try {
-      const res = await fetch(`/api/periods/details/${chotKyId}/temp-close`, {
-        method: 'POST',
-      });
-      const data = await res.json();
+      const { data } = await apiClient.post(`/periods/details/${chotKyId}/temp-close`);
 
       if (data.code === 0) {
         fetchDetails();

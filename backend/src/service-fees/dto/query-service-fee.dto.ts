@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsNumber, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 /**
  * Query Service Fee DTO
@@ -11,14 +12,17 @@ export class QueryServiceFeeDto {
   loaiTien?: string;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   khachBuon?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value, 10))
   @IsNumber()
   page?: number;
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value, 10))
   @IsNumber()
   limit?: number;
 }

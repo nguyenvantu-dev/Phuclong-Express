@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
-const tedious = require('tedious');
 
 export interface BankAccount {
   ID: number;
@@ -14,7 +13,6 @@ export interface CreateBankAccountDto {
 }
 
 export interface UpdateBankAccountDto {
-  id: number;
   tenTaiKhoanNganHang: string;
   ghiChu?: string;
 }
@@ -26,34 +24,18 @@ export interface UpdateBankAccountDto {
  */
 @Injectable()
 export class BankAccountsService {
-  private getSequelize(): Sequelize {
-    return new Sequelize({
-      dialect: 'mssql',
-      host: process.env.DB_HOST || 'localhost',
-      username: process.env.DB_USERNAME || 'sa',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_DATABASE || 'PhucLong',
-      logging: false,
-      dialectOptions: {
-        encrypt: true,
-        trustServerCertificate: true,
-      },
-      dialectModule: tedious
-    });
-  }
+  constructor(@Inject('SEQUELIZE') private sequelize: Sequelize) {}
 
   /**
    * Get all bank accounts
    */
   async findAll(): Promise<BankAccount[]> {
     try {
-      const sequelize = this.getSequelize();
-      const [data]: any[] = await sequelize.query(`
+      const [data]: any[] = await this.sequelize.query(`
         SELECT ID, TenTaiKhoanNganHang, GhiChu
         FROM dbo.TaiKhoanNganHang
         ORDER BY TenTaiKhoanNganHang
       `);
-      await sequelize.close();
       return data || [];
     } catch (error) {
       console.error('Error getting bank accounts:', error.message);
@@ -62,41 +44,26 @@ export class BankAccountsService {
   }
 
   /**
-   * Get bank account by ID
-   */
-  async findOne(id: number): Promise<BankAccount | null> {
-    try {
-      const sequelize = this.getSequelize();
-      const [data]: any[] = await sequelize.query(`
-        SELECT ID, TenTaiKhoanNganHang, GhiChu
-        FROM dbo.TaiKhoanNganHang
-        WHERE ID = ${id}
-      `);
-      await sequelize.close();
-      return data[0] || null;
-    } catch (error) {
-      console.error('Error getting bank account:', error.message);
-      return null;
-    }
-  }
-
-  /**
-   * Create new bank account
+   * Create new bank account (ThemTaiKhoanNganHang)
    */
   async create(createDto: CreateBankAccountDto, nguoiTao: string): Promise<{ success: boolean; id?: number; error?: string }> {
     try {
-      const sequelize = this.getSequelize();
-      const [result]: any[] = await sequelize.query(`
-        INSERT INTO dbo.TaiKhoanNganHang (TenTaiKhoanNganHang, GhiChu)
-        VALUES ('${createDto.tenTaiKhoanNganHang}', '${createDto.ghiChu || ''}');
-        SELECT SCOPE_IDENTITY() as ID;
-      `);
+      const [result]: any[] = await this.sequelize.query(
+        `INSERT INTO dbo.TaiKhoanNganHang (TenTaiKhoanNganHang, GhiChu)
+         VALUES (:ten, :ghiChu);
+         SELECT SCOPE_IDENTITY() as ID;`,
+        { replacements: { ten: createDto.tenTaiKhoanNganHang, ghiChu: createDto.ghiChu || '' } },
+      );
       const id = result[0]?.ID;
 
-      // Log system
-      await this.logAction(nguoiTao, 'ThemMoi', 'TaiKhoanNganHang', id, `TenTaiKhoanNganHang: ${createDto.tenTaiKhoanNganHang}; GhiChu: ${createDto.ghiChu || ''}`);
+      await this.logAction(
+        nguoiTao,
+        'DanhMucTaiKhoanNganHang:ThemTaiKhoanNganHang',
+        'ChinhSua',
+        '',
+        `TaiKhoanNganHangName: ${createDto.tenTaiKhoanNganHang}; GhiChu: ${createDto.ghiChu || ''}`,
+      );
 
-      await sequelize.close();
       return { success: true, id };
     } catch (error) {
       console.error('Error creating bank account:', error.message);
@@ -105,22 +72,25 @@ export class BankAccountsService {
   }
 
   /**
-   * Update bank account
+   * Update bank account (CapNhatTaiKhoanNganHang)
    */
-  async update(updateDto: UpdateBankAccountDto, nguoiCapNhat: string): Promise<{ success: boolean; error?: string }> {
+  async update(id: number, updateDto: UpdateBankAccountDto, nguoiCapNhat: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        UPDATE dbo.TaiKhoanNganHang
-        SET TenTaiKhoanNganHang = '${updateDto.tenTaiKhoanNganHang}',
-            GhiChu = '${updateDto.ghiChu || ''}'
-        WHERE ID = ${updateDto.id}
-      `);
+      await this.sequelize.query(
+        `UPDATE dbo.TaiKhoanNganHang
+         SET TenTaiKhoanNganHang = :ten, GhiChu = :ghiChu
+         WHERE ID = :id`,
+        { replacements: { ten: updateDto.tenTaiKhoanNganHang, ghiChu: updateDto.ghiChu || '', id } },
+      );
 
-      // Log system
-      await this.logAction(nguoiCapNhat, 'ChinhSua', 'TaiKhoanNganHang', updateDto.id, `TenTaiKhoanNganHang: ${updateDto.tenTaiKhoanNganHang}; GhiChu: ${updateDto.ghiChu || ''}`);
+      await this.logAction(
+        nguoiCapNhat,
+        'DanhMucTaiKhoanNganHang:CapNhatTaiKhoanNganHang',
+        'ChinhSua',
+        String(id),
+        `TaiKhoanNganHangName: ${updateDto.tenTaiKhoanNganHang}; GhiChu: ${updateDto.ghiChu || ''}`,
+      );
 
-      await sequelize.close();
       return { success: true };
     } catch (error) {
       console.error('Error updating bank account:', error.message);
@@ -129,37 +99,15 @@ export class BankAccountsService {
   }
 
   /**
-   * Delete bank account
+   * Log system action (ThemSystemLogs)
    */
-  async remove(id: number, nguoiXoa: string): Promise<{ success: boolean; error?: string }> {
+  private async logAction(nguoiTao: string, nguon: string, hanhDong: string, doiTuong: string, noiDung: string): Promise<void> {
     try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        DELETE FROM dbo.TaiKhoanNganHang WHERE ID = ${id}
-      `);
-
-      // Log system
-      await this.logAction(nguoiXoa, 'Xoa', 'TaiKhoanNganHang', id, `ID: ${id}`);
-
-      await sequelize.close();
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting bank account:', error.message);
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Log system action
-   */
-  private async logAction(nguoiTao: string, hanhDong: string, nguon: string, doiTuong: number | string, noiDung: string): Promise<void> {
-    try {
-      const sequelize = this.getSequelize();
-      await sequelize.query(`
-        INSERT INTO dbo.SystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
-        VALUES ('${nguoiTao}', GETDATE(), '${nguon}', '${hanhDong}', '${doiTuong}', '${noiDung}')
-      `);
-      await sequelize.close();
+      await this.sequelize.query(
+        `INSERT INTO dbo.tbSystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
+         VALUES (:nguoiTao, GETDATE(), :nguon, :hanhDong, :doiTuong, :noiDung)`,
+        { replacements: { nguoiTao, nguon, hanhDong, doiTuong, noiDung } },
+      );
     } catch (error) {
       console.error('Error logging action:', error.message);
     }

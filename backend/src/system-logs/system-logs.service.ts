@@ -82,14 +82,14 @@ export class SystemLogsService {
 
       // Get total count
       const [countResult]: any[] = await sequelize.query(
-        `SELECT COUNT(*) as total FROM dbo.SystemLogs ${whereClause}`
+        `SELECT COUNT(*) as total FROM dbo.tbSystemLogs ${whereClause}`
       );
       const total = Number(countResult[0]?.total) || 0;
 
       // Get paginated data
       const [data]: any[] = await sequelize.query(`
         SELECT * FROM (
-          SELECT ROW_NUMBER() OVER (ORDER BY NgayTao DESC) as RowNum, * FROM dbo.SystemLogs ${whereClause}
+          SELECT ROW_NUMBER() OVER (ORDER BY NgayTao DESC) as RowNum, * FROM dbo.tbSystemLogs ${whereClause}
         ) AS Paginated
         WHERE RowNum BETWEEN ${offset + 1} AND ${offset + limit}
       `);

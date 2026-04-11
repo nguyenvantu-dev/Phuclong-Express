@@ -2001,4 +2001,116 @@ export class OrdersService {
       return { totalCount: 0, totalPrice: 0, totalVnd: 0 };
     }
   }
+
+  /**
+   * Get order counts by status for user (DanhSachDonHang.aspx)
+   * Matches: DanhSachDonHang.cs -> LoadSoLuongDonHang -> SP_Lay_SoLuongDonHang(@username, @HangKhoan=-1, @DaXoa=false)
+   */
+  async getUserStatusCounts(username: string, hangKhoan: number = -1): Promise<any[]> {
+    try {
+      const [results] = await this.sequelize.query(
+        `EXEC SP_Lay_SoLuongDonHang
+          @username = :username,
+          @HangKhoan = :hangKhoan,
+          @DaXoa = 0`,
+        { replacements: { username, hangKhoan }, type: 'SELECT' as const },
+      );
+      return Array.isArray(results) ? results : [];
+    } catch (error) {
+      console.error('Error in getUserStatusCounts:', (error as any).message);
+      return [];
+    }
+  }
+
+  /**
+   * Delete order via SP (DanhSachDonHang.aspx)
+   * Matches: DanhSachDonHang.cs -> lbtDelete_Click -> bLL.XoaDonHang(id, username)
+   * Uses: SP_Xoa_DonHang @ID, @NguoiTao
+   * Note: Only for orders with trangthaiOrder='Received' and HangKhoan=false (enforced by UI)
+   */
+  async xoaDonHangSP(id: number, nguoiTao: string): Promise<{ success: boolean }> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_Xoa_DonHang @ID = :id, @NguoiTao = :nguoiTao`,
+        { replacements: { id, nguoiTao }, type: QueryTypes.RAW },
+      );
+      return { success: true };
+    } catch (error) {
+      console.error('Error in xoaDonHangSP:', (error as any).message);
+      return { success: false };
+    }
+  }
+
+  /**
+   * Update order for user (SuaDonHang.aspx)
+   * Matches: SuaDonHang.cs -> btCapNhat_Click -> dBConnect.CapNhatDonHangSimple(...)
+   * Uses: SP_CapNhatDonHangSimple (NOT CoTamTinh — different params: has @LoaiHangID, @MaSoHang; no @cong/@tax/@shipUSA)
+   */
+  async updateForUser(id: number, dto: {
+    websiteName: string;
+    username: string;
+    linkWeb: string;
+    linkHinh: string;
+    color: string;
+    size: string;
+    soLuong: number;
+    donGiaWeb: number;
+    loaiTien: string;
+    ghiChu: string;
+    tyGia: number;
+    saleOff: number;
+    loaiHangId?: number | null;
+    maSoHang?: string;
+    quocGiaId?: number | null;
+    nguoiTao: string;
+  }): Promise<{ success: boolean }> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_CapNhatDonHangSimple
+          @ID = :id,
+          @WebsiteName = :websiteName,
+          @username = :username,
+          @linkweb = :linkWeb,
+          @linkhinh = :linkHinh,
+          @corlor = :color,
+          @size = :size,
+          @soluong = :soLuong,
+          @dongiaweb = :donGiaWeb,
+          @loaitien = :loaiTien,
+          @ghichu = :ghiChu,
+          @tygia = :tyGia,
+          @saleoff = :saleOff,
+          @LoaiHangID = :loaiHangId,
+          @MaSoHang = :maSoHang,
+          @QuocGiaID = :quocGiaId,
+          @NguoiTao = :nguoiTao`,
+        {
+          replacements: {
+            id,
+            websiteName: dto.websiteName || '',
+            username: dto.username || '',
+            linkWeb: dto.linkWeb || '',
+            linkHinh: dto.linkHinh || '',
+            color: dto.color || '',
+            size: dto.size || '',
+            soLuong: dto.soLuong,
+            donGiaWeb: dto.donGiaWeb,
+            loaiTien: dto.loaiTien || 'USD',
+            ghiChu: dto.ghiChu || '',
+            tyGia: dto.tyGia,
+            saleOff: dto.saleOff || 0,
+            loaiHangId: dto.loaiHangId ?? null,
+            maSoHang: dto.maSoHang || '',
+            quocGiaId: dto.quocGiaId ?? null,
+            nguoiTao: dto.nguoiTao,
+          },
+          type: QueryTypes.RAW,
+        },
+      );
+      return { success: true };
+    } catch (error) {
+      console.error('Error in updateForUser:', (error as any).message);
+      return { success: false };
+    }
+  }
 }

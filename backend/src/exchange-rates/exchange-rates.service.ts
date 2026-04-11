@@ -62,11 +62,10 @@ export class ExchangeRatesService {
   async findOne(name: string): Promise<ExchangeRate | null> {
     try {
       const sequelize = this.getSequelize();
-      const [data]: any[] = await sequelize.query(`
-        SELECT Name, TyGiaVND, CongShipVeVN
-        FROM dbo.TY_GIA
-        WHERE Name = '${name}'
-      `);
+      const [data]: any[] = await sequelize.query(
+        `SELECT Name, TyGiaVND, CongShipVeVN FROM dbo.TY_GIA WHERE Name = :name`,
+        { replacements: { name } },
+      );
       await sequelize.close();
       return data[0] || null;
     } catch (error) {
@@ -81,12 +80,10 @@ export class ExchangeRatesService {
   async update(updateDto: UpdateExchangeRateDto, nguoiCapNhat: string): Promise<{ success: boolean; error?: string }> {
     try {
       const sequelize = this.getSequelize();
-      await sequelize.query(`
-        UPDATE dbo.TyGia
-        SET TyGiaVND = ${updateDto.tyGiaVND},
-            CongShipVeVN = ${updateDto.congShipVeVN}
-        WHERE Name = '${updateDto.name}'
-      `);
+      await sequelize.query(
+        `UPDATE dbo.TY_GIA SET TyGiaVND = :tyGiaVND, CongShipVeVN = :congShipVeVN WHERE Name = :name`,
+        { replacements: { tyGiaVND: updateDto.tyGiaVND, congShipVeVN: updateDto.congShipVeVN, name: updateDto.name } },
+      );
 
       // Log system
       await this.logAction(nguoiCapNhat, 'ChinhSua', 'TyGia', updateDto.name, `Name: ${updateDto.name}; TyGia: ${updateDto.tyGiaVND}; CongShipVeVN: ${updateDto.congShipVeVN}`);
@@ -105,10 +102,10 @@ export class ExchangeRatesService {
   private async logAction(nguoiTao: string, hanhDong: string, nguon: string, doiTuong: number | string, noiDung: string): Promise<void> {
     try {
       const sequelize = this.getSequelize();
-      await sequelize.query(`
-        INSERT INTO dbo.SystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
-        VALUES ('${nguoiTao}', GETDATE(), '${nguon}', '${hanhDong}', '${doiTuong}', '${noiDung}')
-      `);
+      await sequelize.query(
+        `INSERT INTO dbo.tbSystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung) VALUES (:nguoiTao, GETDATE(), :nguon, :hanhDong, :doiTuong, :noiDung)`,
+        { replacements: { nguoiTao, nguon, hanhDong, doiTuong: String(doiTuong), noiDung } },
+      );
       await sequelize.close();
     } catch (error) {
       console.error('Error logging action:', error.message);

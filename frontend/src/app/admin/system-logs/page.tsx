@@ -63,8 +63,8 @@ export default function SystemLogsPage() {
     async function loadUsers() {
       try {
         const res = await axios.get(`${API_URL}/users`);
-        if (res.data.users) {
-          setUsers(res.data.users);
+        if (Array.isArray(res.data)) {
+          setUsers(res.data);
         }
       } catch (error) {
         console.error('Failed to load users:', error);

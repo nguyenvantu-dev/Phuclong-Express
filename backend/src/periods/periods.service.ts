@@ -62,8 +62,11 @@ export class PeriodsService {
       database: process.env.DB_DATABASE || 'PhucLong',
       logging: false,
       dialectOptions: {
-        encrypt: true,
-        trustServerCertificate: true,
+        options: {
+          encrypt: true,
+          trustServerCertificate: true,
+          enableArithAbort: true,
+        },
       },
       dialectModule: tedious
     });
@@ -71,327 +74,241 @@ export class PeriodsService {
 
   /**
    * Get all periods (list)
+   * Matches: DBConnect.LayDanhSachKy() → SP_Lay_Ky
    */
   async findAll(): Promise<Period[]> {
+    const sequelize = this.getSequelize();
     try {
-      const sequelize = this.getSequelize();
-      const [data]: any[] = await sequelize.query(`
-        SELECT KyID, Nam, Thang, DaDong
-        FROM dbo.Ky
-        ORDER BY Nam DESC, Thang DESC
-      `);
-      await sequelize.close();
+      const [data]: any[] = await sequelize.query(`EXEC SP_Lay_Ky`);
       return data || [];
     } catch (error) {
-      console.error('Error getting periods:', error.message);
+      console.error('Error getting periods:', (error as any).message);
       return [];
+    } finally {
+      await sequelize.close();
     }
   }
 
   /**
    * Get period by ID
+   * Matches: DBConnect.LayKyByID(@KyID) → SP_Lay_KyByID
    */
   async findOne(id: number): Promise<Period | null> {
+    const sequelize = this.getSequelize();
     try {
-      const sequelize = this.getSequelize();
-      const [data]: any[] = await sequelize.query(`
-        SELECT KyID, Nam, Thang, DaDong
-        FROM dbo.Ky
-        WHERE KyID = ${id}
-      `);
-      await sequelize.close();
-      return data[0] || null;
+      const [data]: any[] = await sequelize.query(
+        `EXEC SP_Lay_KyByID @KyID = :id`,
+        { replacements: { id } },
+      );
+      return (data as any[])[0] || null;
     } catch (error) {
-      console.error('Error getting period:', error.message);
+      console.error('Error getting period:', (error as any).message);
       return null;
+    } finally {
+      await sequelize.close();
     }
   }
 
   /**
    * Create new period
+   * Matches: DBConnect.ThemKy(@Thang, @Nam) → SP_Them_Ky
    * Return codes: 0 = success, 1 = duplicate, -1 = error
    */
   async create(createDto: CreatePeriodDto, nguoiTao: string): Promise<{ success: boolean; code?: number; error?: string }> {
+    const sequelize = this.getSequelize();
     try {
-      const sequelize = this.getSequelize();
+      const [[result]]: any = await sequelize.query(
+        `EXEC SP_Them_Ky @Thang = :thang, @Nam = :nam`,
+        { replacements: { thang: createDto.thang, nam: createDto.nam } },
+      );
+      const code = Number((Object.values(result)[0]) ?? -1);
 
-      // Check if period exists
-      const [existing]: any[] = await sequelize.query(`
-        SELECT KyID FROM dbo.Ky WHERE Nam = ${createDto.nam} AND Thang = ${createDto.thang}
-      `);
-
-      if (existing.length > 0) {
-        await sequelize.close();
-        return { success: false, code: 1 };
+      if (code === 0) {
+        await this.logAction(nguoiTao, 'ThemMoi', 'Ky', '', `Năm: ${createDto.nam}; Tháng: ${createDto.thang}`);
       }
 
-      const [result]: any[] = await sequelize.query(`
-        INSERT INTO dbo.Ky (Nam, Thang)
-        VALUES (${createDto.nam}, ${createDto.thang});
-        SELECT SCOPE_IDENTITY() as KyID;
-      `);
-      const id = result[0]?.KyID;
-
-      // Log system
-      await this.logAction(nguoiTao, 'ThemMoi', 'Ky', id, `Năm: ${createDto.nam}; Tháng: ${createDto.thang}`);
-
-      await sequelize.close();
-      return { success: true, code: 0 };
+      return { success: code === 0, code };
     } catch (error) {
-      console.error('Error creating period:', error.message);
-      return { success: false, code: -1, error: error.message };
+      console.log(error);
+      console.error('Error creating period:', (error as any).message);
+      return { success: false, code: -1, error: (error as any).message };
+    } finally {
+      await sequelize.close();
     }
   }
 
   /**
    * Update period
+   * Matches: DBConnect.SuaKy(@KyID, @Thang, @Nam) → SP_Sua_Ky
    * Return codes: 0 = success, 1 = duplicate, 2 = has data, -1 = error
    */
   async update(updateDto: UpdatePeriodDto, nguoiCapNhat: string): Promise<{ success: boolean; code?: number; error?: string }> {
+    const sequelize = this.getSequelize();
     try {
-      const sequelize = this.getSequelize();
+      const [[result]]: any[] = await sequelize.query(
+        `EXEC SP_Sua_Ky @KyID = :id, @Thang = :thang, @Nam = :nam`,
+        { replacements: { id: updateDto.id, thang: updateDto.thang, nam: updateDto.nam } },
+      );
+      const code = Number(Object.values(result)[0] ?? -1);
 
-      // Check if period exists with same year/month but different ID
-      const [existing]: any[] = await sequelize.query(`
-        SELECT KyID FROM dbo.Ky WHERE Nam = ${updateDto.nam} AND Thang = ${updateDto.thang} AND KyID != ${updateDto.id}
-      `);
-
-      if (existing.length > 0) {
-        await sequelize.close();
-        return { success: false, code: 1 };
+      if (code === 0) {
+        await this.logAction(nguoiCapNhat, 'ChinhSua', 'Ky', updateDto.id, `KyID: ${updateDto.id}; Năm: ${updateDto.nam}; Tháng: ${updateDto.thang}`);
       }
 
-      // Check if has debt data
-      const [hasData]: any[] = await sequelize.query(`
-        SELECT TOP 1 ChotKyID FROM dbo.ChotKy WHERE KyID = ${updateDto.id}
-      `);
-
-      if (hasData.length > 0) {
-        await sequelize.close();
-        return { success: false, code: 2 };
-      }
-
-      await sequelize.query(`
-        UPDATE dbo.Ky
-        SET Nam = ${updateDto.nam}, Thang = ${updateDto.thang}
-        WHERE KyID = ${updateDto.id}
-      `);
-
-      // Log system
-      await this.logAction(nguoiCapNhat, 'ChinhSua', 'Ky', updateDto.id, `KyID: ${updateDto.id}; Năm: ${updateDto.nam}; Tháng: ${updateDto.thang}`);
-
-      await sequelize.close();
-      return { success: true, code: 0 };
+      return { success: code === 0, code };
     } catch (error) {
-      console.error('Error updating period:', error.message);
-      return { success: false, code: -1, error: error.message };
+      console.error('Error updating period:', (error as any).message);
+      return { success: false, code: -1, error: (error as any).message };
+    } finally {
+      await sequelize.close();
     }
   }
 
   /**
    * Delete period
+   * Matches: DBConnect.XoaKy(@KyID) → SP_Xoa_Ky
    * Return codes: 0 = success, 1 = has data, -1 = error
    */
   async remove(id: number, nguoiXoa: string): Promise<{ success: boolean; code?: number; error?: string }> {
+    const sequelize = this.getSequelize();
     try {
-      const sequelize = this.getSequelize();
+      const [[result]]: any[] = await sequelize.query(
+        `EXEC SP_Xoa_Ky @KyID = :id`,
+        { replacements: { id } },
+      );
+      const code = Number(Object.values(result)[0] ?? -1);
 
-      // Check if has debt data
-      const [hasData]: any[] = await sequelize.query(`
-        SELECT TOP 1 ChotKyID FROM dbo.ChotKy WHERE KyID = ${id}
-      `);
-
-      if (hasData.length > 0) {
-        await sequelize.close();
-        return { success: false, code: 1 };
+      if (code === 0) {
+        await this.logAction(nguoiXoa, 'Xoa', 'Ky', id, `KyID: ${id}`);
       }
 
-      await sequelize.query(`
-        DELETE FROM dbo.Ky WHERE KyID = ${id}
-      `);
-
-      // Log system
-      await this.logAction(nguoiXoa, 'Xoa', 'Ky', id, `KyID: ${id}`);
-
-      await sequelize.close();
-      return { success: true, code: 0 };
+      return { success: code === 0, code };
     } catch (error) {
-      console.error('Error deleting period:', error.message);
-      return { success: false, code: -1, error: error.message };
+      console.error('Error deleting period:', (error as any).message);
+      return { success: false, code: -1, error: (error as any).message };
+    } finally {
+      await sequelize.close();
     }
   }
 
   /**
    * Close period (DongKy)
+   * Matches: DBConnect.DongKy(@KyCanDongID, @UserName, @LaKyDauTien, @NguoiTao) → SP_DongKy
    * Return codes: 0 = success, 1 = previous not closed, 2 = no previous, 3 = pending data, -1 = error
    */
   async closePeriod(id: number, nguoiDong: string): Promise<{ success: boolean; code?: number; error?: string }> {
+    const sequelize = this.getSequelize();
     try {
-      const sequelize = this.getSequelize();
+      const [[result]]: any[] = await sequelize.query(
+        `EXEC SP_DongKy @KyCanDongID = :id, @UserName = :username, @LaKyDauTien = 0, @NguoiTao = :nguoiTao`,
+        { replacements: { id, username: nguoiDong, nguoiTao: nguoiDong } },
+      );
+      const code = Number(Object.values(result)[0] ?? -1);
 
-      // Get current period info
-      const [current]: any[] = await sequelize.query(`
-        SELECT Nam, Thang FROM dbo.Ky WHERE KyID = ${id}
-      `);
-
-      if (current.length === 0) {
-        await sequelize.close();
-        return { success: false, code: -1 };
+      if (code === 0) {
+        await this.logAction(nguoiDong, 'ChinhSua', 'Ky', id, `Đóng kỳ ID: ${id}`);
       }
 
-      const { Nam, Thang } = current[0];
-
-      // Find previous period
-      const [previous]: any[] = await sequelize.query(`
-        SELECT TOP 1 KyID, DaDong
-        FROM dbo.Ky
-        WHERE (Nam < ${Nam} OR (Nam = ${Nam} AND Thang < ${Thang}))
-        ORDER BY Nam DESC, Thang DESC
-      `);
-
-      if (previous.length === 0) {
-        await sequelize.close();
-        return { success: false, code: 2 };
-      }
-
-      if (!previous[0].DaDong) {
-        await sequelize.close();
-        return { success: false, code: 1 };
-      }
-
-      // Check for pending debt data before closing date
-      const [pendingData]: any[] = await sequelize.query(`
-        SELECT TOP 1 ChotKyID FROM dbo.ChotKy
-        WHERE KyID = ${id} AND DaDuyet = 0
-      `);
-
-      if (pendingData.length > 0) {
-        await sequelize.close();
-        return { success: false, code: 3 };
-      }
-
-      // Close the period
-      await sequelize.query(`
-        UPDATE dbo.Ky SET DaDong = 1 WHERE KyID = ${id}
-      `);
-
-      // Log system
-      await this.logAction(nguoiDong, 'ChinhSua', 'Ky', id, `Đóng kỳ ID: ${id}`);
-
-      await sequelize.close();
-      return { success: true, code: 0 };
+      return { success: code === 0, code };
     } catch (error) {
-      console.error('Error closing period:', error.message);
-      return { success: false, code: -1, error: error.message };
+      console.error('Error closing period:', (error as any).message);
+      return { success: false, code: -1, error: (error as any).message };
+    } finally {
+      await sequelize.close();
     }
   }
 
   // ========== Period Detail (ChotKy) Methods ==========
 
   /**
-   * Get period details with filters
+   * Get periods filtered by status (open/closed)
+   * Matches: DBConnect.LayDanhSachKyByTinhTrang(@DaDong) → SP_Lay_KyByTinhTrang
+   */
+  async findByStatus(daDong: boolean): Promise<Period[]> {
+    const sequelize = this.getSequelize();
+    try {
+      const [data]: any[] = await sequelize.query(
+        `EXEC SP_Lay_KyByTinhTrang @DaDong = :daDong`,
+        { replacements: { daDong } },
+      );
+      return data || [];
+    } catch (error) {
+      console.error('Error getting periods by status:', (error as any).message);
+      return [];
+    } finally {
+      await sequelize.close();
+    }
+  }
+
+  /**
+   * Get period details with pagination
+   * Matches: DBConnect.LayDanhSachChotKy(@KyID, @UserName, @TamMoKy, @PageSize, @PageNum) → SP_Lay_ChotKyPhanTrang
+   * SP returns 2 result sets: Tables[0] = TotalItem count, Tables[1] = ChotKy rows
    */
   async findAllDetails(query: QueryPeriodDetailDto): Promise<{ data: PeriodDetail[]; total: number; page: number; limit: number }> {
     const { kyId, username, trangThai, page = 1, limit = 200 } = query;
-
+    const sequelize = this.getSequelize();
     try {
-      const sequelize = this.getSequelize();
-
-      let whereClause = 'WHERE 1=1';
-
-      if (kyId && kyId > 0) {
-        whereClause += ` AND ck.KyID = ${kyId}`;
+      const [rawResult]: any[] = await sequelize.query(
+        `EXEC SP_Lay_ChotKyPhanTrang @KyID = :kyId, @UserName = :username, @TamMoKy = :tamMoKy, @PageSize = :pageSize, @PageNum = :pageNum`,
+        {
+          replacements: {
+            kyId: kyId && kyId > 0 ? kyId : -1,
+            username: username || '',
+            tamMoKy: trangThai !== undefined ? trangThai : -1,
+            pageSize: limit,
+            pageNum: page,
+          },
+        },
+      );
+      // SP returns 2 tables: [0] = total count row, [1] = ChotKy data rows
+      // tedious may return them as nested arrays or concatenated
+      let total = 0;
+      let data: any[] = [];
+      if (Array.isArray(rawResult)) {
+        if (Array.isArray(rawResult[0])) {
+          // Multiple result sets returned as nested arrays
+          total = Number(rawResult[0]?.[0]?.[0] ?? 0);
+          data = rawResult[1] ?? [];
+        } else {
+          // Single result set: first row is count, rest are data
+          total = Number(Object.values(rawResult[0] ?? {})[0] ?? 0);
+          data = rawResult.slice(1);
+        }
       }
-      if (username) {
-        whereClause += ` AND ck.username = '${username}'`;
-      }
-      if (trangThai !== undefined && trangThai !== -1) {
-        // trangThai: 0 = da chot (TamMoKy = 0), 1 = chua chot (TamMoKy = 1)
-        whereClause += ` AND ck.TamMoKy = ${trangThai === 0 ? 0 : 1}`;
-      }
-
-      // Get total count
-      const [countResult]: any[] = await sequelize.query(`
-        SELECT COUNT(*) as total
-        FROM dbo.ChotKy ck ${whereClause}
-      `);
-      const total = Number(countResult[0]?.total) || 0;
-
-      // Get paginated data
-      const offset = (page - 1) * limit;
-      const [data]: any[] = await sequelize.query(`
-        SELECT
-          ck.ChotKyID, ck.KyID, k.Nam, k.Thang, ck.username,
-          ck.DauKy, ck.PhatSinhThuDR, ck.PhatSinhChiCR,
-          ck.PhatSinhCanDoi, ck.CuoiKy,
-          ck.NguoiTao, ck.NgayTao, ck.NguoiCapNhatCuoi, ck.NgayCapNhatCuoi,
-          ck.TamMoKy
-        FROM dbo.ChotKy ck
-        LEFT JOIN dbo.Ky k ON ck.KyID = k.KyID
-        ${whereClause}
-        ORDER BY k.Nam DESC, k.Thang DESC, ck.username
-        OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY
-      `);
-
-      await sequelize.close();
-
-      return {
-        data: data || [],
-        total,
-        page,
-        limit,
-      };
+      return { data, total, page, limit };
     } catch (error) {
-      console.error('Error getting period details:', error.message);
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-      };
+      console.error('Error getting period details:', (error as any).message);
+      return { data: [], total: 0, page, limit };
+    } finally {
+      await sequelize.close();
     }
   }
 
   /**
    * Temporarily open period for user (TamMoKy)
-   * Return codes: 0 = success, 1 = too far, -1 = error
+   * Matches: DBConnect.TamMoKy(@ChotKyID) → SP_TamMoKy
+   * Return codes: 0 = success, 1 = too far from current period, -1 = error
    */
   async tempOpenPeriod(chotKyId: number, nguoiMo: string): Promise<{ success: boolean; code?: number; error?: string }> {
+    const sequelize = this.getSequelize();
     try {
-      const sequelize = this.getSequelize();
+      const [[result]]: any[] = await sequelize.query(
+        `EXEC SP_TamMoKy @ChotKyID = :chotKyId`,
+        { replacements: { chotKyId } },
+      );
+      const code = Number((result as any)?.[0] ?? -1);
 
-      // Get current ChotKy info
-      const [current]: any[] = await sequelize.query(`
-        SELECT KyID FROM dbo.ChotKy WHERE ChotKyID = ${chotKyId}
-      `);
-
-      if (current.length === 0) {
-        await sequelize.close();
-        return { success: false, code: -1 };
+      if (code === 0) {
+        await this.logAction(nguoiMo, 'ChinhSua', 'ChotKy', chotKyId, `Tạm mở kỳ ID: ${chotKyId}`);
       }
 
-      // Check if not too far from current period
-      const [maxKy]: any[] = await sequelize.query(`
-        SELECT TOP 1 KyID FROM dbo.Ky ORDER BY Nam DESC, Thang DESC
-      `);
-
-      if (maxKy.length > 0 && current[0].KyID < maxKy[0].KyID - 1) {
-        await sequelize.close();
-        return { success: false, code: 1 };
-      }
-
-      await sequelize.query(`
-        UPDATE dbo.ChotKy SET TamMoKy = 1 WHERE ChotKyID = ${chotKyId}
-      `);
-
-      // Log system
-      await this.logAction(nguoiMo, 'ChinhSua', 'ChotKy', chotKyId, `Tạm mở kỳ ID: ${chotKyId}`);
-
-      await sequelize.close();
-      return { success: true, code: 0 };
+      return { success: code === 0, code };
     } catch (error) {
-      console.error('Error temp opening period:', error.message);
-      return { success: false, code: -1, error: error.message };
+      console.error('Error temp opening period:', (error as any).message);
+      return { success: false, code: -1, error: (error as any).message };
+    } finally {
+      await sequelize.close();
     }
   }
 
@@ -413,8 +330,8 @@ export class PeriodsService {
       await sequelize.close();
       return { success: true, code: 0 };
     } catch (error) {
-      console.error('Error closing temp period:', error.message);
-      return { success: false, code: -1, error: error.message };
+      console.error('Error closing temp period:', (error as any).message);
+      return { success: false, code: -1, error: (error as any).message };
     }
   }
 
@@ -425,12 +342,85 @@ export class PeriodsService {
     try {
       const sequelize = this.getSequelize();
       await sequelize.query(`
-        INSERT INTO dbo.SystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
+        INSERT INTO dbo.tbSystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
         VALUES ('${nguoiTao}', GETDATE(), '${nguon}', '${hanhDong}', '${doiTuong}', '${noiDung}')
       `);
       await sequelize.close();
     } catch (error) {
-      console.error('Error logging action:', error.message);
+      console.error('Error logging action:', (error as any).message);
+    }
+  }
+
+  /**
+   * Get sent shipment batches for user with pagination (DotHangUser.aspx)
+   * Matches: DotHangUser.cs -> Page_Load -> bLL.LayDotHangGui(username, 20, pageNum)
+   * Uses: SP_Lay_DotHangGui @UserName, @PageSize, @PageNum
+   */
+  async getDotHangGui(username: string, pageSize: number = 20, pageNum: number = 1): Promise<{ data: any[]; total: number }> {
+    const sequelize = this.getSequelize();
+    try {
+      const [results] = await sequelize.query(
+        `EXEC SP_Lay_DotHangGui
+          @UserName = :username,
+          @PageSize = :pageSize,
+          @PageNum = :pageNum`,
+        { replacements: { username, pageSize, pageNum }, type: 'SELECT' as const },
+      );
+      const data = Array.isArray(results) ? results : [];
+      const total = data.length > 0 ? ((data[0] as any).TOTALROW ?? data.length) : 0;
+      return { data, total };
+    } catch (error) {
+      console.error('Error in getDotHangGui:', (error as any).message);
+      return { data: [], total: 0 };
+    } finally {
+      await sequelize.close();
+    }
+  }
+
+  /**
+   * Get shipment batch names by user (ThongTinDotHang.aspx - dropdown)
+   * Matches: ThongTinDotHang.cs -> Page_Load -> SP_Lay_TenDotHangByUserName(@UserName)
+   */
+  async getTenDotHangByUserName(username: string): Promise<any[]> {
+    const sequelize = this.getSequelize();
+    try {
+      const [results] = await sequelize.query(
+        `EXEC SP_Lay_TenDotHangByUserName @UserName = :username`,
+        { replacements: { username }, type: 'SELECT' as const },
+      );
+      return Array.isArray(results) ? results : [];
+    } catch (error) {
+      console.error('Error in getTenDotHangByUserName:', (error as any).message);
+      return [];
+    } finally {
+      await sequelize.close();
+    }
+  }
+
+  /**
+   * Get orders in a shipment batch for user (ThongTinDotHang.aspx - btTimKiem)
+   * Matches: ThongTinDotHang.cs -> btTimKiem_Click -> SP_Lay_DonHangUserTheoDotHang(@TenDotHang, @UserName)
+   * SP returns 2 tables: summary + order list
+   */
+  async getDonHangUserTheoDotHang(tenDotHang: string, username: string): Promise<{ data: any[]; summary: any }> {
+    const sequelize = this.getSequelize();
+    try {
+      const [results] = await sequelize.query(
+        `EXEC [SP_Lay_DonHangUserTheoDotHang]
+          @TenDotHang = :tenDotHang,
+          @UserName = :username`,
+        { replacements: { tenDotHang, username } },
+      );
+      const rows = Array.isArray(results) ? results as any[] : [];
+      // First row is summary, rest are order details (C# reads 2 DataTables)
+      const summary = rows.length > 0 ? rows[0] : {};
+      const data = rows.slice(1);
+      return { data, summary };
+    } catch (error) {
+      console.error('Error in getDonHangUserTheoDotHang:', (error as any).message);
+      return { data: [], summary: {} };
+    } finally {
+      await sequelize.close();
     }
   }
 }

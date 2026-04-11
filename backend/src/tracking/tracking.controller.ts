@@ -209,26 +209,32 @@ export class TrackingController {
    * PUT /tracking/:id/history/:historyId
    * Update tracking status
    */
+  @UseGuards(JwtAuthGuard)
   @Put(':id/history/:historyId')
   async updateHistory(
     @Param('id', ParseIntPipe) id: number,
     @Param('historyId', ParseIntPipe) historyId: number,
     @Body() body: { ghiChu: string },
+    @Req() req: any,
   ): Promise<any> {
-    return this.trackingService.updateHistory(historyId, body.ghiChu);
+    const nguoiTao = req.user?.username || 'system';
+    return this.trackingService.updateHistory(historyId, body.ghiChu, nguoiTao);
   }
 
   /**
    * DELETE /tracking/:id/history/:historyId
    * Delete tracking status
    */
+  @UseGuards(JwtAuthGuard)
   @Delete(':id/history/:historyId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteHistory(
     @Param('id', ParseIntPipe) id: number,
     @Param('historyId', ParseIntPipe) historyId: number,
+    @Req() req: any,
   ): Promise<void> {
-    return this.trackingService.deleteHistory(historyId);
+    const nguoiTao = req.user?.username || 'system';
+    return this.trackingService.deleteHistory(historyId, nguoiTao);
   }
 
   /**

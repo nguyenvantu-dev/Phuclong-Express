@@ -371,4 +371,15 @@ export class DebtReportsController {
   async getBatchesByUsername(@Query('username') username: string) {
     return this.debtReportsService.getBatchesByUsername(username);
   }
+
+  /**
+   * GET /debt-reports/user/chuyen-khoan
+   * Get pending transfer list for user (ChuyenKhoan.aspx)
+   * Matches: ChuyenKhoan.cs -> bLL.LayDanhSachCongNo(username, 0, 2)
+   * SP: SP_Lay_CongNo @status=0, @style=2
+   */
+  @Get('user/chuyen-khoan')
+  async getChuyenKhoanPendingList(@Query('username') username: string) {
+    return this.debtReportsService.getChuyenKhoanPendingList(username);
+  }
 }

@@ -1,6 +1,7 @@
-import { Controller, Get, Put, Body, Param, Headers } from '@nestjs/common';
+import { Controller, Get, Put, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ExchangeRatesService } from './exchange-rates.service';
 import type { UpdateExchangeRateDto } from './exchange-rates.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('exchange-rates')
 export class ExchangeRatesController {
@@ -18,12 +19,13 @@ export class ExchangeRatesController {
     return { data };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Put(':name')
   async update(
     @Param('name') name: string,
     @Body() updateDto: UpdateExchangeRateDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.exchangeRatesService.update({ ...updateDto, name }, username || 'system');
+    return this.exchangeRatesService.update({ ...updateDto, name }, req.user?.username || 'system');
   }
 }

@@ -16,6 +16,7 @@ import {
   FiInfo,
   FiTruck,
   FiUsers,
+  FiSettings,
 } from 'react-icons/fi';
 
 /**
@@ -84,6 +85,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { href: '/admin/roles', label: 'Role' },
         { href: '/admin/users', label: 'User' },
         { href: '/admin/clear-user-data', label: 'Xóa dữ liệu theo user' },
+      ],
+    },
+    {
+      label: 'DANH MỤC & CẤU HÌNH',
+      icon: FiSettings,
+      submenu: [
+        { href: '/admin/periods', label: 'Danh mục kỳ' },
+        { href: '/admin/exchange-rates', label: 'Tỷ giá' },
+        { href: '/admin/websites', label: 'Danh sách website' },
+        { href: '/admin/bank-accounts', label: 'Tài khoản ngân hàng' },
+        { href: '/admin/service-fees', label: 'Công mua hàng' },
+        { href: '/admin/delivery-addresses', label: 'Địa chỉ nhận hàng' },
+        { href: '/admin/system-logs', label: 'Báo cáo hoạt động hệ thống' },
       ],
     },
     {

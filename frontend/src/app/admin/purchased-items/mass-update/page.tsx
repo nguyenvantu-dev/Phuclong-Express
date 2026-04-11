@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface FormData {
   orderNumber: string;
@@ -9,7 +10,6 @@ interface FormData {
   totalItem: string;
 }
 
-const API_BASE = '/api/purchased-items';
 
 /**
  * Mass Update Purchased Items Page
@@ -62,20 +62,12 @@ function MassUpdatePurchasedItemsPageContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE}/share`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ids,
-          orderNumber: formData.orderNumber,
-          totalCharged: Number(formData.totalCharged),
-          totalItem: Number(formData.totalItem),
-        }),
+      await apiClient.post('/purchased-items/share', {
+        ids,
+        orderNumber: formData.orderNumber,
+        totalCharged: Number(formData.totalCharged),
+        totalItem: Number(formData.totalItem),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update items');
-      }
 
       router.push('/admin/purchased-items');
     } catch (err) {

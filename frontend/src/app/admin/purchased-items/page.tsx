@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import apiClient from '@/lib/api-client';
 
 interface PurchasedItem {
   id: number;
@@ -37,26 +38,17 @@ interface PaginatedResponse<T> {
   limit: number;
 }
 
-const API_BASE = '/api/purchased-items';
-
 const getPurchasedItems = async (params: QueryParams): Promise<PaginatedResponse<PurchasedItem>> => {
-  const response = await fetch(`${API_BASE}?${new URLSearchParams(params as any)}`);
-  if (!response.ok) throw new Error('Failed to fetch purchased items');
-  return response.json();
+  const { data } = await apiClient.get('/purchased-items', { params });
+  return data;
 };
 
 const deletePurchasedItem = async (id: number) => {
-  const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-  if (!response.ok) throw new Error('Failed to delete item');
+  await apiClient.delete(`/purchased-items/${id}`);
 };
 
 const massDeletePurchasedItems = async (ids: number[]) => {
-  const response = await fetch(`${API_BASE}/mass-delete`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids }),
-  });
-  if (!response.ok) throw new Error('Failed to mass delete items');
+  await apiClient.post('/purchased-items/mass-delete', { ids });
 };
 
 /**

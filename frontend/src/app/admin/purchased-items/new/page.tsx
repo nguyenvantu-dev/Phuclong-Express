@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface FormData {
   websiteName: string;
@@ -15,7 +16,6 @@ interface FormData {
   ghiChu: string;
 }
 
-const API_BASE = '/api/purchased-items';
 
 /**
  * Create Purchased Item Page
@@ -58,27 +58,19 @@ export default function NewPurchasedItemPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          websiteName: formData.websiteName,
-          username: formData.username,
-          linkWeb: formData.linkWeb,
-          linkHinh: formData.linkHinh,
-          color: formData.color,
-          size: formData.size,
-          soLuong: formData.soLuong ? Number(formData.soLuong) : 1,
-          donGiaWeb: formData.donGiaWeb ? Number(formData.donGiaWeb) : 0,
-          loaiTien: 'VND',
-          ghiChu: formData.ghiChu,
-          hangKhoan: true,
-        }),
+      await apiClient.post('/purchased-items', {
+        websiteName: formData.websiteName,
+        username: formData.username,
+        linkWeb: formData.linkWeb,
+        linkHinh: formData.linkHinh,
+        color: formData.color,
+        size: formData.size,
+        soLuong: formData.soLuong ? Number(formData.soLuong) : 1,
+        donGiaWeb: formData.donGiaWeb ? Number(formData.donGiaWeb) : 0,
+        loaiTien: 'VND',
+        ghiChu: formData.ghiChu,
+        hangKhoan: true,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create item');
-      }
 
       router.push('/admin/purchased-items');
     } catch (err) {
