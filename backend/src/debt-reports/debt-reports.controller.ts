@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards, Request } from '@nestjs/common';
 import { DebtReportsService } from './debt-reports.service';
 import { QueryDebtReportDto, UpdateDebtDto, ExportDebtReportDto, QueryDebtReportByLotDto, QueryDebtReconciliationDto, UpdateOrderTotalVndDto, QueryTotalRevenueDto, QueryDebtByUserDto, QueryProfitLossByLotDto, QueryShippingSlipDto } from './dto/debt-report.dto';
 import { QueryDebtManagementDto, CreateDebtDto, UpdateDebtManagementDto } from './dto/debt-management.dto';
@@ -55,11 +55,12 @@ export class DebtReportsController {
   async updateDebt(
     @Param('id') id: number,
     @Body() updateDto: UpdateDebtDto,
+    @Request() req: any,
   ) {
     return this.debtReportsService.updateDebt(
       id,
       updateDto,
-      'admin', // Default username when auth is disabled
+      req.user?.username || 'system',
     );
   }
 
@@ -165,10 +166,13 @@ export class DebtReportsController {
    * Matches: gvDoiChieuCongNo_RowCommand("ChuyenVeReceived") in C#
    */
   @Post('reconciliation/move-to-received')
-  async moveToReceived(@Body() body: { ordernumber: string }) {
+  async moveToReceived(
+    @Body() body: { ordernumber: string },
+    @Request() req: any,
+  ) {
     return this.debtReportsService.moveToReceived(
       body.ordernumber,
-      'admin', // Default username when auth is disabled
+      req.user?.username || 'system',
     );
   }
 
@@ -177,12 +181,15 @@ export class DebtReportsController {
    * Matches: gvDoiChieuCongNo_RowUpdating() in C#
    */
   @Put('reconciliation/update-total-vnd')
-  async updateOrderTotalVND(@Body() body: UpdateOrderTotalVndDto) {
+  async updateOrderTotalVND(
+    @Body() body: UpdateOrderTotalVndDto,
+    @Request() req: any,
+  ) {
     return this.debtReportsService.updateOrderTotalVND(
       body.ordernumber,
       body.trackingNumber,
       body.tongTienOrderVND,
-      'admin', // Default username when auth is disabled
+      req.user?.username || 'system',
     );
   }
 
@@ -307,10 +314,13 @@ export class DebtReportsController {
    * Matches: btDongY_Click() -> Insert_CongNo() in ManageCongNo.cs
    */
   @Post('management')
-  async createDebt(@Body() createDto: CreateDebtDto) {
+  async createDebt(
+    @Body() createDto: CreateDebtDto,
+    @Request() req: any,
+  ) {
     return this.debtReportsService.createDebt(
       createDto,
-      'admin',
+      req.user?.username || 'system',
     );
   }
 
@@ -322,11 +332,12 @@ export class DebtReportsController {
   async updateDebtManagement(
     @Param('id') id: number,
     @Body() updateDto: UpdateDebtManagementDto,
+    @Request() req: any,
   ) {
     return this.debtReportsService.updateDebtManagement(
       id,
       updateDto,
-      'admin',
+      req.user?.username || 'system',
     );
   }
 
@@ -335,10 +346,13 @@ export class DebtReportsController {
    * Matches: gvCongNo_RowDeleting() -> XoaCongNo() in ManageCongNo.cs
    */
   @Delete('management/:id')
-  async deleteDebt(@Param('id') id: number) {
+  async deleteDebt(
+    @Param('id') id: number,
+    @Request() req: any,
+  ) {
     return this.debtReportsService.deleteDebt(
       id,
-      'admin',
+      req.user?.username || 'system',
     );
   }
 
@@ -347,10 +361,13 @@ export class DebtReportsController {
    * Matches: gvCongNo_RowCommand() -> ApproveCongNo() in ManageCongNo.cs
    */
   @Post('management/:id/approve')
-  async approveDebt(@Param('id') id: number) {
+  async approveDebt(
+    @Param('id') id: number,
+    @Request() req: any,
+  ) {
     return this.debtReportsService.approveDebt(
       id,
-      'admin',
+      req.user?.username || 'system',
     );
   }
 

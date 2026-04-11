@@ -207,7 +207,7 @@ export class DebtReportsService {
               chucNang: 'ManageCongNo:CapNhatCongNo',
               hanhDong: 'Chinh sua',
               ma: id.toString(),
-              ghiChu: `ID:${id}; NoiDung: ${updateDto.noiDung}; DR: ${dr}; CR: ${cr}; GhiChu: ${updateDto.ghiChu}`,
+              ghiChu: `ID:${id}; NoiDung: ${updateDto.noiDung?.trim()}; DR: ${dr}; CR: ${cr}; GhiChu: ${updateDto.ghiChu?.trim() || ''}; status: true`,
             },
             type: 'SELECT' as const,
           },
