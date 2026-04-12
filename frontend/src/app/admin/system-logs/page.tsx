@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+import apiClient from '@/lib/api-client';
 
 interface SystemLog {
   SystemLogsID: number;
@@ -62,7 +60,7 @@ export default function SystemLogsPage() {
   useEffect(() => {
     async function loadUsers() {
       try {
-        const res = await axios.get(`${API_URL}/users`);
+        const res = await apiClient.get('/users');
         if (Array.isArray(res.data)) {
           setUsers(res.data);
         }
@@ -87,7 +85,7 @@ export default function SystemLogsPage() {
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
 
-      const res = await axios.get(`${API_URL}/system-logs?${params.toString()}`);
+      const res = await apiClient.get(`/system-logs?${params.toString()}`);
       setLogs(res.data.data || []);
       setTotal(res.data.total || 0);
     } catch (error) {

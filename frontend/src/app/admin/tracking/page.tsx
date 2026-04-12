@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import axios from 'axios';
+import apiClient from '@/lib/api-client';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import { useAuth } from '@/hooks/use-auth-context';
@@ -12,8 +12,6 @@ import {
   FiTrash2, FiCheck, FiX, FiChevronLeft, FiChevronRight,
   FiEye, FiEdit2,
 } from 'react-icons/fi';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface Tracking {
   TrackingID: number;
@@ -48,13 +46,13 @@ interface TrackingCounts {
   Cancelled: number;
 }
 
-const getTracking = async (params: Record<string, any>) => {
-  const response = await axios.get<PaginatedResponse<Tracking>>(`${API_URL}/tracking`, { params });
+const getTracking = async (params: Record<string, string | number>) => {
+  const response = await apiClient.get<PaginatedResponse<Tracking>>('/tracking', { params });
   return response.data;
 };
 
 const getTrackingCounts = async () => {
-  const response = await axios.get<TrackingCounts>(`${API_URL}/tracking/counts`);
+  const response = await apiClient.get<TrackingCounts>('/tracking/counts');
   return response.data;
 };
 
@@ -97,7 +95,7 @@ export default function TrackingPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (ids: number[]) => axios.post(`${API_URL}/tracking/mass-delete`, { ids, nguoiTao }),
+    mutationFn: (ids: number[]) => apiClient.post('/tracking/mass-delete', { ids, nguoiTao }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracking'] });
       queryClient.invalidateQueries({ queryKey: ['tracking-counts'] });
@@ -107,7 +105,7 @@ export default function TrackingPage() {
 
   const statusMutation = useMutation({
     mutationFn: (data: { ids: number[]; tinhTrang: string }) =>
-      axios.post(`${API_URL}/tracking/mass-status`, { ...data, nguoiTao }),
+      apiClient.post('/tracking/mass-status', { ...data, nguoiTao }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracking'] });
       queryClient.invalidateQueries({ queryKey: ['tracking-counts'] });
@@ -116,7 +114,7 @@ export default function TrackingPage() {
   });
 
   const completeAllMutation = useMutation({
-    mutationFn: () => axios.post(`${API_URL}/tracking/mass-complete-all`, { query: filters, nguoiTao }),
+    mutationFn: () => apiClient.post('/tracking/mass-complete-all', { query: filters, nguoiTao }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tracking'] });
       queryClient.invalidateQueries({ queryKey: ['tracking-counts'] });

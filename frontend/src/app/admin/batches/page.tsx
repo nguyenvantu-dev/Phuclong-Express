@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import axios from 'axios';
+import apiClient from '@/lib/api-client';
 import {
   KPICard,
   FilterBar,
@@ -12,8 +12,6 @@ import {
   EmptyState,
   TableLoadingSkeleton,
 } from '@/app/components/admin';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface LoHang {
   LoHangID: number;
@@ -51,13 +49,13 @@ const formatCurrency = (val: number | null) => {
   return val.toLocaleString('vi-VN');
 };
 
-const getBatches = async (params: Record<string, any>): Promise<BatchesResponse> => {
-  const response = await axios.get<BatchesResponse>(`${API_URL}/batches`, { params });
+const getBatches = async (params: Record<string, string | number>): Promise<BatchesResponse> => {
+  const response = await apiClient.get<BatchesResponse>('/batches', { params });
   return response.data;
 };
 
 const getUsers = async (): Promise<User[]> => {
-  const response = await axios.get<User[]>(`${API_URL}/users`);
+  const response = await apiClient.get<User[]>('/users');
   return response.data;
 };
 
@@ -154,7 +152,7 @@ export default function BatchesPage() {
       label: 'Hành động',
       width: '120px',
       align: 'center' as const,
-      render: (_: any, row: LoHang) => (
+      render: (_: unknown, row: LoHang) => (
         <Link
           href={`/admin/batches/${row.LoHangID}`}
           className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 transition-colors"

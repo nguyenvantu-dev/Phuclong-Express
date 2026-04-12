@@ -2,9 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+import apiClient from '@/lib/api-client';
 
 interface Batch {
   ID: number;
@@ -48,7 +46,7 @@ interface BatchDetails extends Batch {
 }
 
 const getBatchDetails = async (id: number) => {
-  const response = await axios.get<BatchDetails>(`${API_URL}/batches/${id}/details`);
+  const response = await apiClient.get<BatchDetails>(`/batches/${id}/details`);
   return response.data;
 };
 
@@ -76,7 +74,7 @@ export default function BatchDetailPage() {
   // Ship costs mutation
   const deleteShipCostMutation = useMutation({
     mutationFn: (shipCostId: number) =>
-      axios.delete(`${API_URL}/batches/${id}/ship-costs/${shipCostId}`),
+      apiClient.delete(`/batches/${id}/ship-costs/${shipCostId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batch', id] });
     },
@@ -85,7 +83,7 @@ export default function BatchDetailPage() {
   // Customs mutation
   const deleteCustomsMutation = useMutation({
     mutationFn: (customsId: number) =>
-      axios.delete(`${API_URL}/batches/${id}/customs/${customsId}`),
+      apiClient.delete(`/batches/${id}/customs/${customsId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['batch', id] });
     },

@@ -4,14 +4,12 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
+import apiClient from '@/lib/api-client';
 import { useAuth } from '@/hooks/use-auth-context';
 import {
   FiArrowLeft, FiPackage, FiUser, FiHash, FiCalendar,
   FiTruck, FiGlobe, FiTag, FiFileText, FiSave,
 } from 'react-icons/fi';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface FormData {
   username: string;
@@ -25,6 +23,30 @@ interface FormData {
   kien: string;
   mawb: string;
   hawb: string;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+interface TrackingUserOption {
+  UserName: string;
+}
+
+interface ShippingCarrierOption {
+  NhaVanChuyenID: number;
+  TenNhaVanChuyen?: string;
+  Name?: string;
+}
+
+interface CountryOption {
+  QuocGiaID: number;
+  TenQuocGia: string;
+  Name?: string;
 }
 
 const tinhTrangOptions = ['Received', 'InTransit', 'InVN', 'VNTransit', 'Completed', 'Cancelled'];
@@ -57,17 +79,17 @@ export default function NewTrackingPage() {
   // Fetch dropdown data from API
   const { data: userList = [] } = useQuery({
     queryKey: ['tracking-users'],
-    queryFn: () => axios.get(`${API_URL}/tracking/dropdown/users`).then(r => r.data || []),
+    queryFn: () => apiClient.get<TrackingUserOption[]>('/tracking/dropdown/users').then(r => r.data || []),
   });
 
   const { data: nhaVanChuyenList = [] } = useQuery({
     queryKey: ['nha-van-chuyen'],
-    queryFn: () => axios.get(`${API_URL}/tracking/dropdown/nha-van-chuyen`).then(r => r.data || []),
+    queryFn: () => apiClient.get<ShippingCarrierOption[]>('/tracking/dropdown/nha-van-chuyen').then(r => r.data || []),
   });
 
   const { data: quocGiaList = [] } = useQuery({
     queryKey: ['quoc-gia'],
-    queryFn: () => axios.get(`${API_URL}/orders/countries`).then(r => r.data || []),
+    queryFn: () => apiClient.get<CountryOption[]>('/orders/countries').then(r => r.data || []),
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -80,15 +102,16 @@ export default function NewTrackingPage() {
     setLoading(true);
     setError('');
     try {
-      await axios.post(`${API_URL}/tracking`, {
+      await apiClient.post('/tracking', {
         ...formData,
         nhaVanChuyenId: formData.nhaVanChuyenId ? Number(formData.nhaVanChuyenId) : undefined,
         quocGiaId: formData.quocGiaId ? Number(formData.quocGiaId) : undefined,
         nguoiTao: user?.username || '',
       });
       router.push('/admin/tracking');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra');
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      setError(apiError.response?.data?.message || 'Có lỗi xảy ra');
     } finally {
       setLoading(false);
     }
@@ -162,7 +185,7 @@ export default function NewTrackingPage() {
               <FieldWithIcon icon={FiUser}>
                 <select name="username" value={formData.username} onChange={handleChange} className={inputCls}>
                   <option value="">-- Chọn username --</option>
-                  {Array.isArray(userList) && userList.map((user: any) => (
+                  {Array.isArray(userList) && userList.map((user) => (
                     <option key={user.UserName} value={user.UserName}>{user.UserName}</option>
                   ))}
                 </select>
@@ -173,7 +196,7 @@ export default function NewTrackingPage() {
               <FieldWithIcon icon={FiTruck}>
                 <select name="nhaVanChuyenId" value={formData.nhaVanChuyenId} onChange={handleChange} className={inputCls}>
                   <option value="">-- Chọn nhà vận chuyển --</option>
-                  {Array.isArray(nhaVanChuyenList) && nhaVanChuyenList.map((nvc: any) => (
+                  {Array.isArray(nhaVanChuyenList) && nhaVanChuyenList.map((nvc) => (
                     <option key={nvc.NhaVanChuyenID} value={nvc.NhaVanChuyenID}>{nvc.TenNhaVanChuyen || nvc.Name}</option>
                   ))}
                 </select>
@@ -184,7 +207,7 @@ export default function NewTrackingPage() {
               <FieldWithIcon icon={FiGlobe}>
                 <select name="quocGiaId" value={formData.quocGiaId} onChange={handleChange} className={inputCls}>
                   <option value="">-- Chọn quốc gia --</option>
-                  {Array.isArray(quocGiaList) && quocGiaList.map((qg: any) => (
+                  {Array.isArray(quocGiaList) && quocGiaList.map((qg) => (
                     <option key={qg.QuocGiaID} value={qg.QuocGiaID}>{qg.TenQuocGia || qg.Name}</option>
                   ))}
                 </select>

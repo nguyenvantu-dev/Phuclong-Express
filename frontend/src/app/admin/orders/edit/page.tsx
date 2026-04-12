@@ -321,10 +321,14 @@ function EditOrderDetailPageContent() {
   const updateOrderDetailMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) =>
       updateOrderDetail(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['orders'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['order-status-counts'], refetchType: 'all' }),
+        queryClient.invalidateQueries({ queryKey: ['order', orderId], refetchType: 'all' }),
+      ]);
       router.push(returnUrl);
+      router.refresh();
     },
     onError: (error: Error) => {
       // Handle closed period error

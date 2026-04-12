@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import apiClient from '@/lib/api-client';
 import { FormInput, FormSelect, FormTextarea } from '@/app/components/admin';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface FormData {
   username: string;
@@ -20,6 +18,14 @@ interface FormData {
   tyGia: string;
   ngayDenDuKien: string;
   ngayDenThucTe: string;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
 }
 
 const tinhTrangOptions = [
@@ -79,15 +85,16 @@ export default function NewBatchPage() {
     setSuccess('');
 
     try {
-      await axios.post(`${API_URL}/batches`, {
+      await apiClient.post('/batches', {
         ...formData,
         nhaVanChuyenId: formData.nhaVanChuyenId ? Number(formData.nhaVanChuyenId) : undefined,
         tyGia: Number(formData.tyGia),
       });
       setSuccess('Lô hàng đã được tạo thành công!');
       setTimeout(() => router.push('/admin/batches'), 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra khi tạo lô hàng');
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      setError(apiError.response?.data?.message || 'Có lỗi xảy ra khi tạo lô hàng');
     } finally {
       setLoading(false);
     }

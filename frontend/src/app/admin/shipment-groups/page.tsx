@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+import apiClient from '@/lib/api-client';
 
 /**
  * Shipment Groups List Page
@@ -40,8 +38,8 @@ interface PaginatedResponse<T> {
   limit: number;
 }
 
-const getShipmentGroups = async (params: Record<string, any>) => {
-  const response = await axios.get<PaginatedResponse<ShipmentGroup>>(`${API_URL}/shipment-groups`, { params });
+const getShipmentGroups = async (params: Record<string, string | number>) => {
+  const response = await apiClient.get<PaginatedResponse<ShipmentGroup>>('/shipment-groups', { params });
   return response.data;
 };
 

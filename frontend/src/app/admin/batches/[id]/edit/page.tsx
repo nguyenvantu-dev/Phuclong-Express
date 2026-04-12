@@ -3,10 +3,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import axios from 'axios';
+import apiClient from '@/lib/api-client';
 import { FormInput, FormSelect, FormTextarea } from '@/app/components/admin';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface Batch {
   ID: number;
@@ -39,6 +37,19 @@ interface FormData {
   ngayDenThucTe: string;
 }
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+type BatchUpdatePayload = Omit<FormData, 'nhaVanChuyenId' | 'tyGia'> & {
+  nhaVanChuyenId?: number;
+  tyGia: number;
+};
+
 const tinhTrangOptions = [
   { value: 'Mới tạo', label: 'Mới tạo' },
   { value: 'Đang vận chuyển', label: 'Đang vận chuyển' },
@@ -63,7 +74,7 @@ const nhaVanChuyenOptions = [
 ];
 
 const getBatch = async (id: number) => {
-  const response = await axios.get<Batch>(`${API_URL}/batches/${id}`);
+  const response = await apiClient.get<Batch>(`/batches/${id}`);
   return response.data;
 };
 
@@ -116,14 +127,15 @@ export default function EditBatchPage() {
   }
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => axios.put(`${API_URL}/batches/${id}`, data),
+    mutationFn: (data: BatchUpdatePayload) => apiClient.put(`/batches/${id}`, data),
     onSuccess: () => {
       setSuccess('Lô hàng đã được cập nhật thành công!');
       queryClient.invalidateQueries({ queryKey: ['batch', id] });
       setTimeout(() => router.push(`/admin/batches/${id}`), 1500);
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra');
+    onError: (err: unknown) => {
+      const apiError = err as ApiError;
+      setError(apiError.response?.data?.message || 'Có lỗi xảy ra');
     },
   });
 

@@ -3,13 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
+import apiClient from '@/lib/api-client';
 import {
   FiArrowLeft, FiEdit2, FiPackage, FiUser, FiHash,
   FiCalendar, FiGlobe, FiFileText, FiClock, FiImage,
 } from 'react-icons/fi';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface TrackingDetail {
   TrackingID: number;
@@ -53,7 +51,7 @@ interface TrackingHistory {
 }
 
 const getTrackingDetails = async (id: number) => {
-  const response = await axios.get<TrackingDetail>(`${API_URL}/tracking/${id}/details`);
+  const response = await apiClient.get<TrackingDetail>(`/tracking/${id}/details`);
   return response.data;
 };
 
