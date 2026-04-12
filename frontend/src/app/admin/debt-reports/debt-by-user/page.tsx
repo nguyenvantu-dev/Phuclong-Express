@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -49,6 +50,7 @@ export default function DebtByUserPage() {
   // Username dropdown state
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [usernameSearch, setUsernameSearch] = useState('');
+  const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
   const userDropdownRef = useRef<HTMLDivElement>(null);
 
   // Refs for date inputs
@@ -57,9 +59,11 @@ export default function DebtByUserPage() {
 
   // Initialize flatpickr
   useEffect(() => {
+    const defaultDates = getDefaultDates();
+
     const fpFrom = flatpickr(fromDateRef.current!, {
       dateFormat: 'd/m/Y',
-      defaultDate: filters.fromDate,
+      defaultDate: defaultDates.fromDate,
       onChange: (dates) => {
         if (dates[0]) {
           const d = dates[0];
@@ -71,7 +75,7 @@ export default function DebtByUserPage() {
 
     const fpTo = flatpickr(toDateRef.current!, {
       dateFormat: 'd/m/Y',
-      defaultDate: filters.toDate,
+      defaultDate: defaultDates.toDate,
       onChange: (dates) => {
         if (dates[0]) {
           const d = dates[0];
@@ -109,8 +113,53 @@ export default function DebtByUserPage() {
 
   // Filter users based on search
   const filteredUsers = users?.filter((user) =>
-    user.UserName.toLowerCase().includes(usernameSearch.toLowerCase())
-  );
+    user.UserName.toLowerCase().includes(usernameSearch.trim().toLowerCase())
+  ).slice(0, 50) || [];
+
+  const handleUsernameInputChange = (value: string) => {
+    setUsernameSearch(value);
+    setShowUserDropdown(true);
+    setActiveUsernameIndex(0);
+
+    if (!value) {
+      setFilters(prev => ({ ...prev, username: '' }));
+    }
+  };
+
+  const handleUsernameSelect = (value: string) => {
+    setUsernameSearch(value);
+    setFilters(prev => ({ ...prev, username: value }));
+    setShowUserDropdown(false);
+    setActiveUsernameIndex(0);
+  };
+
+  const handleUsernameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowUserDropdown(true);
+      if (filteredUsers.length > 0) {
+        setActiveUsernameIndex((prev) => (prev + 1) % filteredUsers.length);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      setShowUserDropdown(true);
+      if (filteredUsers.length > 0) {
+        setActiveUsernameIndex((prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length);
+      }
+      return;
+    }
+
+    const activeUsername = filteredUsers[activeUsernameIndex]?.UserName;
+    if (activeUsername) {
+      handleUsernameSelect(activeUsername);
+    } else if (!usernameSearch.trim()) {
+      handleUsernameSelect('');
+    }
+  };
 
   // Fetch debt by user data
   const { data, isLoading, error, refetch } = useQuery({
@@ -206,49 +255,43 @@ export default function DebtByUserPage() {
             <input
               type="text"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-              placeholder={filters.username || "--All--"}
+              placeholder="Nhập User Name"
               value={usernameSearch}
-              onChange={(e) => {
-                setUsernameSearch(e.target.value);
+              onChange={(e) => handleUsernameInputChange(e.target.value)}
+              onKeyDown={handleUsernameKeyDown}
+              onFocus={() => {
+                setActiveUsernameIndex(0);
                 setShowUserDropdown(true);
               }}
-              onFocus={() => setShowUserDropdown(true)}
+              autoComplete="off"
             />
             {showUserDropdown && (
-              <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-300 bg-white shadow-lg">
-                <div className="sticky top-0 border-b bg-gray-50 p-2">
-                  <input
-                    type="text"
-                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm font-medium text-gray-900 placeholder-gray-400"
-                    placeholder="Search..."
-                    value={usernameSearch}
-                    onChange={(e) => setUsernameSearch(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-                <div
-                  className="cursor-pointer px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
-                  onClick={() => {
-                    setFilters(prev => ({ ...prev, username: '' }));
-                    setUsernameSearch('');
-                    setShowUserDropdown(false);
-                  }}
+              <div className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-sm shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => handleUsernameSelect('')}
+                  className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                 >
                   --All--
-                </div>
-                {filteredUsers?.map((user) => (
-                  <div
+                </button>
+                {filteredUsers.map((user, index) => (
+                  <button
                     key={user.Id}
-                    className="cursor-pointer px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
-                    onClick={() => {
-                      setFilters(prev => ({ ...prev, username: user.UserName }));
-                      setUsernameSearch(user.UserName);
-                      setShowUserDropdown(false);
-                    }}
+                    type="button"
+                    onClick={() => handleUsernameSelect(user.UserName)}
+                    onMouseEnter={() => setActiveUsernameIndex(index)}
+                    className={`block w-full px-3 py-2 text-left font-medium hover:bg-blue-50 hover:text-blue-700 ${
+                      index === activeUsernameIndex
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-900'
+                    }`}
                   >
                     {user.UserName}
-                  </div>
+                  </button>
                 ))}
+                {filteredUsers.length === 0 && (
+                  <div className="px-3 py-2 text-gray-500">Không có user phù hợp</div>
+                )}
               </div>
             )}
           </div>

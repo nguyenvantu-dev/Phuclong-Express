@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
@@ -75,6 +76,10 @@ export default function BatchesPage() {
     tuNgay: defaults.tuNgay,
     denNgay: defaults.denNgay,
   });
+  const [usernameInput, setUsernameInput] = useState('');
+  const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
+  const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
+  const usernameDropdownRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['batches', committed],
@@ -87,11 +92,76 @@ export default function BatchesPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (usernameDropdownRef.current && !usernameDropdownRef.current.contains(event.target as Node)) {
+        setShowUsernameDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredUsers = users
+    .slice()
+    .sort((a, b) => a.UserName.localeCompare(b.UserName))
+    .filter((user) => user.UserName.toLowerCase().includes(usernameInput.trim().toLowerCase()))
+    .slice(0, 50);
+
+  const handleUsernameInputChange = (value: string) => {
+    setUsernameInput(value);
+    setShowUsernameDropdown(true);
+    setActiveUsernameIndex(0);
+
+    if (!value) {
+      setDraft((prev) => ({ ...prev, username: '' }));
+    }
+  };
+
+  const handleUsernameSelect = (value: string) => {
+    setUsernameInput(value);
+    setDraft((prev) => ({ ...prev, username: value }));
+    setShowUsernameDropdown(false);
+    setActiveUsernameIndex(0);
+  };
+
+  const handleUsernameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowUsernameDropdown(true);
+      if (filteredUsers.length > 0) {
+        setActiveUsernameIndex((prev) => (prev + 1) % filteredUsers.length);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      setShowUsernameDropdown(true);
+      if (filteredUsers.length > 0) {
+        setActiveUsernameIndex((prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length);
+      }
+      return;
+    }
+
+    const activeUsername = filteredUsers[activeUsernameIndex]?.UserName;
+    if (activeUsername) {
+      handleUsernameSelect(activeUsername);
+    } else if (!usernameInput.trim()) {
+      handleUsernameSelect('');
+    }
+  };
+
   const handleSearch = () => {
     setCommitted({ ...draft, page: 1, pageSize: 200 });
   };
 
   const handleReset = () => {
+    setUsernameInput('');
+    setShowUsernameDropdown(false);
+    setActiveUsernameIndex(0);
     setDraft({
       username: '',
       tuNgay: defaults.tuNgay,
@@ -210,21 +280,50 @@ export default function BatchesPage() {
             />
           </FilterField>
           <FilterField label="Username">
-            <select
-              value={draft.username}
-              onChange={(e) => setDraft((p) => ({ ...p, username: e.target.value }))}
-              className="w-full px-3 py-2 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            >
-              <option value="">--Tất cả--</option>
-              {users
-                .slice()
-                .sort((a, b) => a.UserName.localeCompare(b.UserName))
-                .map((u) => (
-                  <option key={u.UserName} value={u.UserName}>
-                    {u.UserName}
-                  </option>
-                ))}
-            </select>
+            <div ref={usernameDropdownRef} className="relative">
+              <input
+                type="text"
+                value={usernameInput}
+                onChange={(e) => handleUsernameInputChange(e.target.value)}
+                onKeyDown={handleUsernameKeyDown}
+                onFocus={() => {
+                  setActiveUsernameIndex(0);
+                  setShowUsernameDropdown(true);
+                }}
+                placeholder="Nhập username"
+                autoComplete="off"
+                className="w-full px-3 py-2 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+              {showUsernameDropdown && (
+                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-cyan-200 bg-white py-1 text-sm shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => handleUsernameSelect('')}
+                    className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-cyan-50 hover:text-cyan-700"
+                  >
+                    --Tất cả--
+                  </button>
+                  {filteredUsers.map((user, index) => (
+                    <button
+                      key={user.UserName}
+                      type="button"
+                      onClick={() => handleUsernameSelect(user.UserName)}
+                      onMouseEnter={() => setActiveUsernameIndex(index)}
+                      className={`block w-full px-3 py-2 text-left font-medium hover:bg-cyan-50 hover:text-cyan-700 ${
+                        index === activeUsernameIndex
+                          ? 'bg-cyan-50 text-cyan-700'
+                          : 'text-gray-900'
+                      }`}
+                    >
+                      {user.UserName}
+                    </button>
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <div className="px-3 py-2 text-gray-500">Không có username phù hợp</div>
+                  )}
+                </div>
+              )}
+            </div>
           </FilterField>
           <button
             onClick={handleSearch}

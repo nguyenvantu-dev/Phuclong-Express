@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { CSSProperties } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useAuthStore } from '@/hooks/use-auth';
@@ -99,6 +101,10 @@ export default function QLDatHangThemPage() {
     tax: '',
     ghiChu: '',
   });
+  const [usernameInput, setUsernameInput] = useState('');
+  const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
+  const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
+  const [usernameDropdownStyle, setUsernameDropdownStyle] = useState<CSSProperties>({});
 
   // Calculated values (shown in footer row)
   const [calculated, setCalculated] = useState({ tienCongVnd: 0, tongTienVnd: 0 });
@@ -106,6 +112,8 @@ export default function QLDatHangThemPage() {
   const [isUploading, setIsUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const usernameDropdownRef = useRef<HTMLTableCellElement>(null);
+  const usernameInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch usernames
   const { data: usernames = [] } = useQuery({
@@ -133,6 +141,17 @@ export default function QLDatHangThemPage() {
     queryKey: ['exchange-rates'],
     queryFn: getExchangeRatesForEdit,
   });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (usernameDropdownRef.current && !usernameDropdownRef.current.contains(event.target as Node)) {
+        setShowUsernameDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Calculate fee mutation
   const calculateMutation = useMutation({
@@ -215,6 +234,66 @@ export default function QLDatHangThemPage() {
     });
   };
 
+  const handleUsernameInputChange = (value: string) => {
+    setUsernameInput(value);
+    updateUsernameDropdownPosition();
+    setShowUsernameDropdown(true);
+    setActiveUsernameIndex(0);
+
+    setForm(prev => ({
+      ...prev,
+      username: '',
+    }));
+  };
+
+  const handleUsernameSelect = (value: string) => {
+    setUsernameInput(value);
+    setForm(prev => ({ ...prev, username: value }));
+    setShowUsernameDropdown(false);
+    setActiveUsernameIndex(0);
+  };
+
+  const handleUsernameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      updateUsernameDropdownPosition();
+      setShowUsernameDropdown(true);
+      if (filteredUsernames.length > 0) {
+        setActiveUsernameIndex((prev) => (prev + 1) % filteredUsernames.length);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      updateUsernameDropdownPosition();
+      setShowUsernameDropdown(true);
+      if (filteredUsernames.length > 0) {
+        setActiveUsernameIndex((prev) => (prev - 1 + filteredUsernames.length) % filteredUsernames.length);
+      }
+      return;
+    }
+
+    const activeUsername = filteredUsernames[activeUsernameIndex]?.username;
+    if (activeUsername) {
+      handleUsernameSelect(activeUsername);
+    } else if (!usernameInput.trim()) {
+      handleUsernameSelect('');
+    }
+  };
+
+  const updateUsernameDropdownPosition = () => {
+    const rect = usernameInputRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setUsernameDropdownStyle({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(rect.width, 180),
+    });
+  };
+
   // Handle image file select
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -248,6 +327,7 @@ export default function QLDatHangThemPage() {
   const handleClone = () => {
     if (rows.length === 0) return;
     const last = rows[rows.length - 1];
+    setUsernameInput(last.username);
     setForm(prev => ({
       ...prev,
       websiteName: last.websiteName,
@@ -330,6 +410,10 @@ export default function QLDatHangThemPage() {
     setRows(prev => [...prev, newRow]);
     insertMutation.mutate(newRow);
   };
+
+  const filteredUsernames = (usernames as { username: string }[])
+    .filter((u) => u.username.toLowerCase().includes(usernameInput.trim().toLowerCase()))
+    .slice(0, 50);
 
   return (
     <div className="space-y-4 p-4">
@@ -446,18 +530,55 @@ export default function QLDatHangThemPage() {
                 </select>
               </td>
 
-              {/* Username dropdown */}
-              <td className="px-2 py-1">
-                <select
-                  value={form.username}
-                  onChange={e => handleChange('username', e.target.value)}
+              {/* Username searchable select */}
+              <td ref={usernameDropdownRef} className="relative px-2 py-1">
+                <input
+                  ref={usernameInputRef}
+                  type="text"
+                  value={usernameInput}
+                  onChange={e => handleUsernameInputChange(e.target.value)}
+                  onKeyDown={handleUsernameKeyDown}
+                  onFocus={() => {
+                    updateUsernameDropdownPosition();
+                    setActiveUsernameIndex(0);
+                    setShowUsernameDropdown(true);
+                  }}
+                  placeholder="Nhập Username"
+                  autoComplete="off"
                   className="w-full min-w-[100px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
-                >
-                  <option value="">--Temporary user--</option>
-                  {(usernames as { username: string }[]).map(u => (
-                    <option key={u.username} value={u.username}>{u.username}</option>
-                  ))}
-                </select>
+                />
+                {showUsernameDropdown && (
+                  <div
+                    className="fixed z-50 max-h-64 overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-xs shadow-lg"
+                    style={usernameDropdownStyle}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleUsernameSelect('')}
+                      className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      --Temporary user--
+                    </button>
+                    {filteredUsernames.map((u, index) => (
+                      <button
+                        key={u.username}
+                        type="button"
+                        onClick={() => handleUsernameSelect(u.username)}
+                        onMouseEnter={() => setActiveUsernameIndex(index)}
+                        className={`block w-full px-3 py-2 text-left font-medium hover:bg-blue-50 hover:text-blue-700 ${
+                          index === activeUsernameIndex
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-900'
+                        }`}
+                      >
+                        {u.username}
+                      </button>
+                    ))}
+                    {filteredUsernames.length === 0 && (
+                      <div className="px-3 py-2 text-gray-500">Không có username phù hợp</div>
+                    )}
+                  </div>
+                )}
               </td>
 
               {/* Currency dropdown */}

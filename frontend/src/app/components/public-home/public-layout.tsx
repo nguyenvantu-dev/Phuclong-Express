@@ -46,6 +46,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       ],
     },
     { label: 'LÔ HÀNG', href: '/thong-tin-lo-hang' },
+    { label: 'TỶ GIÁ', href: '/ty-gia' },
     {
       label: 'CÔNG NỢ',
       dropdown: [
@@ -305,6 +306,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                   { label: 'Tra cứu đơn hàng', href: '/danh-sach-don-hang' },
                   { label: 'Quản lý Tracking', href: '/danh-sach-tracking' },
                   { label: 'Thông tin lô hàng', href: '/thong-tin-lo-hang' },
+                  { label: 'Tỷ giá', href: '/ty-gia' },
                   { label: 'Báo cáo công nợ', href: '/bao-cao-cong-no' },
                   { label: 'Hỏi đáp', href: '/hoi-dap' },
                 ].map((item) => (

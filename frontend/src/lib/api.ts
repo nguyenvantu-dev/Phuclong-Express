@@ -1404,6 +1404,17 @@ export const getExchangeRates = async () => {
   return response.data.data;
 };
 
+export interface TyGiaItem {
+  Name: string;
+  TyGiaVND: number;
+  CongShipVeVN: number;
+}
+
+export const getTyGia = async (): Promise<TyGiaItem[]> => {
+  const response = await apiClient.get<{ data: TyGiaItem[] }>('/ty-gia');
+  return response.data.data || [];
+};
+
 /**
  * Get countries (alias for getQuocGia)
  */

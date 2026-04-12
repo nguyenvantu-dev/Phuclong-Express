@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDebtReports,
@@ -46,6 +47,10 @@ export default function DebtReportsByPeriodPage() {
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
   });
+  const [usernameInput, setUsernameInput] = useState('');
+  const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
+  const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
+  const usernameDropdownRef = useRef<HTMLDivElement>(null);
 
   // Edit state for inline editing
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -70,6 +75,17 @@ export default function DebtReportsByPeriodPage() {
     queryKey: ['debt-report-users'],
     queryFn: getDebtReportUsers,
   });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (usernameDropdownRef.current && !usernameDropdownRef.current.contains(event.target as Node)) {
+        setShowUsernameDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch debt reports - pass same kyId for both fromKyId and toKyId
   const { data, isLoading, error, isFetching, refetch } = useQuery({
@@ -125,8 +141,53 @@ export default function DebtReportsByPeriodPage() {
 
   // Handle filter changes
   const handleFilterChange = (key: keyof DebtReportByPeriodQuery, value: string | number) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => ({ ...prev, [key]: value || undefined, page: 1 }));
     setErrorMessage('');
+  };
+
+  const handleUsernameInputChange = (value: string) => {
+    setUsernameInput(value);
+    setShowUsernameDropdown(true);
+    setActiveUsernameIndex(0);
+
+    if (!value) {
+      handleFilterChange('username', '');
+    }
+  };
+
+  const handleUsernameSelect = (value: string) => {
+    setUsernameInput(value);
+    handleFilterChange('username', value);
+    setShowUsernameDropdown(false);
+    setActiveUsernameIndex(0);
+  };
+
+  const handleUsernameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowUsernameDropdown(true);
+      if (filteredUsers.length > 0) {
+        setActiveUsernameIndex((prev) => (prev + 1) % filteredUsers.length);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      setShowUsernameDropdown(true);
+      if (filteredUsers.length > 0) {
+        setActiveUsernameIndex((prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length);
+      }
+      return;
+    }
+
+    const activeUsername = filteredUsers[activeUsernameIndex]?.UserName;
+    if (activeUsername) {
+      handleUsernameSelect(activeUsername);
+    } else if (!usernameInput.trim()) {
+      handleUsernameSelect('');
+    }
   };
 
   // Handle search button click - matching tbTim_Click in C#
@@ -236,6 +297,9 @@ export default function DebtReportsByPeriodPage() {
   };
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 0;
+  const filteredUsers = (users || [])
+    .filter((user) => user.UserName.toLowerCase().includes(usernameInput.trim().toLowerCase()))
+    .slice(0, 50);
 
   return (
     <div className="space-y-4">
@@ -251,22 +315,53 @@ export default function DebtReportsByPeriodPage() {
       <div className="rounded-lg bg-white p-4 shadow">
         <div className="grid gap-4 md:grid-cols-4">
           {/* Username - matching druser in aspx */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+          <div ref={usernameDropdownRef} className="relative">
+            <label htmlFor="debt-report-by-period-username-filter" className="mb-1 block text-sm font-medium text-gray-700">
               User Name
             </label>
-            <select
+            <input
+              id="debt-report-by-period-username-filter"
+              type="text"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-              value={filters.username || ''}
-              onChange={(e) => handleFilterChange('username', e.target.value)}
-            >
-              <option value="">-- Chọn User --</option>
-              {users?.map((user) => (
-                <option key={user.Id} value={user.UserName}>
-                  {user.UserName}
-                </option>
-              ))}
-            </select>
+              value={usernameInput}
+              onChange={(e) => handleUsernameInputChange(e.target.value)}
+              onKeyDown={handleUsernameKeyDown}
+              onFocus={() => {
+                setActiveUsernameIndex(0);
+                setShowUsernameDropdown(true);
+              }}
+              placeholder="Nhập User Name"
+              autoComplete="off"
+            />
+            {showUsernameDropdown && (
+              <div className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-sm shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => handleUsernameSelect('')}
+                  className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  -- Chọn User --
+                </button>
+                {filteredUsers.map((user, index) => (
+                  <button
+                    key={user.Id}
+                    type="button"
+                    onClick={() => handleUsernameSelect(user.UserName)}
+                    onMouseEnter={() => setActiveUsernameIndex(index)}
+                    className={`block w-full px-3 py-2 text-left font-medium hover:bg-blue-50 hover:text-blue-700 ${
+                      index === activeUsernameIndex
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-900'
+                    }`}
+                  >
+                    {user.UserName}
+                  </button>
+                ))}
+                {filteredUsers.length === 0 && (
+                  <div className="px-3 py-2 text-gray-500">Không có user phù hợp</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Kỳ - single dropdown matching ddKy in aspx */}

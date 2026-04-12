@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import flatpickr from 'flatpickr';
@@ -300,6 +301,7 @@ export default function EditOrderListPage() {
   // Refs for date inputs
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
+  const usernameDropdownRef = useRef<HTMLDivElement>(null);
 
   // Filter state - matching EditOrder.aspx filters
   // "Filter" (tbNoiDungTim) -> search, "Mã đặt hàng" (tbMaDatHang) -> ids (exact match by ID)
@@ -313,6 +315,9 @@ export default function EditOrderListPage() {
 
   // Separate state for "Mã đặt hàng" (tbMaDatHang) - exact ID match
   const [maDatHang, setMaDatHang] = useState<string>('');
+  const [usernameInput, setUsernameInput] = useState<string>('');
+  const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
+  const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
 
   // Selection state for mass operations
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -371,6 +376,17 @@ export default function EditOrderListPage() {
       fpStart.destroy();
       fpEnd.destroy();
     };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (usernameDropdownRef.current && !usernameDropdownRef.current.contains(event.target as Node)) {
+        setShowUsernameDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Fetch orders with TanStack Query
@@ -473,6 +489,52 @@ export default function EditOrderListPage() {
   const handleFilterChange = (key: keyof QueryParams, value: string) => {
     const processedValue = key === 'quocGiaId' && value ? parseInt(value, 10) : (value || undefined);
     setFilters((prev) => ({ ...prev, [key]: processedValue, page: 1 }));
+  };
+
+  const handleUsernameInputChange = (value: string) => {
+    setUsernameInput(value);
+    setShowUsernameDropdown(true);
+    setActiveUsernameIndex(0);
+
+    if (!value) {
+      handleFilterChange('username', '');
+      return;
+    }
+  };
+
+  const handleUsernameSelect = (value: string) => {
+    setUsernameInput(value);
+    handleFilterChange('username', value);
+    setShowUsernameDropdown(false);
+    setActiveUsernameIndex(0);
+  };
+
+  const handleUsernameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowUsernameDropdown(true);
+      if (filteredUsernames.length > 0) {
+        setActiveUsernameIndex((prev) => (prev + 1) % filteredUsernames.length);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      setShowUsernameDropdown(true);
+      if (filteredUsernames.length > 0) {
+        setActiveUsernameIndex((prev) => (prev - 1 + filteredUsernames.length) % filteredUsernames.length);
+      }
+      return;
+    }
+
+    const activeUsername = filteredUsernames[activeUsernameIndex]?.username;
+    if (activeUsername) {
+      handleUsernameSelect(activeUsername);
+    } else if (!usernameInput.trim()) {
+      handleUsernameSelect('');
+    }
   };
 
   // Handle page change
@@ -721,6 +783,11 @@ export default function EditOrderListPage() {
   const statuses = ['Received', 'Ordered', 'Shipped', 'Completed', 'Cancelled'];
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 0;
+  const filteredUsernames = (usernames || [])
+    .filter((u: { username: string }) =>
+      u.username.toLowerCase().includes(usernameInput.trim().toLowerCase())
+    )
+    .slice(0, 50);
 
   return (
     <div className="space-y-4">
@@ -836,20 +903,51 @@ export default function EditOrderListPage() {
           </div>
 
           {/* Username - matching ddUserName in C# */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700">Username</label>
-            <select
+          <div ref={usernameDropdownRef} className="relative">
+            <label htmlFor="order-username-filter" className="mb-1 block text-xs font-medium text-gray-700">Username</label>
+            <input
+              id="order-username-filter"
+              type="text"
               className="w-48 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-              value={filters.username || ''}
-              onChange={(e) => handleFilterChange('username', e.target.value)}
-            >
-              <option value="">--Tất cả User--</option>
-              {usernames?.map((u: any) => (
-                <option key={u.username} value={u.username}>
-                  {u.username}
-                </option>
-              ))}
-            </select>
+              value={usernameInput}
+              onChange={(e) => handleUsernameInputChange(e.target.value)}
+              onKeyDown={handleUsernameKeyDown}
+              onFocus={() => {
+                setActiveUsernameIndex(0);
+                setShowUsernameDropdown(true);
+              }}
+              placeholder="Nhập Username"
+              autoComplete="off"
+            />
+            {showUsernameDropdown && (
+              <div className="absolute z-50 mt-1 max-h-64 w-56 overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-sm shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => handleUsernameSelect('')}
+                  className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  --Tất cả User--
+                </button>
+                {filteredUsernames.map((u: { username: string }, index: number) => (
+                  <button
+                    key={u.username}
+                    type="button"
+                    onClick={() => handleUsernameSelect(u.username)}
+                    onMouseEnter={() => setActiveUsernameIndex(index)}
+                    className={`block w-full px-3 py-2 text-left font-medium hover:bg-blue-50 hover:text-blue-700 ${
+                      index === activeUsernameIndex
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-900'
+                    }`}
+                  >
+                    {u.username}
+                  </button>
+                ))}
+                {filteredUsernames.length === 0 && (
+                  <div className="px-3 py-2 text-gray-500">Không có username phù hợp</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Search Button - matching btTimKiem in C# */}

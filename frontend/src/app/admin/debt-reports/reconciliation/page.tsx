@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -25,16 +26,34 @@ import {
  * - Date defaults: first day of current month, today
  */
 
+const formatDateInput = (d: Date) => {
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const getDefaultFilters = () => {
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  return {
+    fromDate: formatDateInput(firstDayOfMonth),
+    toDate: formatDateInput(today),
+    username: '',
+    orderNumber: '',
+  };
+};
+
 export default function DebtReconciliationPage() {
   const queryClient = useQueryClient();
 
   // Filter state - matching tbTuNgay, tbDenNgay, druser, tbOrderNumber in aspx
-  const [filters, setFilters] = useState({
-    fromDate: '',
-    toDate: '',
-    username: '',
-    orderNumber: '',
-  });
+  const [filters, setFilters] = useState(getDefaultFilters);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
+  const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
+  const usernameDropdownRef = useRef<HTMLDivElement>(null);
 
   // Refs for date inputs
   const fromDateRef = useRef<HTMLInputElement>(null);
@@ -49,45 +68,25 @@ export default function DebtReconciliationPage() {
 
   // Initialize dates on mount - matching KhoiTaoNgay() in C#
   useEffect(() => {
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    // Format dd/mm/yyyy for flatpickr
-    const formatDate = (d: Date) => {
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}/${month}/${year}`;
-    };
-
-    setFilters({
-      fromDate: formatDate(firstDayOfMonth),
-      toDate: formatDate(today),
-      username: '',
-      orderNumber: '',
-    });
+    const defaultFilters = getDefaultFilters();
 
     // Initialize flatpickr
     const fpFrom = flatpickr(fromDateRef.current!, {
       dateFormat: 'd/m/Y',
-      defaultDate: formatDate(firstDayOfMonth),
+      defaultDate: defaultFilters.fromDate,
       onChange: (dates) => {
         if (dates[0]) {
-          const d = dates[0];
-          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-          setFilters(prev => ({ ...prev, fromDate: formatted }));
+          setFilters(prev => ({ ...prev, fromDate: formatDateInput(dates[0]) }));
         }
       },
     });
 
     const fpTo = flatpickr(toDateRef.current!, {
       dateFormat: 'd/m/Y',
-      defaultDate: formatDate(today),
+      defaultDate: defaultFilters.toDate,
       onChange: (dates) => {
         if (dates[0]) {
-          const d = dates[0];
-          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-          setFilters(prev => ({ ...prev, toDate: formatted }));
+          setFilters(prev => ({ ...prev, toDate: formatDateInput(dates[0]) }));
         }
       },
     });
@@ -98,11 +97,26 @@ export default function DebtReconciliationPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (usernameDropdownRef.current && !usernameDropdownRef.current.contains(event.target as Node)) {
+        setShowUsernameDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Fetch users for dropdown - matching LoadDataUser() in C#
   const { data: users } = useQuery({
     queryKey: ['debt-report-users'],
     queryFn: getDebtReportUsers,
   });
+
+  const filteredUsers = (users || [])
+    .filter((user) => user.UserName.toLowerCase().includes(usernameInput.trim().toLowerCase()))
+    .slice(0, 50);
 
   // Fetch debt reconciliation report
   const { data, isLoading, error, isFetching, refetch } = useQuery({
@@ -204,6 +218,51 @@ export default function DebtReconciliationPage() {
   ) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setErrorMessage('');
+  };
+
+  const handleUsernameInputChange = (value: string) => {
+    setUsernameInput(value);
+    setShowUsernameDropdown(true);
+    setActiveUsernameIndex(0);
+
+    if (!value) {
+      handleFilterChange('username', '');
+    }
+  };
+
+  const handleUsernameSelect = (value: string) => {
+    setUsernameInput(value);
+    handleFilterChange('username', value);
+    setShowUsernameDropdown(false);
+    setActiveUsernameIndex(0);
+  };
+
+  const handleUsernameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowUsernameDropdown(true);
+      if (filteredUsers.length > 0) {
+        setActiveUsernameIndex((prev) => (prev + 1) % filteredUsers.length);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      setShowUsernameDropdown(true);
+      if (filteredUsers.length > 0) {
+        setActiveUsernameIndex((prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length);
+      }
+      return;
+    }
+
+    const activeUsername = filteredUsers[activeUsernameIndex]?.UserName;
+    if (activeUsername) {
+      handleUsernameSelect(activeUsername);
+    } else if (!usernameInput.trim()) {
+      handleUsernameSelect('');
+    }
   };
 
   // Handle search button click - matching tbTim_Click in C#
@@ -330,22 +389,53 @@ export default function DebtReconciliationPage() {
           </div>
 
           {/* User - matching druser in aspx */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+          <div ref={usernameDropdownRef} className="relative">
+            <label htmlFor="debt-reconciliation-username-filter" className="mb-1 block text-sm font-medium text-gray-700">
               User
             </label>
-            <select
+            <input
+              id="debt-reconciliation-username-filter"
+              type="text"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-              value={filters.username}
-              onChange={(e) => handleFilterChange('username', e.target.value)}
-            >
-              <option value="">--All--</option>
-              {users?.map((user) => (
-                <option key={user.Id} value={user.UserName}>
-                  {user.UserName}
-                </option>
-              ))}
-            </select>
+              value={usernameInput}
+              onChange={(e) => handleUsernameInputChange(e.target.value)}
+              onKeyDown={handleUsernameKeyDown}
+              onFocus={() => {
+                setActiveUsernameIndex(0);
+                setShowUsernameDropdown(true);
+              }}
+              placeholder="Nhập User"
+              autoComplete="off"
+            />
+            {showUsernameDropdown && (
+              <div className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-sm shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => handleUsernameSelect('')}
+                  className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  --All--
+                </button>
+                {filteredUsers.map((user, index) => (
+                  <button
+                    key={user.Id}
+                    type="button"
+                    onClick={() => handleUsernameSelect(user.UserName)}
+                    onMouseEnter={() => setActiveUsernameIndex(index)}
+                    className={`block w-full px-3 py-2 text-left font-medium hover:bg-blue-50 hover:text-blue-700 ${
+                      index === activeUsernameIndex
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-900'
+                    }`}
+                  >
+                    {user.UserName}
+                  </button>
+                ))}
+                {filteredUsers.length === 0 && (
+                  <div className="px-3 py-2 text-gray-500">Không có user phù hợp</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Order number - matching tbOrderNumber in aspx */}
