@@ -3,10 +3,11 @@ import {
   IsOptional,
   IsNumber,
   IsDateString,
+  IsArray,
   Min,
   Max,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 /**
  * Query DTO for QLDatHang_LietKe (Order Management List)
@@ -29,6 +30,21 @@ export class QueryQLDatHangDto {
   @IsString()
   @IsOptional()
   username?: string;
+
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @IsArray()
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      return value.split(',').map((v) => v.trim()).filter(Boolean);
+    }
+    return undefined;
+  })
+  statuses?: string[];
 
   @IsString()
   @IsOptional()

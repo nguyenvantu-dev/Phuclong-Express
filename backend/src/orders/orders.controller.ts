@@ -272,8 +272,9 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   async createQuickOrders(
     @Body() createQuickOrdersDto: CreateQuickOrdersDto,
+    @Request() req: any,
   ): Promise<{ success: number; failed: number; errors: string[] }> {
-    return this.ordersService.createQuickOrders(createQuickOrdersDto);
+    return this.ordersService.createQuickOrders(createQuickOrdersDto, req.user?.username || 'system');
   }
 
   /**
@@ -347,6 +348,40 @@ export class OrdersController {
     @Body() importDto: ImportOrdersDto,
   ): Promise<{ imported: number; errors?: string[] }> {
     return this.ordersService.importOrders(file, importDto);
+  }
+
+  /**
+   * PUT /orders/tracking-number
+   * Update tracking number for LIST_ORDER (TrackingNumber.aspx)
+   * Uses orderNumber (string) as param, matching C# capNhatTrackingNumber
+   */
+  @Put('tracking-number')
+  async updateTrackingNumber(
+    @Body() body: { orderNumber: string; trackingNumber: string; ngayNhanTaiNuocNgoai: string; trackingLink: string },
+  ): Promise<{ success: boolean; message: string }> {
+    return this.ordersService.updateTrackingNumber(body.orderNumber, body.trackingNumber, body.ngayNhanTaiNuocNgoai, body.trackingLink);
+  }
+
+  /**
+   * GET /orders/totals
+   * Get totals for QLDatHang_LietKe page (Total count, Total price, Total VND)
+   */
+  @Get('totals')
+  async getTotals(@Query() query: QueryOrderDto): Promise<{ totalCount: number; totalPrice: number; totalVnd: number }> {
+    return this.ordersService.getTotals(query);
+  }
+
+  /**
+   * GET /orders/user-status-counts
+   * Get order badge counts by status for user (DanhSachDonHang.aspx)
+   * Matches: DanhSachDonHang.cs -> SP_Lay_SoLuongDonHang(@username, @HangKhoan=-1, @DaXoa=false)
+   */
+  @Get('user-status-counts')
+  async getUserStatusCounts(
+    @Query('username') username: string,
+    @Query('hangKhoan') hangKhoan?: string,
+  ): Promise<any[]> {
+    return this.ordersService.getUserStatusCounts(username, hangKhoan !== undefined ? Number(hangKhoan) : -1);
   }
 
   // ========== PARAMETERIZED ROUTES (must come last) ==========
@@ -540,18 +575,6 @@ export class OrdersController {
   }
 
   /**
-   * PUT /orders/tracking-number
-   * Update tracking number for LIST_ORDER (TrackingNumber.aspx)
-   * Uses orderNumber (string) as param, matching C# capNhatTrackingNumber
-   */
-  @Put('tracking-number')
-  async updateTrackingNumber(
-    @Body() body: { orderNumber: string; trackingNumber: string; ngayNhanTaiNuocNgoai: string; trackingLink: string },
-  ): Promise<{ success: boolean; message: string }> {
-    return this.ordersService.updateTrackingNumber(body.orderNumber, body.trackingNumber, body.ngayNhanTaiNuocNgoai, body.trackingLink);
-  }
-
-  /**
    * POST /orders/search-by-tracking
    * Search orders by order number OR tracking number (TrackingNumber.aspx)
    * Calls BLL.LayDanhSachListOrder with both parameters
@@ -561,28 +584,6 @@ export class OrdersController {
     @Body() body: { orderNumber?: string; trackingNumber?: string; page?: number; limit?: number },
   ): Promise<{ data: any[]; total: number }> {
     return this.ordersService.searchByOrderOrTracking(body.orderNumber || '', body.trackingNumber || '', body.page, body.limit);
-  }
-
-  /**
-   * GET /orders/totals
-   * Get totals for QLDatHang_LietKe page (Total count, Total price, Total VND)
-   */
-  @Get('totals')
-  async getTotals(@Query() query: QueryOrderDto): Promise<{ totalCount: number; totalPrice: number; totalVnd: number }> {
-    return this.ordersService.getTotals(query);
-  }
-
-  /**
-   * GET /orders/user-status-counts
-   * Get order badge counts by status for user (DanhSachDonHang.aspx)
-   * Matches: DanhSachDonHang.cs -> SP_Lay_SoLuongDonHang(@username, @HangKhoan=-1, @DaXoa=false)
-   */
-  @Get('user-status-counts')
-  async getUserStatusCounts(
-    @Query('username') username: string,
-    @Query('hangKhoan') hangKhoan?: string,
-  ): Promise<any[]> {
-    return this.ordersService.getUserStatusCounts(username, hangKhoan !== undefined ? Number(hangKhoan) : -1);
   }
 
   /**

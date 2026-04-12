@@ -58,7 +58,7 @@ export class BatchesService {
   async findOne(id: number): Promise<any> {
     try {
       const [result]: any[] = await this.sequelize.query(
-        `SELECT * FROM dbo.tbLoHang WHERE ID = ${id}`
+        `SELECT * FROM dbo.tbLoHang WHERE LoHangID = ${id}`
       );
 
       if (!result || result.length === 0) {
@@ -84,18 +84,18 @@ export class BatchesService {
     try {
       // First get LoHang ID by TenLoHang
       const [loHangResult]: any[] = await this.sequelize.query(
-        `SELECT ID FROM dbo.tbLoHang WHERE TenLoHang = N'${tenLoHang.replace(/'/g, "''")}' AND DaXoa = 0`
+        `SELECT LoHangID FROM dbo.tbLoHang WHERE TenLoHang = N'${tenLoHang.replace(/'/g, "''")}' AND DaXoa = 0`
       );
 
       if (!loHangResult || loHangResult.length === 0) {
         throw new NotFoundException(`Batch with TenLoHang ${tenLoHang} not found`);
       }
 
-      const loHangId = loHangResult[0].ID;
+      const loHangId = loHangResult[0].LoHangID;
 
       // Get batch details using SP_Lay_LoHangByID
       const [batchResult] = await this.sequelize.query(
-        `EXEC dbo.SP_Lay_LoHangByID @ID = ${loHangId}`
+        `EXEC dbo.SP_Lay_LoHangByID @LoHangID = ${loHangId}`
       );
       const batch = batchResult?.[0];
 
@@ -221,7 +221,7 @@ export class BatchesService {
 
     if (updates.length > 0) {
       await this.sequelize.query(`
-        UPDATE dbo.tbLoHang SET ${updates.join(', ')} WHERE ID = ${id}
+        UPDATE dbo.tbLoHang SET ${updates.join(', ')} WHERE LoHangID = ${id}
       `);
     }
 
@@ -235,7 +235,7 @@ export class BatchesService {
     await this.findOne(id); // Verify exists
 
     await this.sequelize.query(`
-      UPDATE dbo.tbLoHang SET DaXoa = 1 WHERE ID = ${id}
+      UPDATE dbo.tbLoHang SET DaXoa = 1 WHERE LoHangID = ${id}
     `);
   }
 

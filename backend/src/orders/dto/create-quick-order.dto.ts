@@ -1,4 +1,5 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, IsNumber, IsOptional, IsBoolean, Min, IsArray, ValidateNested } from 'class-validator';
 
 /**
  * DTO for creating a quick order (DatHangM - simple order)
@@ -99,5 +100,8 @@ export class CreateQuickOrderDto {
  * DTO for creating multiple quick orders at once
  */
 export class CreateQuickOrdersDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuickOrderDto)
   orders: CreateQuickOrderDto[];
 }

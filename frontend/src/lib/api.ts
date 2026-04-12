@@ -285,6 +285,16 @@ export const deleteOrder = async (id: number): Promise<void> => {
 };
 
 /**
+ * Delete an order using the same stored procedure as DanhSachDonHang.aspx.
+ */
+export const deleteOrderForUser = async (id: number, nguoiTao: string): Promise<{ success: boolean }> => {
+  const response = await apiClient.delete<{ success: boolean }>(`/orders/${id}/sp-xoa`, {
+    params: { nguoiTao },
+  });
+  return response.data;
+};
+
+/**
  * Mass delete orders (soft delete)
  *
  * @param ids - Array of order IDs to delete
@@ -1240,6 +1250,49 @@ export const createShippingRequest = async (params: {
 
 export const getOrderById = async (id: number): Promise<any> => {
   const response = await apiClient.get(`/orders/${id}`);
+  const order = response.data || {};
+
+  return {
+    ...order,
+    id: order.id ?? order.ID,
+    username: order.username ?? order.UserName,
+    linkWeb: order.linkWeb ?? order.linkweb,
+    linkHinh: order.linkHinh ?? order.linkhinh,
+    color: order.color ?? order.corlor,
+    soLuong: order.soLuong ?? order.soluong,
+    donGiaWeb: order.donGiaWeb ?? order.dongiaweb,
+    saleOff: order.saleOff ?? order.saleoff,
+    ghiChu: order.ghiChu ?? order.ghichu,
+    trangThaiOrder: order.trangThaiOrder ?? order.trangthaiOrder,
+    loaiTien: order.loaiTien ?? order.loaitien,
+    tyGia: order.tyGia ?? order.tygia,
+    websiteName: order.websiteName ?? order.WebsiteName,
+    loaiHangId: order.loaiHangId ?? order.LoaiHangID,
+    maSoHang: order.maSoHang ?? order.MaSoHang,
+    quocGiaId: order.quocGiaId ?? order.QuocGiaID,
+    hangKhoan: order.hangKhoan ?? order.HangKhoan,
+  };
+};
+
+export const updateOrderForUser = async (id: number, order: {
+  websiteName: string;
+  username: string;
+  linkWeb: string;
+  linkHinh: string;
+  color: string;
+  size: string;
+  soLuong: number;
+  donGiaWeb: number;
+  loaiTien: string;
+  ghiChu: string;
+  tyGia: number;
+  saleOff: number;
+  loaiHangId?: number | null;
+  maSoHang?: string;
+  quocGiaId?: number | null;
+  nguoiTao: string;
+}): Promise<{ success: boolean }> => {
+  const response = await apiClient.put<{ success: boolean }>(`/orders/${id}/user-update`, order);
   return response.data;
 };
 
@@ -1357,6 +1410,19 @@ export const getBatches = async (): Promise<{ tenDotHang: string }[]> => {
   return response.data;
 };
 
+export interface LoHangBatchItem {
+  LoHangID: number;
+  TenLoHang: string;
+  NgayLoHang?: string;
+}
+
+export const getLoHangBatches = async (): Promise<LoHangBatchItem[]> => {
+  const response = await apiClient.get<{ data: LoHangBatchItem[] }>('/batches', {
+    params: { pageSize: 10000 },
+  });
+  return response.data.data || [];
+};
+
 /**
  * Get batch details by TenLoHang (for public lot info page)
  * Returns batch info, ship costs, customs, and tracking list
@@ -1380,6 +1446,20 @@ export const getProductTypes = async (): Promise<{ LoaiHangID: number; TenLoaiHa
 export const getStatusCounts = async (): Promise<Record<string, number>> => {
   const response = await apiClient.get<Record<string, number>>('/orders/status-counts');
   return response.data;
+};
+
+/**
+ * Get current user's order status counts for DanhSachDonHang.
+ */
+export const getUserStatusCounts = async (username: string, hangKhoan = -1): Promise<Record<string, number>> => {
+  const response = await apiClient.get<{ trangthaiOrder: string; SL: number }[]>('/orders/user-status-counts', {
+    params: { username, hangKhoan },
+  });
+
+  return response.data.reduce<Record<string, number>>((counts, row) => {
+    counts[row.trangthaiOrder] = Number(row.SL) || 0;
+    return counts;
+  }, {});
 };
 
 /**

@@ -40,6 +40,7 @@ export default function DatHangMPage() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [defaultTyGia, setDefaultTyGia] = useState(1);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadInitialData();
@@ -92,7 +93,7 @@ export default function DatHangMPage() {
     }
   };
 
-  const updateOrder = (id: string, field: keyof OrderItem, value: any) => {
+  const updateOrder = <K extends keyof OrderItem>(id: string, field: K, value: OrderItem[K]) => {
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id !== id) return o;
@@ -108,37 +109,61 @@ export default function DatHangMPage() {
     );
   };
 
+  const isValidHttpUrl = (value: string): boolean => {
+    try {
+      const url = new URL(value.trim());
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   const validateOrders = (): boolean => {
-    let isValid = true;
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (!o.linkWeb) {
-          isValid = false;
-          return { ...o, error: 'Vui lòng nhập link hàng' };
-        }
-        if (!o.linkHinh) {
-          isValid = false;
-          return { ...o, error: 'Vui lòng nhập link hình hoặc chọn file' };
-        }
-        if (!o.soLuong || o.soLuong < 1) {
-          isValid = false;
-          return { ...o, error: 'Vui lòng nhập số lượng' };
-        }
-        if (!o.donGiaWeb && o.donGiaWeb !== 0) {
-          isValid = false;
-          return { ...o, error: 'Vui lòng nhập giá website' };
-        }
-        if (o.saleOff && isNaN(o.saleOff)) {
-          isValid = false;
-          return { ...o, error: 'Sale Off phải là kiểu số' };
-        }
-        return { ...o, error: '' };
-      })
-    );
-    return isValid;
+    let firstError = '';
+    const nextOrders = orders.map((o, index) => {
+      const linkWeb = o.linkWeb.trim();
+      const linkHinh = o.linkHinh.trim();
+      let error = '';
+
+      if (!linkWeb) {
+        error = 'Vui lòng nhập link hàng';
+      } else if (!isValidHttpUrl(linkWeb)) {
+        error = 'Link hàng phải bắt đầu bằng http:// hoặc https://';
+      } else if (!linkHinh) {
+        error = 'Vui lòng nhập link hình';
+      } else if (!isValidHttpUrl(linkHinh)) {
+        error = 'Link hình phải bắt đầu bằng http:// hoặc https://';
+      } else if (!Number.isInteger(o.soLuong) || o.soLuong < 1) {
+        error = 'Số lượng phải là số nguyên lớn hơn 0';
+      } else if (!Number.isFinite(o.donGiaWeb) || o.donGiaWeb <= 0) {
+        error = 'Giá website phải lớn hơn 0';
+      } else if (!Number.isFinite(o.saleOff) || o.saleOff < 0 || o.saleOff > 100) {
+        error = 'Sale Off phải từ 0 đến 100';
+      } else if (!Number.isFinite(o.tyGia) || o.tyGia <= 0) {
+        error = 'Tỷ giá phải lớn hơn 0';
+      } else if (!o.quocGiaId) {
+        error = 'Vui lòng chọn quốc gia';
+      }
+
+      if (error && !firstError) {
+        firstError = orders.length > 1 ? `Đơn ${index + 1}: ${error}` : error;
+      }
+
+      return { ...o, linkWeb, linkHinh, error };
+    });
+
+    setOrders(nextOrders);
+
+    if (firstError) {
+      setSubmitMessage({ type: 'error', text: firstError });
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async () => {
+    setSubmitMessage(null);
     if (!validateOrders()) {
       return;
     }
@@ -162,7 +187,10 @@ export default function DatHangMPage() {
       const result = await createQuickOrders(ordersToSubmit);
 
       if (result.success > 0) {
-        alert(`Đã thêm thành công ${result.success} đơn hàng`);
+        setSubmitMessage({
+          type: 'success',
+          text: `Đã thêm thành công ${result.success} đơn hàng${result.failed > 0 ? `, ${result.failed} đơn lỗi` : ''}`,
+        });
         setOrders([
           {
             id: generateId(),
@@ -184,10 +212,13 @@ export default function DatHangMPage() {
 
       if (result.failed > 0) {
         console.error('Failed orders:', result.errors);
+        if (result.success === 0) {
+          setSubmitMessage({ type: 'error', text: `Có ${result.failed} đơn hàng chưa thêm được` });
+        }
       }
     } catch (error) {
       console.error('Error submitting orders:', error);
-      alert('Có lỗi khi thêm đơn hàng');
+      setSubmitMessage({ type: 'error', text: 'Có lỗi khi thêm đơn hàng' });
     } finally {
       setIsLoading(false);
     }
@@ -196,6 +227,18 @@ export default function DatHangMPage() {
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
       <h1 className="text-2xl md:text-3xl font-bold mb-6 text-cyan-700">Đặt hàng</h1>
+
+      {submitMessage && (
+        <div
+          className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
+            submitMessage.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
+        >
+          {submitMessage.text}
+        </div>
+      )}
 
       <div className="space-y-4">
         {orders.map((order) => (
@@ -300,7 +343,6 @@ export default function DatHangMPage() {
                   value={order.saleOff}
                   onChange={(e) => updateOrder(order.id, 'saleOff', parseFloat(e.target.value) || 0)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
-                  defaultValue={0}
                 />
               </div>
 
@@ -348,7 +390,7 @@ export default function DatHangMPage() {
                     type="number"
                     value={order.tyGia}
                     onChange={(e) => updateOrder(order.id, 'tyGia', parseFloat(e.target.value) || 0)}
-                    className="w-24 border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                    className="w-36 border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
                     placeholder="Tỷ giá"
                   />
                 </div>

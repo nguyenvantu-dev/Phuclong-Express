@@ -2,17 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getOrdersQLDatHang, getStatusCounts } from '@/lib/api';
+import { FiPlus } from 'react-icons/fi';
+import { deleteOrderForUser, getOrdersQLDatHang, getUserStatusCounts } from '@/lib/api';
 import { Order } from '@/types/order';
+import { useAuthStore } from '@/hooks/use-auth';
+import OrderFilterBar from './components/order-filter-bar';
+import OrderListTable from './components/order-list-table';
+import OrderPagination from './components/order-pagination';
 
-const ORDER_STATUSES = ['Received', 'Ordered', 'Shipped', 'Completed', 'Cancelled'];
+const LIMIT = 20;
 
 /**
- * DanhSachDonHang Page - Public Order List
+ * DanhSachDonHang Page - User order list
  * Converted from: UF/DanhSachDonHang.aspx
- * Uses stored procedure: SP_Lay_DonHang
  */
 export default function DanhSachDonHangPage() {
+  const { user } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -20,296 +25,169 @@ export default function DanhSachDonHangPage() {
   const [search, setSearch] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Received']);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
-
-  const limit = 50;
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
+    if (!user?.username) return;
     loadOrders();
     loadStatusCounts();
-  }, [page, selectedStatuses]);
+  }, [page, selectedStatuses, user?.username]);
 
   const loadStatusCounts = async () => {
+    if (!user?.username) return;
     try {
-      const counts = await getStatusCounts();
+      const counts = await getUserStatusCounts(user.username, -1);
       setStatusCounts(counts || {});
-    } catch (error) {
-      console.error('Error loading status counts:', error);
+    } catch (err) {
+      console.error('Error loading status counts:', err);
     }
   };
 
   const loadOrders = async () => {
+    if (!user?.username) return;
     setIsLoading(true);
     try {
       const response = await getOrdersQLDatHang({
+        username: user.username,
         search,
         statuses: selectedStatuses,
         page,
-        limit,
+        limit: LIMIT,
       });
       setOrders(response.danhSachDonHang || []);
       setTotal(response.totalItem || 0);
-    } catch (error) {
-      console.error('Error loading orders:', error);
+    } catch (err) {
+      console.error('Error loading orders:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const toggleStatus = (status: string) => {
+  const handleToggleStatus = (status: string) => {
     setSelectedStatuses((prev) =>
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     );
     setPage(1);
   };
 
-  const handleSearch = () => {
+  const handleSearchSubmit = () => {
     setPage(1);
     loadOrders();
   };
 
-  const handleExportExcel = () => {
-    // Create CSV content
-    const headers = ['Mã ĐH', 'Ngày ĐH', 'Order Number', 'Link', 'Màu', 'Size', 'SL', 'Giá web', '% off', 'Ship', '% Tax', '% Công', 'Công NT', 'Tổng NT', 'Tỷ giá', 'Tổng VND', 'Status', 'VN Status', 'Ghi chú'];
+  const handleDelete = async (order: Order) => {
+    if (!user?.username) return;
+    if (order.trangThaiOrder !== 'Received' || order.hangKhoan) return;
+    if (!window.confirm('Bạn có chắc muốn xóa không?')) return;
 
-    const rows = orders.map(order => [
-      order.id,
-      order.ngayMuaHang ? new Date(order.ngayMuaHang).toLocaleDateString('vi-VN') : '',
-      order.orderNumber || '',
-      order.linkWeb || '',
-      order.color || '',
-      order.size || '',
-      order.soLuong || 0,
-      order.donGiaWeb || 0,
-      order.saleOff || 0,
-      order.shipUsa || '',
-      order.tax || 0,
-      order.cong || 0,
-      order.tienCongUsd || 0,
-      order.tongTienUsd || 0,
-      order.tyGia || 0,
-      order.tongTienVnd || 0,
-      order.trangThaiOrder || '',
-      order.ngayVeVn ? `Đợt hàng ${new Date(order.ngayVeVn).toLocaleDateString('vi-VN')}` : '',
-      order.ghiChu || ''
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-
-    // Download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `DanhSachDatHang_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    setDeletingId(order.id);
+    try {
+      const result = await deleteOrderForUser(order.id, user.username);
+      if (!result.success) {
+        window.alert('Xóa đơn hàng không thành công');
+        return;
+      }
+      await Promise.all([loadOrders(), loadStatusCounts()]);
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      window.alert('Xóa đơn hàng không thành công');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
-  const totalPages = Math.ceil(total / limit);
+  const handleExport = () => {
+    const headers = [
+      'Mã ĐH','Ngày ĐH','Order Number','Link','Màu','Size','SL',
+      'Giá web','% off','Ship','% Tax','% Công','Công NT','Tổng NT',
+      'Tỷ giá','Tổng VND','Status','VN Status','Ghi chú',
+    ];
+    const rows = orders.map((o) => [
+      o.id,
+      o.ngayMuaHang ? new Date(o.ngayMuaHang).toLocaleDateString('vi-VN') : '',
+      o.orderNumber || '', o.linkWeb || '', o.color || '', o.size || '',
+      o.soLuong, o.donGiaWeb, o.saleOff ?? 0, o.shipUsa ?? '',
+      o.tax, o.cong ?? 0, o.tienCongUsd ?? 0, o.tongTienUsd ?? 0,
+      o.tyGia ?? 0, o.tongTienVnd ?? 0, o.trangThaiOrder || '',
+      o.ngayVeVn ? `Đợt hàng ${new Date(o.ngayVeVn).toLocaleDateString('vi-VN')}` : '',
+      o.ghiChu || '',
+    ]);
+    const csv = [
+      headers.join(','),
+      ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')),
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `DanhSachDatHang_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
 
   const formatNumber = (num: number | null | undefined) => {
     if (!num && num !== 0) return '0';
     return new Intl.NumberFormat('vi-VN').format(num);
   };
 
-  return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6">
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-cyan-700">Danh sách đơn hàng</h2>
+  const totalPages = Math.ceil(total / LIMIT);
 
-      {/* Filter */}
-      <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-cyan-50 rounded-xl">
-        <input
-          type="text"
-          placeholder="Tìm kiếm..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-slate-300 rounded-lg px-3 py-2 w-full sm:w-40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
-        />
-        <div className="flex flex-wrap gap-2">
-          {ORDER_STATUSES.map((status) => (
-            <label key={status} className="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-slate-200 hover:border-cyan-300 transition-colors duration-150">
-              <input
-                type="checkbox"
-                checked={selectedStatuses.includes(status)}
-                onChange={() => toggleStatus(status)}
-                className="cursor-pointer accent-cyan-600"
-              />
-              <span className="text-sm text-slate-700">
-                {status}
-                {statusCounts[status] !== undefined && ` (${statusCounts[status]})`}
-              </span>
-            </label>
-          ))}
+  return (
+    <div className="max-w-[1400px] mx-auto px-4 py-6 md:px-6 md:py-8">
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Danh sách đơn hàng</h1>
+          <p className="text-sm text-slate-400 mt-0.5">Theo dõi và quản lý các đơn hàng của bạn</p>
         </div>
-        <button
-          onClick={handleSearch}
-          className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
+        <Link
+          href="/dat-hang"
+          className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium rounded-xl cursor-pointer transition-colors duration-200 shadow-sm"
         >
-          Xem
-        </button>
-        <button
-          onClick={handleExportExcel}
-          disabled={orders.length === 0}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Export to Excel
-        </button>
+          <FiPlus className="w-4 h-4" />
+          Đặt hàng mới
+        </Link>
       </div>
 
+      {/* Filter bar */}
+      <OrderFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        onSearchSubmit={handleSearchSubmit}
+        selectedStatuses={selectedStatuses}
+        onToggleStatus={handleToggleStatus}
+        statusCounts={statusCounts}
+        onExport={handleExport}
+        exportDisabled={orders.length === 0}
+      />
+
+      {/* Loading skeleton */}
       {isLoading ? (
-        <div className="text-center py-12">
-          <svg className="w-8 h-8 animate-spin text-cyan-600 mx-auto" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <p className="mt-2 text-slate-600">Đang tải...</p>
+        <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="h-11 bg-slate-50 border-b border-slate-200" />
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex gap-3 px-4 py-3 border-b border-slate-100 animate-pulse">
+              <div className="h-4 w-10 bg-slate-200 rounded" />
+              <div className="h-4 w-20 bg-slate-100 rounded" />
+              <div className="h-4 w-28 bg-slate-100 rounded" />
+              <div className="h-4 flex-1 bg-slate-100 rounded" />
+              <div className="h-4 w-16 bg-slate-100 rounded" />
+            </div>
+          ))}
         </div>
       ) : (
         <>
-          {/* Table */}
-          <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-cyan-100">
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Mã ĐH</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ngày ĐH</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Order Number</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Link</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Hình</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Màu</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Size</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">SL</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Giá web</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">% off</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ship</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">% Tax</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">% Công</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Công NT</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Tổng NT</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Tỷ giá</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Tổng VND</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Status</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">VN Status</th>
-                  <th className="border-b border-cyan-200 px-2 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.length === 0 ? (
-                  <tr>
-                    <td colSpan={20} className="text-center py-8 text-slate-500">
-                      Không có dữ liệu
-                    </td>
-                  </tr>
-                ) : (
-                  orders.map((order, index) => (
-                    <tr
-                      key={order.id}
-                      className={index % 2 === 0 ? 'bg-white' : 'bg-cyan-50/50'}
-                    >
-                      <td className="border-b border-cyan-100 px-2 py-2 text-cyan-600 font-medium">{order.id}</td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-slate-600">
-                        {order.ngayMuaHang
-                          ? new Date(order.ngayMuaHang).toLocaleDateString('vi-VN')
-                          : ''}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-slate-600">{order.orderNumber}</td>
-                      <td className="border-b border-cyan-100 px-2 py-2">
-                        {order.hangKhoan ? (
-                          ''
-                        ) : order.linkWeb ? (
-                          <a
-                            href={order.linkWeb}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-cyan-600 hover:text-cyan-800 cursor-pointer"
-                          >
-                            {order.linkWeb.substring(0, 30)}...
-                          </a>
-                        ) : null}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2">
-                        {order.linkHinh && (
-                          <img src={order.linkHinh} alt="hình" height="50" className="rounded-lg" />
-                        )}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-slate-600">{order.color}</td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-slate-600">{order.size}</td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right font-medium text-slate-700">
-                        {order.soLuong}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right text-slate-700">
-                        {formatNumber(order.donGiaWeb)}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right text-slate-700">
-                        {order.saleOff}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-slate-600">{order.shipUsa}</td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right text-slate-700">
-                        {order.tax}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right text-slate-700">
-                        {order.cong}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right text-slate-700">
-                        {formatNumber(order.tienCongUsd)}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right text-slate-700 font-medium">
-                        {formatNumber(order.tongTienUsd)}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right text-slate-600">
-                        {formatNumber(order.tyGia)}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-right text-cyan-700 font-bold">
-                        {formatNumber(order.tongTienVnd)}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2">
-                        {order.trangThaiOrder === 'Shipped' ? (
-                          <Link
-                            href={`/UF/ThongTinShiphang.aspx?id=${order.id}`}
-                            className="text-cyan-600 hover:text-cyan-800 cursor-pointer font-medium"
-                          >
-                            Shipped
-                          </Link>
-                        ) : (
-                          <span className="text-slate-600">{order.trangThaiOrder}</span>
-                        )}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-slate-600">
-                        {order.ngayVeVn
-                          ? `Đợt hàng ${new Date(order.ngayVeVn).toLocaleDateString('vi-VN')}`
-                          : ''}
-                      </td>
-                      <td className="border-b border-cyan-100 px-2 py-2 text-slate-500">{order.ghiChu}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-6">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-cyan-50 hover:border-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-150"
-              >
-                Previous
-              </button>
-              <span className="px-4 py-1.5 text-slate-600">
-                Trang <span className="font-medium text-cyan-700">{page}</span> / {totalPages} (Tổng: {total})
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-cyan-50 hover:border-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-150"
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <OrderListTable
+            orders={orders}
+            deletingId={deletingId}
+            onDelete={handleDelete}
+            formatNumber={formatNumber}
+          />
+          <OrderPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          />
         </>
       )}
     </div>

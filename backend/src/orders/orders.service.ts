@@ -345,8 +345,7 @@ export class OrdersService {
           @HangKhoan = :hangKhoan,
           @LoaiHangID = :loaiHangId,
           @MaSoHang = :maSoHang,
-          @QuocGiaID = :quocGiaId,
-          @NguoiTao = :nguoiTao`,
+          @QuocGiaID = :quocGiaId`,
         {
           replacements: {
             websiteName: websiteName.replace(/'/g, "''"),
@@ -366,7 +365,6 @@ export class OrdersService {
             loaiHangId: loaiHangId || null,
             maSoHang: maSoHang,
             quocGiaId: quocGiaId || null,
-            nguoiTao: nguoiTao,
           },
           type: QueryTypes.RAW,
         },
@@ -411,9 +409,15 @@ export class OrdersService {
     let successCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
+    const actorUsername = nguoiTao || '';
 
     for (const order of createQuickOrdersDto.orders) {
-      const result = await this.createQuickOrder({ ...order, nguoiTao });
+      const result = await this.createQuickOrder({
+        ...order,
+        username: order.username || actorUsername,
+        usernameSave: actorUsername || order.usernameSave,
+        nguoiTao: actorUsername,
+      });
       if (result.success) {
         successCount++;
       } else {
@@ -604,6 +608,8 @@ export class OrdersService {
     const {
       website,
       username,
+      status,
+      statuses,
       search,
       ids,
       quocGiaId,
@@ -615,6 +621,17 @@ export class OrdersService {
     } = query;
 
     try {
+      const allowedStatuses = new Set(Object.values(OrderStatus));
+      const buildStatusFilter = (values: string[]) =>
+        values.filter((value) => allowedStatuses.has(value as OrderStatus)).map((value) => `'${value}'`).join(',');
+      let trangthaiOrder = "'Received'";
+
+      if (Array.isArray(statuses)) {
+        trangthaiOrder = buildStatusFilter(statuses);
+      } else if (status) {
+        trangthaiOrder = buildStatusFilter([status]);
+      }
+
       // Gọi stored procedure SP_Lay_DonHang giống C# DBConnect.LayDanhSachDonHang()
       const results = await this.sequelize.query(
         `EXEC dbo.SP_Lay_DonHang
@@ -636,7 +653,7 @@ export class OrdersService {
           replacements: {
             website: website || '',
             username: username || '',
-            trangthaiOrder: "'Received'",
+            trangthaiOrder,
             NoiDungTim: search || '',
             MaDatHang: ids || '',
             QuocGiaID: quocGiaId && quocGiaId > 0 ? quocGiaId : -1,
@@ -2067,7 +2084,7 @@ export class OrdersService {
    */
   async getUserStatusCounts(username: string, hangKhoan: number = -1): Promise<any[]> {
     try {
-      const [results] = await this.sequelize.query(
+      const results = await this.sequelize.query(
         `EXEC SP_Lay_SoLuongDonHang
           @username = :username,
           @HangKhoan = :hangKhoan,

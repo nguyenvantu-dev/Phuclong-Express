@@ -35,6 +35,7 @@ export default function QuickOrderPage() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [defaultTyGia, setDefaultTyGia] = useState(1);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadInitialData();
@@ -133,6 +134,7 @@ export default function QuickOrderPage() {
   };
 
   const handleSubmit = async () => {
+    setSubmitMessage(null);
     if (!validateOrders()) {
       return;
     }
@@ -156,8 +158,10 @@ export default function QuickOrderPage() {
       const result = await createQuickOrders(ordersToSubmit);
 
       if (result.success > 0) {
-        alert(`Đã thêm thành công ${result.success} đơn hàng`);
-        // Clear form
+        setSubmitMessage({
+          type: 'success',
+          text: `Đã thêm thành công ${result.success} đơn hàng${result.failed > 0 ? `, ${result.failed} đơn lỗi` : ''}`,
+        });
         setOrders([
           {
             id: generateId(),
@@ -179,10 +183,13 @@ export default function QuickOrderPage() {
 
       if (result.failed > 0) {
         console.error('Failed orders:', result.errors);
+        if (result.success === 0) {
+          setSubmitMessage({ type: 'error', text: `Có ${result.failed} đơn hàng chưa thêm được` });
+        }
       }
     } catch (error) {
       console.error('Error submitting orders:', error);
-      alert('Có lỗi khi thêm đơn hàng');
+      setSubmitMessage({ type: 'error', text: 'Có lỗi khi thêm đơn hàng' });
     } finally {
       setIsLoading(false);
     }
@@ -198,6 +205,18 @@ export default function QuickOrderPage() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Đặt hàng nhanh</h1>
+
+      {submitMessage && (
+        <div
+          className={`mb-4 rounded border px-4 py-3 text-sm ${
+            submitMessage.type === 'success'
+              ? 'border-green-200 bg-green-50 text-green-700'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
+        >
+          {submitMessage.text}
+        </div>
+      )}
 
       <div className="space-y-4">
         {orders.map((order, index) => (

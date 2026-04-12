@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth-context';
-import { getOrderById, updateOrder } from '@/lib/api';
+import { getOrderById, updateOrderForUser } from '@/lib/api';
 import { getExchangeRates } from '@/lib/api';
 
 interface Order {
@@ -19,6 +19,11 @@ interface Order {
   trangThaiOrder: string;
   loaiTien: string;
   tyGia: number;
+  username: string;
+  websiteName: string;
+  loaiHangId: number | null;
+  maSoHang: string;
+  quocGiaId: number | null;
 }
 
 interface ExchangeRate {
@@ -110,7 +115,14 @@ function SuaDonHangContent() {
     setSuccess('');
 
     try {
-      await updateOrder(Number(id), {
+      if (!order || !user?.username) {
+        setError('Không tìm thấy thông tin đơn hàng');
+        return;
+      }
+
+      const result = await updateOrderForUser(Number(id), {
+        websiteName: order.websiteName || '',
+        username: order.username || '',
         linkWeb: linkHang,
         linkHinh: linkHinh,
         color: mauSac,
@@ -121,7 +133,17 @@ function SuaDonHangContent() {
         ghiChu: ghiChu,
         loaiTien: loaiTien,
         tyGia: tyGia,
+        loaiHangId: order.loaiHangId ?? null,
+        maSoHang: order.maSoHang || '',
+        quocGiaId: order.quocGiaId ?? null,
+        nguoiTao: user.username,
       });
+
+      if (!result.success) {
+        setError('Có lỗi khi cập nhật đơn hàng');
+        return;
+      }
+
       setSuccess('Cập nhật đơn hàng thành công');
       setTimeout(() => router.push('/danh-sach-don-hang'), 1500);
     } catch (err) {

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getBatches, getBatchByTenLoHang } from '@/lib/api';
+import { getLoHangBatches, getBatchByTenLoHang } from '@/lib/api';
 
 interface BatchItem {
-  tenDotHang: string;
+  LoHangID: number;
+  TenLoHang: string;
 }
 
 interface ShipFeeItem {
@@ -58,11 +59,11 @@ export default function ThongTinLoHangPage() {
 
   const loadBatches = async () => {
     try {
-      const data = await getBatches();
+      const data = await getLoHangBatches();
       setBatches(data || []);
       if (data && data.length > 0) {
-        setSelectedBatchTen(data[0].tenDotHang);
-        loadBatchInfo(data[0].tenDotHang);
+        setSelectedBatchTen(data[0].TenLoHang);
+        loadBatchInfo(data[0].TenLoHang);
       }
     } catch (error) {
       console.error('Error loading batches:', error);
@@ -122,8 +123,8 @@ export default function ThongTinLoHangPage() {
         >
           <option value="">Chọn...</option>
           {batches.map((batch) => (
-            <option key={batch.tenDotHang} value={batch.tenDotHang}>
-              {batch.tenDotHang}
+            <option key={batch.LoHangID} value={batch.TenLoHang}>
+              {batch.TenLoHang}
             </option>
           ))}
         </select>
