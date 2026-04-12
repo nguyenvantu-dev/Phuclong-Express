@@ -1118,6 +1118,16 @@ export const getShippers = async (): Promise<Shipper[]> => {
   return response.data;
 };
 
+export interface NhaVanChuyen {
+  NhaVanChuyenID: number;
+  TenNhaVanChuyen: string;
+}
+
+export const getNhaVanChuyen = async (): Promise<NhaVanChuyen[]> => {
+  const response = await apiClient.get('/tracking/dropdown/nha-van-chuyen');
+  return response.data;
+};
+
 export const getShipper = async (id: number): Promise<Shipper> => {
   const response = await apiClient.get(`/shippers/${id}`);
   return response.data;
@@ -1713,6 +1723,8 @@ export interface TrackingQueryParams {
   limit?: number;
 }
 
+export type TrackingListItem = Record<string, string | number | null | undefined>;
+
 export const getTracking = async (params: TrackingQueryParams): Promise<any[]> => {
   const response = await apiClient.get('/tracking', { params });
   return response.data.data || [];
@@ -1723,12 +1735,17 @@ export const getTracking = async (params: TrackingQueryParams): Promise<any[]> =
  * GET /tracking
  */
 export const getTrackingList = async (params: TrackingQueryParams): Promise<{
-  data: any[];
+  data: TrackingListItem[];
   total: number;
   page: number;
   limit: number;
 }> => {
   const response = await apiClient.get('/tracking', { params });
+  return response.data;
+};
+
+export const getTrackingCounts = async (username?: string): Promise<Record<string, number>> => {
+  const response = await apiClient.get('/tracking/counts', { params: { username } });
   return response.data;
 };
 

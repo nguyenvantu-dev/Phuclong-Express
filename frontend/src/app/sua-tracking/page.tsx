@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getTracking, updateTracking, getShippers, getCountries, getTrackingDetails } from '@/lib/api';
+import { Suspense, useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { getTracking, updateTracking, getNhaVanChuyen, getCountries, getTrackingDetails } from '@/lib/api';
 
 interface TrackingDetail {
   id: number;
@@ -20,12 +21,54 @@ interface TrackingDetail {
   lichSuTracking: HistoryItem[];
 }
 
+interface RawTrackingDetail {
+  id?: number;
+  TrackingID?: number;
+  trackingNumber?: string;
+  TrackingNumber?: string;
+  orderNumber?: string;
+  OrderNumber?: string;
+  username?: string;
+  UserName?: string;
+  ngayDatHang?: string;
+  NgayDatHang?: string;
+  nhaVanChuyenId?: number;
+  NhaVanChuyenID?: number;
+  quocGiaId?: number;
+  QuocGiaID?: number;
+  tinhTrang?: string;
+  TinhTrang?: string;
+  ghiChu?: string;
+  GhiChu?: string;
+  kien?: string;
+  Kien?: string;
+  mawb?: string;
+  Mawb?: string;
+  hawb?: string;
+  Hawb?: string;
+  chiTietTracking?: RawChiTietItem[];
+  lichSuTracking?: RawHistoryItem[];
+}
+
 interface ChiTietItem {
   ID: number;
   linkHinhDaiDien: string;
   soLuong: number;
   gia: number;
   ghiChu: string;
+}
+
+interface RawChiTietItem {
+  ID?: number;
+  ChiTietTrackingID?: number;
+  linkHinhDaiDien?: string;
+  LinkHinh?: string;
+  soLuong?: number;
+  SoLuong?: number;
+  gia?: number;
+  Gia?: number;
+  ghiChu?: string;
+  GhiChu?: string;
 }
 
 interface HistoryItem {
@@ -37,9 +80,24 @@ interface HistoryItem {
   ghiChu: string;
 }
 
-interface Shipper {
-  ID: number;
-  ShipperName: string;
+interface RawHistoryItem {
+  TinhTrangTrackingID?: number;
+  nguoiTao?: string;
+  NguoiTao?: string;
+  ngayChuyenTinhTrang?: string;
+  NgayChuyenTinhTrang?: string;
+  NgayTao?: string;
+  tinhTrang?: string;
+  TinhTrang?: string;
+  moTaTinhTrang?: string;
+  MoTaTinhTrang?: string;
+  ghiChu?: string;
+  GhiChu?: string;
+}
+
+interface NhaVanChuyen {
+  NhaVanChuyenID: number;
+  TenNhaVanChuyen: string;
 }
 
 interface Country {
@@ -49,14 +107,53 @@ interface Country {
 
 const TRACKING_STATUSES = ['Received', 'InTransit', 'InVN', 'VNTransit', 'Completed', 'Cancelled'];
 
+const normalizeTrackingDetail = (data: RawTrackingDetail): TrackingDetail => ({
+  id: Number(data.id || data.TrackingID || 0),
+  trackingNumber: data.trackingNumber || data.TrackingNumber || '',
+  orderNumber: data.orderNumber || data.OrderNumber || '',
+  username: data.username || data.UserName || '',
+  ngayDatHang: data.ngayDatHang || data.NgayDatHang || '',
+  nhaVanChuyenId: Number(data.nhaVanChuyenId || data.NhaVanChuyenID || 0),
+  quocGiaId: Number(data.quocGiaId || data.QuocGiaID || 0),
+  tinhTrang: data.tinhTrang || data.TinhTrang || 'Received',
+  ghiChu: data.ghiChu || data.GhiChu || '',
+  kien: data.kien || data.Kien || '',
+  mawb: data.mawb || data.Mawb || '',
+  hawb: data.hawb || data.Hawb || '',
+  chiTietTracking: (data.chiTietTracking || []).map((item) => ({
+    ID: Number(item.ID || item.ChiTietTrackingID || 0),
+    linkHinhDaiDien: item.linkHinhDaiDien || item.LinkHinh || '',
+    soLuong: Number(item.soLuong || item.SoLuong || 0),
+    gia: Number(item.gia || item.Gia || 0),
+    ghiChu: item.ghiChu || item.GhiChu || '',
+  })),
+  lichSuTracking: (data.lichSuTracking || []).map((item) => ({
+    TinhTrangTrackingID: Number(item.TinhTrangTrackingID || 0),
+    nguoiTao: item.nguoiTao || item.NguoiTao || '',
+    ngayChuyenTinhTrang: item.ngayChuyenTinhTrang || item.NgayChuyenTinhTrang || item.NgayTao || '',
+    tinhTrang: item.tinhTrang || item.TinhTrang || '',
+    moTaTinhTrang: item.moTaTinhTrang || item.MoTaTinhTrang || '',
+    ghiChu: item.ghiChu || item.GhiChu || '',
+  })),
+});
+
 /**
  * SuaTracking Page - Edit Tracking
  * Converted from: UF/SuaTracking.aspx
  * Uses backend: tracking service
  */
 export default function SuaTrackingPage() {
+  return (
+    <Suspense fallback={<div className="max-w-6xl mx-auto p-4 md:p-6">Đang tải...</div>}>
+      <SuaTrackingContent />
+    </Suspense>
+  );
+}
+
+function SuaTrackingContent() {
+  const searchParams = useSearchParams();
   const [tracking, setTracking] = useState<TrackingDetail | null>(null);
-  const [shippers, setShippers] = useState<Shipper[]>([]);
+  const [nhaVanChuyen, setNhaVanChuyen] = useState<NhaVanChuyen[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -80,11 +177,11 @@ export default function SuaTrackingPage() {
 
   const loadInitialData = async () => {
     try {
-      const [shipperList, countryList] = await Promise.all([
-        getShippers(),
+      const [nhaVanChuyenList, countryList] = await Promise.all([
+        getNhaVanChuyen(),
         getCountries(),
       ]);
-      setShippers(shipperList);
+      setNhaVanChuyen(nhaVanChuyenList);
       setCountries(countryList);
     } catch (err) {
       console.error('Error loading initial data:', err);
@@ -104,19 +201,50 @@ export default function SuaTrackingPage() {
       const trackingList = await getTracking({ search: trackingNumber, limit: 1 });
       if (trackingList && trackingList.length > 0) {
         const trackingData = trackingList[0];
+        const trackingId = Number(trackingData.id || trackingData.TrackingID);
+        if (!trackingId) {
+          setError('Không tìm thấy tracking');
+          return;
+        }
         // Get full details
-        const details = await getTrackingDetails(trackingData.id);
+        const details = normalizeTrackingDetail(await getTrackingDetails(trackingId));
         setTracking(details);
         fillForm(details);
       } else {
         setError('Không tìm thấy tracking');
       }
     } catch (err) {
+      console.error('Error searching tracking:', err);
       setError('Có lỗi khi tìm kiếm');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const loadTrackingById = useCallback(async (id: number) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const details = normalizeTrackingDetail(await getTrackingDetails(id));
+      if (details.tinhTrang !== 'Received') {
+        setError('Chỉ được sửa những tracking ở trạng thái Received');
+      }
+      setTracking(details);
+      fillForm(details);
+    } catch (err) {
+      console.error('Error loading tracking details:', err);
+      setError('Không tìm thấy tracking');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = Number(searchParams.get('id'));
+    if (id > 0) {
+      loadTrackingById(id);
+    }
+  }, [loadTrackingById, searchParams]);
 
   const fillForm = (data: TrackingDetail) => {
     setTrackingNumber(data.trackingNumber || '');
@@ -152,6 +280,7 @@ export default function SuaTrackingPage() {
       });
       setSuccess('Cập nhật thành công');
     } catch (err) {
+      console.error('Error updating tracking:', err);
       setError('Có lỗi khi cập nhật');
     } finally {
       setIsLoading(false);
@@ -224,9 +353,9 @@ export default function SuaTrackingPage() {
                   className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
                 >
                   <option value={0}>Chọn...</option>
-                  {shippers.map((s) => (
-                    <option key={s.ID} value={s.ID}>
-                      {s.ShipperName}
+                  {nhaVanChuyen.map((item) => (
+                    <option key={item.NhaVanChuyenID} value={item.NhaVanChuyenID}>
+                      {item.TenNhaVanChuyen}
                     </option>
                   ))}
                 </select>

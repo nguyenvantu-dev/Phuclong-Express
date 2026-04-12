@@ -16,10 +16,9 @@ export class ShippersService {
    */
   async getShippers(): Promise<any[]> {
     try {
-      const [results] = await this.sequelize.query(
-        `EXEC SP_Lay_DanhSach_Shipper`,
-        { type: 'SELECT' as const },
-      );
+      const [results] = await this.sequelize.query(`EXEC SP_Lay_Shipper`, {
+        type: 'SELECT' as const,
+      });
       return results || [];
     } catch (error) {
       console.error('Error in getShippers:', error.message);

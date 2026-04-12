@@ -145,14 +145,14 @@ export class TrackingService {
 
   /**
    * Get tracking counts by status
-   * Uses: SP_Lay_SoLuongTracking (same as C# dBConnect.LaySoLuongTracking(""))
+   * Uses: SP_Lay_SoLuongTracking (same as C# dBConnect.LaySoLuongTracking(UserName))
    */
-  async getCounts(): Promise<any> {
+  async getCounts(username = ''): Promise<any> {
     try {
       // SP returns rows: { TinhTrang, SL }
       const data = await this.sequelize.query(
         `EXEC dbo.SP_Lay_SoLuongTracking @UserName = :username`,
-        { replacements: { username: '' }, type: QueryTypes.SELECT }
+        { replacements: { username }, type: QueryTypes.SELECT }
       );
 
       const counts: Record<string, number> = {
@@ -401,7 +401,7 @@ export class TrackingService {
    * Soft delete tracking
    * Uses: SP_Xoa_Tracking (same as C# DBConnect.XoaTracking)
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number, actorUsername = ''): Promise<void> {
     // Verify tracking exists first
     await this.findOne(id);
 
@@ -410,6 +410,14 @@ export class TrackingService {
         `EXEC dbo.SP_Xoa_Tracking @TrackingID = :id`,
         { replacements: { id }, type: QueryTypes.RAW }
       );
+
+      await this.systemLogsService.create({
+        nguoiTao: actorUsername,
+        nguon: 'DanhSachTracking:XoaTracking',
+        hanhDong: 'Xoa',
+        doiTuong: id.toString(),
+        noiDung: `ID: ${id}`,
+      });
     } catch (error) {
       console.error('Error in remove tracking:', (error as any).message);
       throw error;

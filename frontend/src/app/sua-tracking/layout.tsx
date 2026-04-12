@@ -1,5 +1,4 @@
 import PublicLayout from '@/app/components/public-home/public-layout';
-import SuaTrackingPage from './page';
 
 /**
  * SuaTracking Public Page Layout
@@ -9,7 +8,7 @@ import SuaTrackingPage from './page';
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <PublicLayout>
-      <SuaTrackingPage />
+      {children}
     </PublicLayout>
   );
 }

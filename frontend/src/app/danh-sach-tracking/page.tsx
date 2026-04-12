@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { getTrackingList, deleteTracking } from '@/lib/api';
+import { getTrackingList, getTrackingCounts, deleteTracking, type TrackingListItem } from '@/lib/api';
+import { useAuthStore } from '@/hooks/use-auth';
 
 const TRACKING_STATUSES = ['Received', 'InTransit', 'InVN', 'VNTransit', 'Completed', 'Cancelled'];
+const LIMIT = 20;
 
 /**
  * DanhSachTracking Page - Tracking List
@@ -12,27 +14,37 @@ const TRACKING_STATUSES = ['Received', 'InTransit', 'InVN', 'VNTransit', 'Comple
  * Uses backend: tracking service
  */
 export default function DanhSachTrackingPage() {
-  const [trackings, setTrackings] = useState<any[]>([]);
+  const { user } = useAuthStore();
+  const [trackings, setTrackings] = useState<TrackingListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Received', 'InTransit', 'InVN', 'VNTransit', 'Completed']);
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [appliedStatuses, setAppliedStatuses] = useState<string[]>(['Received', 'InTransit', 'InVN', 'VNTransit', 'Completed']);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
-  const limit = 50;
+  const loadStatusCounts = useCallback(async () => {
+    if (!user?.username) return;
+    try {
+      const counts = await getTrackingCounts(user.username);
+      setStatusCounts(counts || {});
+    } catch (error) {
+      console.error('Error loading tracking counts:', error);
+    }
+  }, [user?.username]);
 
-  useEffect(() => {
-    loadTrackings();
-  }, [page, selectedStatuses]);
-
-  const loadTrackings = async () => {
+  const loadTrackings = useCallback(async () => {
+    if (!user?.username) return;
     setIsLoading(true);
     try {
       const response = await getTrackingList({
-        search,
-        statuses: selectedStatuses.join(','),
+        username: user.username,
+        search: appliedSearch,
+        statuses: appliedStatuses.join(','),
         page,
-        limit,
+        limit: LIMIT,
       });
       setTrackings(response.data || []);
       setTotal(response.total || 0);
@@ -41,23 +53,34 @@ export default function DanhSachTrackingPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [appliedSearch, appliedStatuses, page, user?.username]);
+
+  useEffect(() => {
+    loadTrackings();
+  }, [loadTrackings]);
+
+  useEffect(() => {
+    loadStatusCounts();
+  }, [loadStatusCounts]);
 
   const toggleStatus = (status: string) => {
     setSelectedStatuses((prev) =>
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     );
-    setPage(1);
   };
 
   const handleSearch = () => {
+    setAppliedSearch(search);
+    setAppliedStatuses(selectedStatuses);
+    if (page === 1) {
+      return;
+    }
     setPage(1);
-    loadTrackings();
   };
 
-  const formatDate = (dateStr: string | null) => {
+  const formatDate = (dateStr: unknown) => {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('vi-VN');
+    return new Date(String(dateStr)).toLocaleDateString('vi-VN');
   };
 
   const handleDelete = async (trackingId: number) => {
@@ -67,15 +90,69 @@ export default function DanhSachTrackingPage() {
 
     try {
       await deleteTracking(trackingId);
-      // Reload the list after delete
-      loadTrackings();
+      await Promise.all([loadTrackings(), loadStatusCounts()]);
     } catch (error) {
       console.error('Error deleting tracking:', error);
       alert('Có lỗi khi xóa tracking');
     }
   };
 
-  const totalPages = Math.ceil(total / limit);
+  const escapeHtml = (value: unknown) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+  const getField = (tracking: TrackingListItem, camelKey: string, pascalKey: string) =>
+    tracking[camelKey] ?? tracking[pascalKey] ?? '';
+
+  const handleExport = () => {
+    const headers = [
+      'Mã',
+      'Tracking Number',
+      'Order Number',
+      'Ngày ĐH',
+      'Nhà vận chuyển',
+      'Quốc gia',
+      'Lô hàng',
+      'Tình trạng',
+      'Ghi chú',
+    ];
+    const rows = trackings.map((tracking) => [
+      getField(tracking, 'id', 'TrackingID'),
+      getField(tracking, 'trackingNumber', 'TrackingNumber'),
+      getField(tracking, 'orderNumber', 'OrderNumber'),
+      formatDate(getField(tracking, 'ngayDatHang', 'NgayDatHang')),
+      getField(tracking, 'tenNhaVanChuyen', 'TenNhaVanChuyen'),
+      getField(tracking, 'tenQuocGia', 'TenQuocGia'),
+      getField(tracking, 'tenLoHang', 'TenLoHang'),
+      getField(tracking, 'tinhTrang', 'TinhTrang'),
+      getField(tracking, 'ghiChu', 'GhiChu'),
+    ]);
+    const html = `
+      <html>
+        <head><meta charset="utf-8" /></head>
+        <body>
+          <table border="1">
+            <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead>
+            <tbody>
+              ${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'DanhSachDatHang.xls';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const totalPages = Math.ceil(total / LIMIT);
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6">
@@ -100,6 +177,7 @@ export default function DanhSachTrackingPage() {
                 className="cursor-pointer accent-cyan-600"
               />
               <span className="text-sm text-slate-700">{status}</span>
+              <span className="text-sm text-slate-500">({statusCounts[status] || 0})</span>
             </label>
           ))}
         </div>
@@ -108,6 +186,12 @@ export default function DanhSachTrackingPage() {
           className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
         >
           Xem
+        </button>
+        <button
+          onClick={handleExport}
+          className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-cyan-50 hover:border-cyan-300 cursor-pointer transition-colors duration-150"
+        >
+          Export to excel
         </button>
       </div>
 
@@ -148,7 +232,7 @@ export default function DanhSachTrackingPage() {
                 ) : (
                   trackings.map((tracking, index) => (
                     <tr
-                      key={tracking.id || tracking.TrackingID}
+                      key={String(tracking.id || tracking.TrackingID)}
                       className={index % 2 === 0 ? 'bg-white' : 'bg-cyan-50/50'}
                     >
                       <td className="border-b border-cyan-100 px-2 py-2.5 text-cyan-600 font-medium">
@@ -199,7 +283,7 @@ export default function DanhSachTrackingPage() {
                           {(tracking.tinhTrang || tracking.TinhTrang) === 'Received' && (
                             <button
                               className="text-red-500 hover:text-red-700 cursor-pointer px-2 py-1 rounded hover:bg-red-50 transition-colors duration-150"
-                              onClick={() => handleDelete(tracking.id || tracking.TrackingID)}
+                              onClick={() => handleDelete(Number(tracking.id || tracking.TrackingID))}
                             >
                               Xóa
                             </button>

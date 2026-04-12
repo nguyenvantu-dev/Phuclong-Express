@@ -23,6 +23,12 @@ import { MassUpdateTrackingDto } from './dto/mass-update-tracking.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+interface AuthenticatedRequest {
+  user?: {
+    username?: string;
+  };
+}
+
 /**
  * Tracking Controller
  *
@@ -62,8 +68,8 @@ export class TrackingController {
    * Get tracking counts by status
    */
   @Get('counts')
-  async getCounts(): Promise<any> {
-    return this.trackingService.getCounts();
+  async getCounts(@Query('username') username?: string): Promise<any> {
+    return this.trackingService.getCounts(username);
   }
 
   /**
@@ -120,19 +126,27 @@ export class TrackingController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTrackingDto: UpdateTrackingDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ): Promise<any> {
-    return this.trackingService.update(id, updateTrackingDto, req.user?.username);
+    return this.trackingService.update(
+      id,
+      updateTrackingDto,
+      req.user?.username,
+    );
   }
 
   /**
    * DELETE /tracking/:id
    * Soft delete tracking
    */
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.trackingService.remove(id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<void> {
+    return this.trackingService.remove(id, req.user?.username);
   }
 
   /**
@@ -141,7 +155,9 @@ export class TrackingController {
    */
   @Post('mass-delete')
   @HttpCode(HttpStatus.OK)
-  async massDelete(@Body() body: { ids: number[]; nguoiTao?: string }): Promise<{ deleted: number }> {
+  async massDelete(
+    @Body() body: { ids: number[]; nguoiTao?: string },
+  ): Promise<{ deleted: number }> {
     return this.trackingService.massDelete(body.ids, body.nguoiTao);
   }
 
@@ -151,7 +167,9 @@ export class TrackingController {
    */
   @Post('mass-status')
   @HttpCode(HttpStatus.OK)
-  async massStatus(@Body() massUpdateDto: MassUpdateTrackingDto): Promise<{ updated: number }> {
+  async massStatus(
+    @Body() massUpdateDto: MassUpdateTrackingDto,
+  ): Promise<{ updated: number }> {
     return this.trackingService.massStatus(massUpdateDto);
   }
 
@@ -161,7 +179,9 @@ export class TrackingController {
    */
   @Post('mass-complete')
   @HttpCode(HttpStatus.OK)
-  async massComplete(@Body() body: { ids: number[]; nguoiTao?: string }): Promise<{ updated: number }> {
+  async massComplete(
+    @Body() body: { ids: number[]; nguoiTao?: string },
+  ): Promise<{ updated: number }> {
     return this.trackingService.massComplete(body.ids, body.nguoiTao);
   }
 
@@ -171,7 +191,9 @@ export class TrackingController {
    */
   @Post('mass-complete-all')
   @HttpCode(HttpStatus.OK)
-  async massCompleteAll(@Body() body: { query: QueryTrackingDto; nguoiTao?: string }): Promise<{ updated: number }> {
+  async massCompleteAll(
+    @Body() body: { query: QueryTrackingDto; nguoiTao?: string },
+  ): Promise<{ updated: number }> {
     return this.trackingService.massCompleteAll(body.query, body.nguoiTao);
   }
 
@@ -215,7 +237,7 @@ export class TrackingController {
     @Param('id', ParseIntPipe) id: number,
     @Param('historyId', ParseIntPipe) historyId: number,
     @Body() body: { ghiChu: string },
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ): Promise<any> {
     const nguoiTao = req.user?.username || 'system';
     return this.trackingService.updateHistory(historyId, body.ghiChu, nguoiTao);
@@ -231,7 +253,7 @@ export class TrackingController {
   async deleteHistory(
     @Param('id', ParseIntPipe) id: number,
     @Param('historyId', ParseIntPipe) historyId: number,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ): Promise<void> {
     const nguoiTao = req.user?.username || 'system';
     return this.trackingService.deleteHistory(historyId, nguoiTao);
@@ -244,9 +266,23 @@ export class TrackingController {
   @Post(':id/chi-tiet')
   async addChiTiet(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { linkHinh: string; soLuong: number; gia: number; ghiChu: string; nguoiTao?: string },
+    @Body()
+    body: {
+      linkHinh: string;
+      soLuong: number;
+      gia: number;
+      ghiChu: string;
+      nguoiTao?: string;
+    },
   ): Promise<any> {
-    return this.trackingService.addChiTiet(id, body.linkHinh, body.soLuong, body.gia, body.ghiChu, body.nguoiTao);
+    return this.trackingService.addChiTiet(
+      id,
+      body.linkHinh,
+      body.soLuong,
+      body.gia,
+      body.ghiChu,
+      body.nguoiTao,
+    );
   }
 
   /**
@@ -257,9 +293,24 @@ export class TrackingController {
   async updateChiTiet(
     @Param('id', ParseIntPipe) id: number,
     @Param('chiTietId', ParseIntPipe) chiTietId: number,
-    @Body() body: { linkHinh: string; soLuong: number; gia: number; ghiChu: string; nguoiTao?: string },
+    @Body()
+    body: {
+      linkHinh: string;
+      soLuong: number;
+      gia: number;
+      ghiChu: string;
+      nguoiTao?: string;
+    },
   ): Promise<any> {
-    return this.trackingService.updateChiTiet(chiTietId, body.linkHinh, body.soLuong, body.gia, body.ghiChu, id, body.nguoiTao);
+    return this.trackingService.updateChiTiet(
+      chiTietId,
+      body.linkHinh,
+      body.soLuong,
+      body.gia,
+      body.ghiChu,
+      id,
+      body.nguoiTao,
+    );
   }
 
   /**
