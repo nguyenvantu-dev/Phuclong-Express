@@ -56,7 +56,25 @@ export class PurchasedItemsController {
     @Body() createPurchasedItemDto: CreatePurchasedItemDto,
     @Request() req: any,
   ): Promise<any> {
-    return this.purchasedItemsService.create(createPurchasedItemDto, req.user?.username || 'system');
+    return this.purchasedItemsService.createFromList(createPurchasedItemDto, req.user?.username || 'system');
+  }
+
+  @Post('hang-khoan-liet-ke')
+  @UseGuards(JwtAuthGuard)
+  async createFromList(
+    @Body() createPurchasedItemDto: CreatePurchasedItemDto,
+    @Request() req: any,
+  ): Promise<any> {
+    return this.purchasedItemsService.createFromList(createPurchasedItemDto, req.user?.username || 'system');
+  }
+
+  @Post('hang-khoan-them')
+  @UseGuards(JwtAuthGuard)
+  async createFromCreatePage(
+    @Body() createPurchasedItemDto: CreatePurchasedItemDto,
+    @Request() req: any,
+  ): Promise<any> {
+    return this.purchasedItemsService.createFromCreatePage(createPurchasedItemDto, req.user?.username || 'system');
   }
 
   @Put(':id')

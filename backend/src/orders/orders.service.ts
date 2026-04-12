@@ -1278,7 +1278,7 @@ export class OrdersService {
    *
    * Converted from EditOrder_BoSungGhiChu.aspx.cs
    */
-  async updateNote(ids: number[], updateNoteDto: UpdateOrderNoteDto): Promise<any> {
+  async updateNote(ids: number[], updateNoteDto: UpdateOrderNoteDto, nguoiTao = 'system'): Promise<any> {
     // Converted from EditOrder_BoSungGhiChu.aspx.cs - btCapNhat_Click()
     // Calls stored procedure SP_CapNhat_BoSungGhiChu which handles batch note update
     // SP uses SplitString(@id, ',') to parse comma-separated IDs
@@ -1294,6 +1294,13 @@ export class OrdersService {
           type: QueryTypes.RAW,
         },
       );
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'EditOrder_BoSungGhiChu:btCapNhat_Click',
+        hanhDong: 'Chinh sua',
+        doiTuong: idsParam,
+        noiDung: `ID: ${idsParam}; BoSungGhiChu: ${updateNoteDto.boSungGhiChu || ''}`,
+      });
       // Return first updated order for response
       return this.findOne(ids[0]);
     } catch (error) {
@@ -1640,6 +1647,7 @@ export class OrdersService {
       usernamesave?: string;
       nguoiTao: string;
     },
+    actorUsername = 'system',
   ): Promise<{ success: boolean; error?: string }> {
     const {
       username,
@@ -1673,6 +1681,7 @@ export class OrdersService {
       usernamesave,
       nguoiTao,
     } = updateData;
+    const logUsername = actorUsername || nguoiTao || 'system';
 
     // Step 1: Check permission using SP_KiemTra_DuocCapNhatDonHang
     const [checkResult]: any[] = await this.sequelize.query(
@@ -1790,7 +1799,7 @@ export class OrdersService {
             adminNote: (adminNote || '').replace(/'/g, "''"),
             loaiHangId: loaiHangId || null,
             quocGiaId: quocGiaId || null,
-            nguoiTao: nguoiTao || '',
+            nguoiTao: logUsername,
           },
           type: QueryTypes.RAW,
         },
@@ -1802,7 +1811,7 @@ export class OrdersService {
 
     // Step 4: Log to SystemLogs
     await this.systemLogsService.create({
-      nguoiTao: nguoiTao || '',
+      nguoiTao: logUsername,
       nguon: 'EditOrderDetail:CapNhatDonHang',
       hanhDong: 'Chinh sua',
       doiTuong: String(id),

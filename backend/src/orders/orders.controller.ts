@@ -469,9 +469,10 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   async updateNoteBatch(
     @Body() batchDto: BatchUpdateNoteDto,
+    @Request() req: any,
   ): Promise<any> {
     console.log('[updateNoteBatch] received:', JSON.stringify(batchDto));
-    return this.ordersService.updateNote(batchDto.ids, { boSungGhiChu: batchDto.boSungGhiChu });
+    return this.ordersService.updateNote(batchDto.ids, { boSungGhiChu: batchDto.boSungGhiChu }, req.user?.username || 'system');
   }
 
   /**
@@ -482,8 +483,9 @@ export class OrdersController {
   async updateNoteSingle(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateNoteDto: UpdateOrderNoteDto,
+    @Request() req: any,
   ): Promise<Order> {
-    return this.ordersService.updateNote([id], updateNoteDto);
+    return this.ordersService.updateNote([id], updateNoteDto, req.user?.username || 'system');
   }
 
   /**
@@ -494,8 +496,9 @@ export class OrdersController {
   async updateReturnDate(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateReturnDateDto: UpdateReturnDateDto,
+    @Request() req: any,
   ): Promise<Order> {
-    return this.ordersService.updateReturnDate(id, updateReturnDateDto, updateReturnDateDto.username);
+    return this.ordersService.updateReturnDate(id, updateReturnDateDto, req.user?.username || 'system');
   }
 
   // ========== EDIT ORDER DETAIL ENDPOINTS (converted from EditOrderDetail.cs) ==========
@@ -531,8 +534,9 @@ export class OrdersController {
   async updateOrderDetail(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: any,
+    @Request() req: any,
   ): Promise<{ success: boolean; error?: string }> {
-    return this.ordersService.updateOrderDetail(id, body);
+    return this.ordersService.updateOrderDetail(id, body, req.user?.username || 'system');
   }
 
   /**

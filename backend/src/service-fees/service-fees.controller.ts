@@ -68,7 +68,7 @@ export class ServiceFeesController {
     @Body() createServiceFeeDto: CreateServiceFeeDto,
     @Request() req: any,
   ): Promise<ServiceFee> {
-    return this.serviceFeesService.create(createServiceFeeDto, req.user?.username);
+    return this.serviceFeesService.create(createServiceFeeDto, req.user?.username || 'system');
   }
 
   /**
@@ -82,7 +82,7 @@ export class ServiceFeesController {
     @Body() updateServiceFeeDto: UpdateServiceFeeDto,
     @Request() req: any,
   ): Promise<ServiceFee> {
-    return this.serviceFeesService.update(id, updateServiceFeeDto, req.user?.username);
+    return this.serviceFeesService.update(id, updateServiceFeeDto, req.user?.username || 'system');
   }
 
   /**
@@ -96,6 +96,6 @@ export class ServiceFeesController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ): Promise<void> {
-    return this.serviceFeesService.remove(id, req.user?.username);
+    return this.serviceFeesService.remove(id, req.user?.username || 'system');
   }
 }

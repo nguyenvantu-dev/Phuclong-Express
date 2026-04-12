@@ -2,10 +2,12 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import axios from 'axios';
 import { useState } from 'react';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+import {
+  completeShipmentGroup,
+  getShipmentGroupByUsernameAndTenDotHang,
+  updateShipmentGroupShip,
+} from '@/lib/api';
 
 interface ShipmentsGroup {
   ID: number;
@@ -25,10 +27,7 @@ interface ShipmentsGroup {
 }
 
 const getShipmentsGroup = async (username: string, tenDotHang: string) => {
-  const response = await axios.get<ShipmentsGroup>(
-    `${API_URL}/shipment-groups/${encodeURIComponent(username)}/${encodeURIComponent(tenDotHang)}`
-  );
-  return response.data;
+  return getShipmentGroupByUsernameAndTenDotHang(username, tenDotHang) as Promise<ShipmentsGroup>;
 };
 
 const formatDate = (date: string | null) => {
@@ -65,10 +64,7 @@ export default function ShipmentsGroupDetailPage() {
   // Update shipping mutation
   const updateShipMutation = useMutation({
     mutationFn: (data: { shipperId: number; ngayGuiHang: string; soVanDon: string; phiShipTrongNuoc: number }) =>
-      axios.put(
-        `${API_URL}/shipment-groups/${encodeURIComponent(username!)}/${encodeURIComponent(tenDotHang!)}/ship`,
-        data
-      ),
+      updateShipmentGroupShip(username!, tenDotHang!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipment-group', username, tenDotHang] });
       setShowShipForm(false);
@@ -77,10 +73,7 @@ export default function ShipmentsGroupDetailPage() {
 
   // Complete mutation
   const completeMutation = useMutation({
-    mutationFn: () =>
-      axios.put(
-        `${API_URL}/shipment-groups/${encodeURIComponent(username!)}/${encodeURIComponent(tenDotHang!)}/complete`
-      ),
+    mutationFn: () => completeShipmentGroup(username!, tenDotHang!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipment-group', username, tenDotHang] });
     },

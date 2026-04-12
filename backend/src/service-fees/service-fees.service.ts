@@ -104,8 +104,8 @@ export class ServiceFeesService {
       nguoiTao,
       nguon: 'GiaTienCong_Them:ThemGiaTienCong',
       hanhDong: 'Them moi',
-      doiTuong: serviceFee.id.toString(),
-      noiDung: `ID: ${serviceFee.id}; LoaiTien: ${createServiceFeeDto.loaiTien}; TuGia: ${createServiceFeeDto.tuGia}; DenGia: ${createServiceFeeDto.denGia}; TienCong1Mon: ${createServiceFeeDto.tienCong1Mon}`,
+      doiTuong: '',
+      noiDung: `LoaiTien: ${createServiceFeeDto.loaiTien}; TuGia: ${createServiceFeeDto.tuGia}; dDenGia: ${createServiceFeeDto.denGia}; TienCong1Mon: ${createServiceFeeDto.tienCong1Mon}; TinhTheoPhanTram: ${createServiceFeeDto.tinhTheoPhanTram || false}; KhachBuon: ${createServiceFeeDto.khachBuon || false}`,
     });
 
     return serviceFee;
@@ -123,13 +123,21 @@ export class ServiceFeesService {
   ): Promise<ServiceFee> {
     const serviceFee = await this.findOne(id);
     const updated = await serviceFee.update(updateServiceFeeDto as any);
+    const logData = {
+      loaiTien: updateServiceFeeDto.loaiTien ?? serviceFee.loaiTien,
+      tuGia: updateServiceFeeDto.tuGia ?? serviceFee.tuGia,
+      denGia: updateServiceFeeDto.denGia ?? serviceFee.denGia,
+      tienCong1Mon: updateServiceFeeDto.tienCong1Mon ?? serviceFee.tienCong1Mon,
+      tinhTheoPhanTram: updateServiceFeeDto.tinhTheoPhanTram ?? serviceFee.tinhTheoPhanTram,
+      khachBuon: updateServiceFeeDto.khachBuon ?? serviceFee.khachBuon,
+    };
 
     await this.systemLogsService.create({
       nguoiTao,
       nguon: 'GiaTienCong_Them:CapNhatGiaTienCong',
       hanhDong: 'Chinh sua',
       doiTuong: id.toString(),
-      noiDung: `ID: ${id}; LoaiTien: ${updateServiceFeeDto.loaiTien}; TuGia: ${updateServiceFeeDto.tuGia}; DenGia: ${updateServiceFeeDto.denGia}; TienCong1Mon: ${updateServiceFeeDto.tienCong1Mon}`,
+      noiDung: `ID: ${id}; LoaiTien: ${logData.loaiTien}; TuGia: ${logData.tuGia}; dDenGia: ${logData.denGia}; TienCong1Mon: ${logData.tienCong1Mon}; TinhTheoPhanTram: ${logData.tinhTheoPhanTram}; KhachBuon: ${logData.khachBuon}`,
     });
 
     return updated;

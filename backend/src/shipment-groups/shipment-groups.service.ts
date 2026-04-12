@@ -170,7 +170,7 @@ export class ShipmentGroupsService {
   /**
    * Create new shipment group
    */
-  async create(createShipmentGroupDto: CreateShipmentGroupDto): Promise<any> {
+  async create(createShipmentGroupDto: CreateShipmentGroupDto, nguoiTao = 'system'): Promise<any> {
     const { username, tenDotHang, canNang, phiShipVeVnUsd, phiShipVeVnVnd, tyGia, ngayGuiHang, soVanDon, shipperId } = createShipmentGroupDto;
 
     try {
@@ -191,49 +191,48 @@ export class ShipmentGroupsService {
   /**
    * Update shipment group
    */
-  async update(id: number, updateShipmentGroupDto: UpdateShipmentGroupDto): Promise<any> {
-    await this.findOne(id);
+  async update(id: number, updateShipmentGroupDto: UpdateShipmentGroupDto, nguoiTao = 'system'): Promise<any> {
+    const group = await this.findOne(id);
 
-    const updates: string[] = [];
+    await this.sequelize.query(
+      `EXEC SP_CapNhat_CapNhatDotHang
+        @TenDotHang = :tenDotHang,
+        @UserName = :username,
+        @CanNang = :canNang,
+        @PhiShipVeVN_USD = :phiShipVeVnUsd,
+        @TyGia = :tyGia,
+        @PhiShipVeVN_VND = :phiShipVeVnVnd,
+        @NguoiTao = :nguoiTao`,
+      {
+        replacements: {
+          tenDotHang: group.TenDotHang,
+          username: group.UserName,
+          canNang: updateShipmentGroupDto.canNang ?? group.CanNang ?? 0,
+          phiShipVeVnUsd: updateShipmentGroupDto.phiShipVeVnUsd ?? group.PhiShipVeVN_USD ?? 0,
+          tyGia: updateShipmentGroupDto.tyGia ?? group.TyGia ?? 0,
+          phiShipVeVnVnd: updateShipmentGroupDto.phiShipVeVnVnd ?? group.PhiShipVeVN_VND ?? 0,
+          nguoiTao,
+        },
+      },
+    );
 
-    if (updateShipmentGroupDto.canNang !== undefined) {
-      updates.push(`CanNang = ${updateShipmentGroupDto.canNang}`);
-    }
-    if (updateShipmentGroupDto.phiShipVeVnUsd !== undefined) {
-      updates.push(`PhiShipVeVN_USD = ${updateShipmentGroupDto.phiShipVeVnUsd}`);
-    }
-    if (updateShipmentGroupDto.phiShipVeVnVnd !== undefined) {
-      updates.push(`PhiShipVeVN_VND = ${updateShipmentGroupDto.phiShipVeVnVnd}`);
-    }
-    if (updateShipmentGroupDto.tyGia !== undefined) {
-      updates.push(`TyGia = ${updateShipmentGroupDto.tyGia}`);
-    }
-    if (updateShipmentGroupDto.ngayGuiHang !== undefined) {
-      updates.push(`NgayGuiHang = ${updateShipmentGroupDto.ngayGuiHang ? `'${updateShipmentGroupDto.ngayGuiHang}'` : 'NULL'}`);
-    }
-    if (updateShipmentGroupDto.soVanDon !== undefined) {
-      updates.push(`SoVanDon = N'${updateShipmentGroupDto.soVanDon}'`);
-    }
-    if (updateShipmentGroupDto.shipperId !== undefined) {
-      updates.push(`ShipperID = ${updateShipmentGroupDto.shipperId}`);
-    }
-    if (updateShipmentGroupDto.daYeuCauGuiHang !== undefined) {
-      updates.push(`DaYeuCauGuiHang = ${updateShipmentGroupDto.daYeuCauGuiHang ? 1 : 0}`);
-    }
+    const updated = await this.findOne(id);
 
-    if (updates.length > 0) {
-      await this.sequelize.query(`
-        UPDATE dbo.DotHang SET ${updates.join(', ')} WHERE ID = ${id}
-      `);
-    }
+    await this.logAction(
+      nguoiTao,
+      'DotHang_LietKe:CapNhatDotHang',
+      'Chinh sua',
+      group.TenDotHang,
+      `TenDotHang: ${group.TenDotHang}; UserName: ${group.UserName}; : ${updateShipmentGroupDto.canNang ?? group.CanNang ?? 0}; PhiShipVeVN_USD: ${updateShipmentGroupDto.phiShipVeVnUsd ?? group.PhiShipVeVN_USD ?? 0}; TyGia: ${updateShipmentGroupDto.tyGia ?? group.TyGia ?? 0}; PhiShipVeVN_VND: ${updateShipmentGroupDto.phiShipVeVnVnd ?? group.PhiShipVeVN_VND ?? 0}`,
+    );
 
-    return this.findOne(id);
+    return updated;
   }
 
   /**
    * Soft delete shipment group
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number, nguoiTao = 'system'): Promise<void> {
     await this.findOne(id);
 
     await this.sequelize.query(`
@@ -251,14 +250,67 @@ export class ShipmentGroupsService {
     ngayGuiHang: string,
     soVanDon: string,
     phiShipTrongNuoc: number,
+    nguoiTao = 'system',
   ): Promise<any> {
-    const group = await this.findByUsernameAndTenDotHang(username, tenDotHang);
+    await this.findByUsernameAndTenDotHang(username, tenDotHang);
 
-    await this.sequelize.query(`
-      UPDATE dbo.DotHang
-      SET ShipperID = ${shipperId}, NgayGuiHang = '${ngayGuiHang}', SoVanDon = N'${soVanDon}', PhiShipTrongNuoc = ${phiShipTrongNuoc}
-      WHERE UserName = '${username}' AND TenDotHang = N'${tenDotHang}'
-    `);
+    await this.sequelize.query(
+      `EXEC SP_CapNhat_DotHang_Ship
+        @TenDotHang = :tenDotHang,
+        @UserName = :username,
+        @ShipperID = :shipperId,
+        @NgayGuiHang = :ngayGuiHang,
+        @SoVanDon = :soVanDon,
+        @PhiShipTrongNuoc = :phiShipTrongNuoc,
+        @NguoiTao = :nguoiTao`,
+      { replacements: { tenDotHang, username, shipperId, ngayGuiHang: ngayGuiHang || null, soVanDon: soVanDon || '', phiShipTrongNuoc: phiShipTrongNuoc || 0, nguoiTao } },
+    );
+
+    await this.logAction(
+      nguoiTao,
+      'DotHang_Ship:CapNhatDotHang_Ship',
+      'Chinh sua',
+      tenDotHang,
+      `TenDotHang: ${tenDotHang}; User: ${username}; Shipper: ${shipperId}; NgayGuiHang: ${ngayGuiHang}; SoVanDon: ${soVanDon}; PhiShipTrongNuoc: ${phiShipTrongNuoc}`,
+    );
+
+    return this.findByUsernameAndTenDotHang(username, tenDotHang);
+  }
+
+  async updateShippingFromDebtReport(
+    username: string,
+    tenDotHang: string,
+    shipperId: number,
+    ngayGuiHang: string,
+    soVanDon: string,
+    phiShipTrongNuoc: number,
+    diaChiNhanHang: string,
+    datCoc: number,
+    nguoiTao = 'system',
+  ): Promise<any> {
+    await this.findByUsernameAndTenDotHang(username, tenDotHang);
+
+    await this.sequelize.query(
+      `EXEC SP_CapNhat_DotHang_Ship1
+        @TenDotHang = :tenDotHang,
+        @UserName = :username,
+        @ShipperID = :shipperId,
+        @NgayGuiHang = :ngayGuiHang,
+        @SoVanDon = :soVanDon,
+        @PhiShipTrongNuoc = :phiShipTrongNuoc,
+        @DiaChiNhanHang = :diaChiNhanHang,
+        @DatCoc = :datCoc,
+        @NguoiTao = :nguoiTao`,
+      { replacements: { tenDotHang, username, shipperId, ngayGuiHang: ngayGuiHang || null, soVanDon: soVanDon || '', phiShipTrongNuoc: phiShipTrongNuoc || 0, diaChiNhanHang: diaChiNhanHang || '', datCoc: datCoc || 0, nguoiTao } },
+    );
+
+    await this.logAction(
+      nguoiTao,
+      'DotHang_Ship1:CapNhatDotHang_Ship1',
+      'Chinh sua',
+      tenDotHang,
+      `TenDotHang: ${tenDotHang}; User: ${username}; Shipper: ${shipperId}; NgayGuiHang: ${ngayGuiHang}; SoVanDon: ${soVanDon}; PhiShipTrongNuoc: ${phiShipTrongNuoc}; DiaChiNhanHang: ${diaChiNhanHang}; DatCoc: ${datCoc}`,
+    );
 
     return this.findByUsernameAndTenDotHang(username, tenDotHang);
   }
@@ -266,15 +318,33 @@ export class ShipmentGroupsService {
   /**
    * Mark as complete
    */
-  async complete(username: string, tenDotHang: string): Promise<any> {
+  async complete(username: string, tenDotHang: string, nguoiTao = 'system'): Promise<any> {
     await this.findByUsernameAndTenDotHang(username, tenDotHang);
 
-    await this.sequelize.query(`
-      UPDATE dbo.DotHang
-      SET DaYeuCauGuiHang = 1
-      WHERE UserName = '${username}' AND TenDotHang = N'${tenDotHang}'
-    `);
+    await this.sequelize.query(
+      `EXEC SP_CapNhat_CompleteDotHang @username = :username, @TenDotHang = :tenDotHang`,
+      { replacements: { username, tenDotHang } },
+    );
+
+    await this.logAction(
+      nguoiTao,
+      'DotHangGui:CapNhatCompleteDotHang',
+      'Chinh sua',
+      '',
+      `UserName: ${username}; TenDotHang: ${tenDotHang}`,
+    );
 
     return this.findByUsernameAndTenDotHang(username, tenDotHang);
+  }
+
+  private async logAction(nguoiTao: string, nguon: string, hanhDong: string, doiTuong: string, noiDung: string): Promise<void> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_Them_SystemLogs @NguoiTao = :nguoiTao, @Nguon = :nguon, @HanhDong = :hanhDong, @DoiTuong = :doiTuong, @NoiDung = :noiDung`,
+        { replacements: { nguoiTao, nguon, hanhDong, doiTuong, noiDung } },
+      );
+    } catch (error) {
+      console.error('Error logging shipment group action:', error.message);
+    }
   }
 }

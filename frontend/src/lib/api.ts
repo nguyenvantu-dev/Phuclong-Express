@@ -1148,6 +1148,41 @@ export const getShipmentGroupByUsernameAndTenDotHang = async (username: string, 
   return response.data;
 };
 
+export interface UpdateShipmentGroupShipParams {
+  shipperId: number;
+  ngayGuiHang: string;
+  soVanDon: string;
+  phiShipTrongNuoc: number;
+}
+
+export const updateShipmentGroupShip = async (
+  username: string,
+  tenDotHang: string,
+  params: UpdateShipmentGroupShipParams,
+): Promise<any> => {
+  const response = await apiClient.put(`/shipment-groups/${username}/${tenDotHang}/ship`, params);
+  return response.data;
+};
+
+export interface UpdateShipmentGroupShipFromDebtReportParams extends UpdateShipmentGroupShipParams {
+  diaChiNhanHang: string;
+  datCoc: number;
+}
+
+export const updateShipmentGroupShipFromDebtReport = async (
+  username: string,
+  tenDotHang: string,
+  params: UpdateShipmentGroupShipFromDebtReportParams,
+): Promise<any> => {
+  const response = await apiClient.put(`/shipment-groups/${username}/${tenDotHang}/ship1`, params);
+  return response.data;
+};
+
+export const completeShipmentGroup = async (username: string, tenDotHang: string): Promise<any> => {
+  const response = await apiClient.put(`/shipment-groups/${username}/${tenDotHang}/complete`);
+  return response.data;
+};
+
 export interface BatchInfo {
   tenDotHang: string;
   username: string;

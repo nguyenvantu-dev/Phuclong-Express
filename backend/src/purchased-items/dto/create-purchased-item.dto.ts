@@ -46,4 +46,5 @@ export class CreatePurchasedItemDto {
   @IsBoolean()
   @IsOptional()
   hangKhoan?: boolean;
+
 }

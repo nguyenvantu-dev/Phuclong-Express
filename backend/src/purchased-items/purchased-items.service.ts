@@ -109,6 +109,18 @@ export class PurchasedItemsService {
    * Converted from HangKhoan_LietKe.cs / HangKhoan_Them.cs - Insert logic
    */
   async create(createPurchasedItemDto: CreatePurchasedItemDto, nguoiTao = 'system'): Promise<any> {
+    return this.createWithLogSource(createPurchasedItemDto, nguoiTao, 'HangKhoan_LietKe:ThemDatHangSimple');
+  }
+
+  async createFromList(createPurchasedItemDto: CreatePurchasedItemDto, nguoiTao = 'system'): Promise<any> {
+    return this.createWithLogSource(createPurchasedItemDto, nguoiTao, 'HangKhoan_LietKe:ThemDatHangSimple');
+  }
+
+  async createFromCreatePage(createPurchasedItemDto: CreatePurchasedItemDto, nguoiTao = 'system'): Promise<any> {
+    return this.createWithLogSource(createPurchasedItemDto, nguoiTao, 'HangKhoan_Them');
+  }
+
+  private async createWithLogSource(createPurchasedItemDto: CreatePurchasedItemDto, nguoiTao: string, nguon: string): Promise<any> {
     const [tyGiaResult]: any = await this.sequelize.query(`SELECT TOP 1 CAST(TyGia AS float) as tyGia FROM TY_GIA WHERE DaDong = 0`, { type: 'SELECT' as const });
     const tyGiaValue = tyGiaResult?.[0]?.tyGia || 23000;
 
@@ -167,7 +179,13 @@ export class PurchasedItemsService {
       ghiChu: createPurchasedItemDto.ghiChu || '',
       tyGia: tyGiaValue,
     });
-    await this.logAction(nguoiTao, 'HangKhoan_LietKe:ThemDatHangSimple', 'Them moi', '', noiDung);
+    await this.logAction(
+      nguoiTao,
+      nguon,
+      'Them moi',
+      '',
+      noiDung,
+    );
 
     return result;
   }

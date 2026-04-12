@@ -10,11 +10,14 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { ShipmentGroupsService } from './shipment-groups.service';
 import { CreateShipmentGroupDto } from './dto/create-shipment-group.dto';
 import { UpdateShipmentGroupDto } from './dto/update-shipment-group.dto';
 import { QueryShipmentGroupDto } from './dto/query-shipment-group.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * Shipment Groups Controller
@@ -92,10 +95,12 @@ export class ShipmentGroupsController {
    * Create new shipment group
    */
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(
     @Body() createShipmentGroupDto: CreateShipmentGroupDto,
+    @Request() req: any,
   ): Promise<any> {
-    return this.shipmentGroupsService.create(createShipmentGroupDto);
+    return this.shipmentGroupsService.create(createShipmentGroupDto, req.user?.username || 'system');
   }
 
   /**
@@ -103,11 +108,13 @@ export class ShipmentGroupsController {
    * Update shipment group
    */
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateShipmentGroupDto: UpdateShipmentGroupDto,
+    @Request() req: any,
   ): Promise<any> {
-    return this.shipmentGroupsService.update(id, updateShipmentGroupDto);
+    return this.shipmentGroupsService.update(id, updateShipmentGroupDto, req.user?.username || 'system');
   }
 
   /**
@@ -115,9 +122,10 @@ export class ShipmentGroupsController {
    * Soft delete shipment group
    */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.shipmentGroupsService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number, @Request() req: any): Promise<void> {
+    return this.shipmentGroupsService.remove(id, req.user?.username || 'system');
   }
 
   /**
@@ -125,6 +133,7 @@ export class ShipmentGroupsController {
    * Update shipping info for shipment group
    */
   @Put(':username/:tenDotHang/ship')
+  @UseGuards(JwtAuthGuard)
   async updateShipping(
     @Param('username') username: string,
     @Param('tenDotHang') tenDotHang: string,
@@ -134,6 +143,7 @@ export class ShipmentGroupsController {
       soVanDon: string;
       phiShipTrongNuoc: number;
     },
+    @Request() req: any,
   ): Promise<any> {
     return this.shipmentGroupsService.updateShipping(
       username,
@@ -142,6 +152,39 @@ export class ShipmentGroupsController {
       body.ngayGuiHang,
       body.soVanDon,
       body.phiShipTrongNuoc,
+      req.user?.username || 'system',
+    );
+  }
+
+  /**
+   * PUT /shipment-groups/:username/:tenDotHang/ship1
+   * Update shipping info from DotHang_Ship1 flow.
+   */
+  @Put(':username/:tenDotHang/ship1')
+  @UseGuards(JwtAuthGuard)
+  async updateShippingFromDebtReport(
+    @Param('username') username: string,
+    @Param('tenDotHang') tenDotHang: string,
+    @Body() body: {
+      shipperId: number;
+      ngayGuiHang: string;
+      soVanDon: string;
+      phiShipTrongNuoc: number;
+      diaChiNhanHang: string;
+      datCoc: number;
+    },
+    @Request() req: any,
+  ): Promise<any> {
+    return this.shipmentGroupsService.updateShippingFromDebtReport(
+      username,
+      tenDotHang,
+      body.shipperId,
+      body.ngayGuiHang,
+      body.soVanDon,
+      body.phiShipTrongNuoc,
+      body.diaChiNhanHang,
+      body.datCoc,
+      req.user?.username || 'system',
     );
   }
 
@@ -150,10 +193,12 @@ export class ShipmentGroupsController {
    * Mark shipment group as complete
    */
   @Put(':username/:tenDotHang/complete')
+  @UseGuards(JwtAuthGuard)
   async complete(
     @Param('username') username: string,
     @Param('tenDotHang') tenDotHang: string,
+    @Request() req: any,
   ): Promise<any> {
-    return this.shipmentGroupsService.complete(username, tenDotHang);
+    return this.shipmentGroupsService.complete(username, tenDotHang, req.user?.username || 'system');
   }
 }

@@ -58,7 +58,7 @@ export default function NewPurchasedItemPage() {
     setIsSubmitting(true);
 
     try {
-      await apiClient.post('/purchased-items', {
+      await apiClient.post('/purchased-items/hang-khoan-them', {
         websiteName: formData.websiteName,
         username: formData.username,
         linkWeb: formData.linkWeb,
