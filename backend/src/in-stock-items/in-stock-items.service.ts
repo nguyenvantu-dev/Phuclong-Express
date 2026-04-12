@@ -91,13 +91,23 @@ export class InStockItemsService {
    *
    * Converted from HangCoSan_Them.cs - btCapNhat_Click()
    */
-  async create(createInStockItemDto: CreateInStockItemDto): Promise<InStockItem> {
-    return this.inStockItemModel.create({
+  async create(createInStockItemDto: CreateInStockItemDto, nguoiTao = 'system'): Promise<InStockItem> {
+    const item = await this.inStockItemModel.create({
       ...createInStockItemDto,
       giaTien: createInStockItemDto.giaTien || 0,
       soSao: createInStockItemDto.soSao || 0,
       thuTu: createInStockItemDto.thuTu || 0,
     } as any);
+
+    await this.logAction(
+      nguoiTao,
+      'HangCoSan_Them:ThemHangCoSan',
+      'Them moi',
+      '',
+      `TenHinh: ${createInStockItemDto.tenHinh || ''}; TenHang: ${createInStockItemDto.tenHang}; GiaTien: ${createInStockItemDto.giaTien || 0}; MoTa: ${createInStockItemDto.moTa || ''}; SoSao: ${createInStockItemDto.soSao || 0}; ThuTu: ${createInStockItemDto.thuTu || 0}`,
+    );
+
+    return item;
   }
 
   /**
@@ -108,10 +118,20 @@ export class InStockItemsService {
   async update(
     id: number,
     updateInStockItemDto: UpdateInStockItemDto,
+    nguoiTao = 'system',
   ): Promise<InStockItem> {
     const inStockItem = await this.findOne(id);
+    const updatedItem = await inStockItem.update(updateInStockItemDto as any);
 
-    return inStockItem.update(updateInStockItemDto as any);
+    await this.logAction(
+      nguoiTao,
+      'HangCoSan_Them:CapNhatHangCoSan',
+      'Chinh sua',
+      String(id),
+      `ID: ${id}; TenHinh: ${updateInStockItemDto.tenHinh || ''}; TenHang: ${updateInStockItemDto.tenHang || ''}; GiaTien: ${updateInStockItemDto.giaTien || 0}; MoTa: ${updateInStockItemDto.moTa || ''}; SoSao: ${updateInStockItemDto.soSao || 0}; ThuTu: ${updateInStockItemDto.thuTu || 0}`,
+    );
+
+    return updatedItem;
   }
 
   /**
@@ -119,9 +139,11 @@ export class InStockItemsService {
    *
    * Converted from HangCoSan_LietKe.cs - gvHangCoSan_RowDeleting()
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number, nguoiTao = 'system'): Promise<void> {
     const inStockItem = await this.findOne(id);
     await inStockItem.destroy();
+
+    await this.logAction(nguoiTao, 'HangCoSan_LietKe:XoaHangCoSan', 'Xoa', String(id), `ID: ${id}`);
   }
 
   /**
@@ -132,5 +154,16 @@ export class InStockItemsService {
   async updateImage(id: number, tenHinh: string): Promise<InStockItem> {
     const inStockItem = await this.findOne(id);
     return inStockItem.update({ tenHinh });
+  }
+
+  private async logAction(nguoiTao: string, nguon: string, hanhDong: string, doiTuong: string, noiDung: string): Promise<void> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_Them_SystemLogs @NguoiTao = :nguoiTao, @Nguon = :nguon, @HanhDong = :hanhDong, @DoiTuong = :doiTuong, @NoiDung = :noiDung`,
+        { replacements: { nguoiTao, nguon, hanhDong, doiTuong, noiDung } },
+      );
+    } catch (error) {
+      console.error('Error logging in-stock item action:', error.message);
+    }
   }
 }

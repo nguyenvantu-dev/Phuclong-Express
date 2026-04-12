@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { CustomerLimitsService } from './customer-limits.service';
 import type { QueryCustomerLimitDto, CreateCustomerLimitDto, UpdateCustomerLimitDto } from './customer-limits.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('customer-limits')
 export class CustomerLimitsController {
@@ -18,27 +19,30 @@ export class CustomerLimitsController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(
     @Body() createDto: CreateCustomerLimitDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.customerLimitsService.create(createDto, username || 'system');
+    return this.customerLimitsService.create(createDto, req.user?.username || 'system');
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateCustomerLimitDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.customerLimitsService.update({ ...updateDto, id: Number(id) }, username || 'system');
+    return this.customerLimitsService.update({ ...updateDto, id: Number(id) }, req.user?.username || 'system');
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(
     @Param('id') id: string,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.customerLimitsService.remove(Number(id), username || 'system');
+    return this.customerLimitsService.remove(Number(id), req.user?.username || 'system');
   }
 }

@@ -116,6 +116,10 @@ export class MassCompleteDto {
   @IsString()
   @IsOptional()
   username?: string;
+
+  @IsString()
+  @IsOptional()
+  nguon?: string;
 }
 
 /**
@@ -148,4 +152,8 @@ export class MassShippedDto {
   @IsString()
   @IsOptional()
   username?: string;
+
+  @IsString()
+  @IsOptional()
+  nguon?: string;
 }

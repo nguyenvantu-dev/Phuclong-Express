@@ -152,7 +152,7 @@ export class DeliveryAddressesService {
       const id = result[0]?.ID;
 
       // Log system
-      await this.logAction(nguoiTao, 'Them moi', 'DanhMucDiaChiNhanHang:ThemDiaChiNhanHang', id, `UserName: ${createDto.username}; DiaChi: ${createDto.diaChi}`);
+      await this.logAction(nguoiTao, 'Them moi', 'DanhMucDiaChiNhanHang:ThemDiaChiNhanHang', '', `UserName: ${createDto.username}; DiaChi: ${createDto.diaChi}`);
 
       await sequelize.close();
       return { success: true, id };

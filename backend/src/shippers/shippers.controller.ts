@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards, Request } from '@nestjs/common';
 import { ShippersService } from './shippers.service';
 import { QueryShipperDto, CreateShipperDto, UpdateShipperDto } from './dto/shipper.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -36,8 +36,8 @@ export class ShippersController {
    * Matches: btCapNhat_Click() -> ThemShipper() in Shipper_Them.cs
    */
   @Post()
-  async createShipper(@Body() createDto: CreateShipperDto) {
-    return this.shippersService.createShipper(createDto, 'admin');
+  async createShipper(@Body() createDto: CreateShipperDto, @Request() req: any) {
+    return this.shippersService.createShipper(createDto, req.user?.username || 'system');
   }
 
   /**
@@ -48,8 +48,9 @@ export class ShippersController {
   async updateShipper(
     @Param('id') id: number,
     @Body() updateDto: UpdateShipperDto,
+    @Request() req: any,
   ) {
-    return this.shippersService.updateShipper(id, updateDto, 'admin');
+    return this.shippersService.updateShipper(id, updateDto, req.user?.username || 'system');
   }
 
   /**
@@ -57,7 +58,7 @@ export class ShippersController {
    * Matches: gvShipper_RowDeleting() -> XoaShipper() in Shipper_LietKe.cs
    */
   @Delete(':id')
-  async deleteShipper(@Param('id') id: number) {
-    return this.shippersService.deleteShipper(id, 'admin');
+  async deleteShipper(@Param('id') id: number, @Request() req: any) {
+    return this.shippersService.deleteShipper(id, req.user?.username || 'system');
   }
 }

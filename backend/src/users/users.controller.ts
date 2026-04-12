@@ -10,10 +10,13 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * Users Controller
@@ -47,8 +50,9 @@ export class UsersController {
    * Create new user
    */
   @Post()
-  async create(@Body() userData: Partial<User>): Promise<User> {
-    return this.usersService.create(userData);
+  @UseGuards(JwtAuthGuard)
+  async create(@Body() userData: Partial<User>, @Request() req: any): Promise<User> {
+    return this.usersService.create(userData, req.user?.username || 'system');
   }
 
   /**
@@ -77,8 +81,9 @@ export class UsersController {
    * Clear all data for a specific user
    */
   @Post('clear-data')
-  async clearUserData(@Body() body: { username: string; nguoiTao?: string }) {
-    return this.usersService.clearUserData(body.username, body.nguoiTao);
+  @UseGuards(JwtAuthGuard)
+  async clearUserData(@Body() body: { username: string }, @Request() req: any) {
+    return this.usersService.clearUserData(body.username, req.user?.username || 'system');
   }
 
   /**

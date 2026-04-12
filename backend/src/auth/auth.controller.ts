@@ -12,6 +12,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 /**
  * Auth Controller
@@ -77,9 +78,10 @@ export class AuthController {
   /**
    * POST /auth/roles - Create new role
    */
+  @UseGuards(JwtAuthGuard)
   @Post('roles')
-  async createRole(@Body() body: { roleName: string }) {
-    return this.authService.createRole(body.roleName);
+  async createRole(@Body() body: { roleName: string }, @Request() req: any) {
+    return this.authService.createRole(body.roleName, req.user?.username || 'system');
   }
 
   /**

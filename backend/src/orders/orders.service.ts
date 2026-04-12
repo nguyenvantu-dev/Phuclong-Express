@@ -823,23 +823,31 @@ export class OrdersService {
   /**
    * Soft delete order
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number, nguoiTao = 'system'): Promise<void> {
     const order = await this.findOne(id);
     await order.update({ DaXoa: true });
+
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'EditOrder:XoaDonHang',
+      hanhDong: 'Xoa',
+      doiTuong: '',
+      noiDung: `ID: ${id}`,
+    });
   }
 
   /**
    * Mass soft delete orders using stored procedure (same as EditOrder logic)
    */
-  async massDelete(massDeleteDto: MassDeleteDto): Promise<{ deleted: number }> {
-    const { ids, username, note } = massDeleteDto;
+  async massDelete(massDeleteDto: MassDeleteDto, nguoiTao = 'system'): Promise<{ deleted: number }> {
+    const { ids } = massDeleteDto;
 
     // Check kỳ đóng (giống EditOrder KiemTraDuocCapNhatCongNo)
     const ngayGhiNo = new Date().toISOString().split('T')[0];
     const [checkResult]: any[] = await this.sequelize.query(
       `DECLARE @ret int; EXEC @ret = dbo.SP_KiemTra_DuocCapNhatCongNo @NgayGhiNo = :ngayGhiNo, @UserName = :username; SELECT @ret AS DuocCapNhat`,
       {
-        replacements: { ngayGhiNo, username: username || '' },
+        replacements: { ngayGhiNo, username: nguoiTao || '' },
         type: QueryTypes.RAW,
       }
     );
@@ -855,7 +863,7 @@ export class OrdersService {
       await this.sequelize.query(
         `EXEC dbo.SP_CapNhat_MassCancel1 @id = :ids, @NguoiTao = :username`,
         {
-          replacements: { ids: ids.join(','), username: username || '' },
+        replacements: { ids: ids.join(','), username: nguoiTao || '' },
           type: QueryTypes.RAW,
         }
       );
@@ -865,15 +873,13 @@ export class OrdersService {
     }
 
     // Log the mass delete action
-    if (username) {
-      await this.systemLogsService.create({
-        nguoiTao: username,
-        nguon: 'EditOrder:MassCancel1',
-        hanhDong: 'Chinh sua',
-        doiTuong: ids.join(', '),
-        noiDung: note || '',
-      });
-    }
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'EditOrder:MassCancel1',
+      hanhDong: 'Chinh sua',
+      doiTuong: '',
+      noiDung: `ID: ${ids.join(',')}`,
+    });
 
     return { deleted: ids.length };
   }
@@ -881,7 +887,7 @@ export class OrdersService {
   /**
    * Mass complete orders using stored procedure (giống EditOrder logic)
    */
-  async massComplete(ids: string, nguoiTao?: string): Promise<{ completed: number }> {
+  async massComplete(ids: string, nguoiTao = 'system', nguon = 'EditOrder'): Promise<{ completed: number }> {
     // SP_CapNhat_MassComplete: @id (comma-separated IDs)
     try {
       await this.sequelize.query(`EXEC dbo.SP_CapNhat_MassComplete @id = :ids`, {
@@ -896,7 +902,7 @@ export class OrdersService {
     // System log (giống EditOrder)
     await this.systemLogsService.create({
       nguoiTao: nguoiTao || 'system',
-      nguon: 'EditOrder:MassComplete',
+      nguon: nguon === 'CanHang' ? 'CanHang:MassComplete' : 'EditOrder:MassComplete',
       hanhDong: 'Chinh sua',
       doiTuong: '',
       noiDung: `ID: ${ids}`,
@@ -910,7 +916,7 @@ export class OrdersService {
    * Converted from: EditOrder.cs - lbtMassReceived_Click
    * Calls: SP_CapNhat_MassReceived (@id, @NguoiTao)
    */
-  async massReceived(ids: string, nguoiTao?: string): Promise<{ received: number }> {
+  async massReceived(ids: string, nguoiTao = 'system'): Promise<{ received: number }> {
     // Check kỳ đóng trước khi thực hiện (giống code cũ)
     const [checkResult]: any[] = await this.sequelize.query(
       `DECLARE @ret int; EXEC @ret = dbo.SP_KiemTra_DuocCapNhatCongNo @NgayGhiNo = :ngayGhiNo, @UserName = :username; SELECT @ret AS DuocCapNhat`,
@@ -939,15 +945,13 @@ export class OrdersService {
     }
 
     // System log (giống EditOrder)
-    if (nguoiTao) {
-      await this.systemLogsService.create({
-        nguoiTao: nguoiTao,
-        nguon: 'EditOrder:MassReceived',
-        hanhDong: 'Chinh sua',
-        doiTuong: '',
-        noiDung: `ID: ${ids}`,
-      });
-    }
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'EditOrder:MassReceived',
+      hanhDong: 'Chinh sua',
+      doiTuong: '',
+      noiDung: `ID: ${ids}`,
+    });
 
     return { received: ids.split(',').length };
   }
@@ -958,7 +962,7 @@ export class OrdersService {
    * Calls: SP_CapNhat_MassShipped (@id)
    * Note: Không check kỳ đóng (giống code cũ)
    */
-  async massShipped(ids: string, nguoiTao?: string): Promise<{ shipped: number }> {
+  async massShipped(ids: string, nguoiTao = 'system', nguon = 'EditOrder'): Promise<{ shipped: number }> {
     // Call stored procedure SP_CapNhat_MassShipped
     try {
       await this.sequelize.query(`EXEC dbo.SP_CapNhat_MassShipped @id = :ids`, {
@@ -971,15 +975,13 @@ export class OrdersService {
     }
 
     // System log (giống EditOrder)
-    if (nguoiTao) {
-      await this.systemLogsService.create({
-        nguoiTao: nguoiTao,
-        nguon: 'EditOrder:MassShipped',
-        hanhDong: 'Chinh sua',
-        doiTuong: '',
-        noiDung: `ID: ${ids}`,
-      });
-    }
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: nguon === 'CanHang' ? 'CanHang:MassShipped' : 'EditOrder:MassShipped',
+      hanhDong: 'Chinh sua',
+      doiTuong: '',
+      noiDung: `ID: ${ids}`,
+    });
 
     return { shipped: ids.split(',').length };
   }
@@ -1477,6 +1479,54 @@ export class OrdersService {
       console.error('Error calculating shipping:', error);
       return { shippingFee: 0 };
     }
+  }
+
+  async updateCanHang(
+    id: number,
+    body: {
+      loaiHangId: number;
+      canHangSoKg: number;
+      canHangTienShipVeVn: number;
+      canHangTienShipTrongNuoc?: number;
+      canHangGhiChuShipVeVn?: string;
+    },
+    nguoiTao = 'system',
+  ): Promise<{ success: boolean }> {
+    const canHangTienShipTrongNuoc = body.canHangTienShipTrongNuoc ?? 0;
+    const canHangGhiChuShipVeVn = body.canHangGhiChuShipVeVn || '';
+
+    await this.sequelize.query(
+      `EXEC dbo.SP_CanHang
+        @ID = :id,
+        @LoaiHangID = :loaiHangId,
+        @CanHang_SoKg = :canHangSoKg,
+        @CanHang_TienShipVeVN = :canHangTienShipVeVn,
+        @CanHang_TienShipTrongNuoc = :canHangTienShipTrongNuoc,
+        @CanHang_GhiChuShipVeVN = :canHangGhiChuShipVeVn,
+        @NguoiTao = :nguoiTao`,
+      {
+        replacements: {
+          id,
+          loaiHangId: body.loaiHangId,
+          canHangSoKg: body.canHangSoKg ?? 0,
+          canHangTienShipVeVn: body.canHangTienShipVeVn ?? 0,
+          canHangTienShipTrongNuoc,
+          canHangGhiChuShipVeVn,
+          nguoiTao,
+        },
+        type: QueryTypes.RAW,
+      },
+    );
+
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'CanHang:CanHang',
+      hanhDong: 'Chinh sua',
+      doiTuong: String(id),
+      noiDung: `ID: ${id}; LoaiHang: ${body.loaiHangId}; CanHang_SoKg: ${body.canHangSoKg ?? 0}; CanHang_TienShipVeVN: ${body.canHangTienShipVeVn ?? 0}; CanHang_GhiChuShipVeVN: ${canHangGhiChuShipVeVn}`,
+    });
+
+    return { success: true };
   }
 
   /**

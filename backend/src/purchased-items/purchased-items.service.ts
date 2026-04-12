@@ -108,7 +108,7 @@ export class PurchasedItemsService {
    *
    * Converted from HangKhoan_LietKe.cs / HangKhoan_Them.cs - Insert logic
    */
-  async create(createPurchasedItemDto: CreatePurchasedItemDto): Promise<any> {
+  async create(createPurchasedItemDto: CreatePurchasedItemDto, nguoiTao = 'system'): Promise<any> {
     const [tyGiaResult]: any = await this.sequelize.query(`SELECT TOP 1 CAST(TyGia AS float) as tyGia FROM TY_GIA WHERE DaDong = 0`, { type: 'SELECT' as const });
     const tyGiaValue = tyGiaResult?.[0]?.tyGia || 23000;
 
@@ -155,6 +155,20 @@ export class PurchasedItemsService {
       },
     );
 
+    const noiDung = this.buildOrderLogContent({
+      username: createPurchasedItemDto.username,
+      linkWeb: createPurchasedItemDto.linkWeb || '',
+      linkHinh: createPurchasedItemDto.linkHinh || '',
+      color: createPurchasedItemDto.color || '',
+      size: createPurchasedItemDto.size || '',
+      soLuong: createPurchasedItemDto.soLuong || 1,
+      donGiaWeb: createPurchasedItemDto.donGiaWeb || 0,
+      loaiTien: createPurchasedItemDto.loaiTien || 'VND',
+      ghiChu: createPurchasedItemDto.ghiChu || '',
+      tyGia: tyGiaValue,
+    });
+    await this.logAction(nguoiTao, 'HangKhoan_LietKe:ThemDatHangSimple', 'Them moi', '', noiDung);
+
     return result;
   }
 
@@ -166,6 +180,7 @@ export class PurchasedItemsService {
   async update(
     id: number,
     updatePurchasedItemDto: UpdatePurchasedItemDto,
+    nguoiTao = 'system',
   ): Promise<any> {
     const item = await this.findOne(id);
 
@@ -183,6 +198,20 @@ export class PurchasedItemsService {
         @loaitien = '${updatePurchasedItemDto.loaiTien || item.loaiTien || 'VND'}',
         @ghichu = '${updatePurchasedItemDto.ghiChu || item.ghiChu || ''}'
     `);
+
+    const noiDung = this.buildOrderLogContent({
+      username: updatePurchasedItemDto.username || item.username,
+      linkWeb: updatePurchasedItemDto.linkWeb || item.linkWeb || '',
+      linkHinh: updatePurchasedItemDto.linkHinh || item.linkHinh || '',
+      color: updatePurchasedItemDto.color || item.color || '',
+      size: updatePurchasedItemDto.size || item.size || '',
+      soLuong: updatePurchasedItemDto.soLuong || item.soLuong || 1,
+      donGiaWeb: updatePurchasedItemDto.donGiaWeb || item.donGiaWeb || 0,
+      loaiTien: updatePurchasedItemDto.loaiTien || item.loaiTien || 'VND',
+      ghiChu: updatePurchasedItemDto.ghiChu || item.ghiChu || '',
+      tyGia: 1,
+    });
+    await this.logAction(nguoiTao, 'HangKhoan_LietKe', 'Chinh sua', '', `ID: ${id}; ${noiDung}`);
 
     return result;
   }
@@ -214,7 +243,7 @@ export class PurchasedItemsService {
    *
    * Converted from HangKhoan_MassUpdate.cs - btShare_Click()
    */
-  async massUpdate(massUpdateDto: MassUpdatePurchasedItemDto): Promise<{ updated: number }> {
+  async massUpdate(massUpdateDto: MassUpdatePurchasedItemDto, nguoiTao = 'system'): Promise<{ updated: number }> {
     let updated = 0;
 
     for (const item of massUpdateDto.items) {
@@ -230,7 +259,7 @@ export class PurchasedItemsService {
           donGiaWeb: item.donGiaWeb,
           ghiChu: item.ghiChu,
         };
-        await this.update(item.id, updateData);
+        await this.update(item.id, updateData, nguoiTao);
         updated++;
       } catch (error) {
         console.error(`Failed to update purchased item ${item.id}:`, error);
@@ -245,7 +274,7 @@ export class PurchasedItemsService {
    *
    * Converted from HangKhoan_MassUpdate.cs - btShare_Click()
    */
-  async shareOrders(shareOrdersDto: ShareOrdersDto): Promise<{ success: boolean }> {
+  async shareOrders(shareOrdersDto: ShareOrdersDto, nguoiTao = 'system'): Promise<{ success: boolean }> {
     const { ids, orderNumber, totalCharged, totalItem } = shareOrdersDto;
 
     try {
@@ -257,6 +286,14 @@ export class PurchasedItemsService {
           @TotalCharged = ${totalCharged},
           @TotalItem = ${totalItem}
       `);
+
+      await this.logAction(
+        nguoiTao,
+        'HangKhoan_MassUpdate:ShareOrdersHangKhoan',
+        'Chinh sua',
+        ids,
+        `ID: ${ids}; OrderNumber: ${orderNumber || ''}; TotalCharged: ${totalCharged}; TotalItem: ${totalItem}`,
+      );
 
       return { success: true };
     } catch (error) {
@@ -273,5 +310,31 @@ export class PurchasedItemsService {
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
     const random = Math.floor(1000 + Math.random() * 9000);
     return `ORD-${dateStr}-${random}`;
+  }
+
+  private buildOrderLogContent(data: {
+    username: string;
+    linkWeb: string;
+    linkHinh: string;
+    color: string;
+    size: string;
+    soLuong: number;
+    donGiaWeb: number;
+    loaiTien: string;
+    ghiChu: string;
+    tyGia: number;
+  }): string {
+    return `username: ${data.username}; linkweb: ${data.linkWeb}; linkhinh: ${data.linkHinh}; corlor: ${data.color}; size: ${data.size}; soluong: ${data.soLuong}; dongiaweb: ${data.donGiaWeb}; saleoff: 0; phuthu: 0; shipUSA: 0; tax: 0; cong: 0; loaitien: ${data.loaiTien}; ghichu: ${data.ghiChu}; tygia: ${data.tyGia}`;
+  }
+
+  private async logAction(nguoiTao: string, nguon: string, hanhDong: string, doiTuong: string, noiDung: string): Promise<void> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_Them_SystemLogs @NguoiTao = :nguoiTao, @Nguon = :nguon, @HanhDong = :hanhDong, @DoiTuong = :doiTuong, @NoiDung = :noiDung`,
+        { replacements: { nguoiTao, nguon, hanhDong, doiTuong, noiDung } },
+      );
+    } catch (error) {
+      console.error('Error logging purchased item action:', error.message);
+    }
   }
 }

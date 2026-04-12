@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards, Request } from '@nestjs/common';
 import { QnaService } from './qna.service';
 import { QueryQnaDto, AnswerQnaDto, CreateQnaDto } from './dto/qna.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,8 +33,8 @@ export class QnaController {
    */
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createQna(@Body() createDto: CreateQnaDto) {
-    return this.qnaService.createQna(createDto.cauHoi);
+  async createQna(@Body() createDto: CreateQnaDto, @Request() req: any) {
+    return this.qnaService.createQna(createDto.cauHoi, req.user?.username || 'system');
   }
 
   /**
@@ -46,11 +46,12 @@ export class QnaController {
   async answerQna(
     @Param('id') id: number,
     @Body() answerDto: AnswerQnaDto,
+    @Request() req: any,
   ) {
     return this.qnaService.answerQna(
       id,
       answerDto.traLoi,
-      'admin',
+      req.user?.username || 'system',
     );
   }
 
@@ -60,7 +61,7 @@ export class QnaController {
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async deleteQna(@Param('id') id: number) {
-    return this.qnaService.deleteQna(id, 'admin');
+  async deleteQna(@Param('id') id: number, @Request() req: any) {
+    return this.qnaService.deleteQna(id, req.user?.username || 'system');
   }
 }

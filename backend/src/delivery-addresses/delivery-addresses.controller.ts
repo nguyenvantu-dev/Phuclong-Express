@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { DeliveryAddressesService } from './delivery-addresses.service';
 import type { QueryDeliveryAddressDto, CreateDeliveryAddressDto, UpdateDeliveryAddressDto } from './delivery-addresses.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('delivery-addresses')
 export class DeliveryAddressesController {
@@ -18,27 +19,30 @@ export class DeliveryAddressesController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(
     @Body() createDto: CreateDeliveryAddressDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.deliveryAddressesService.create(createDto, username || 'system');
+    return this.deliveryAddressesService.create(createDto, req.user?.username || 'system');
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateDeliveryAddressDto,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.deliveryAddressesService.update({ ...updateDto, id: Number(id) }, username || 'system');
+    return this.deliveryAddressesService.update({ ...updateDto, id: Number(id) }, req.user?.username || 'system');
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(
     @Param('id') id: string,
-    @Headers('x-username') username: string,
+    @Request() req: any,
   ) {
-    return this.deliveryAddressesService.remove(Number(id), username || 'system');
+    return this.deliveryAddressesService.remove(Number(id), req.user?.username || 'system');
   }
 }

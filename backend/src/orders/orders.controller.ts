@@ -13,6 +13,7 @@ import {
   UseInterceptors,
   UploadedFile,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { OrdersService } from './orders.service';
@@ -115,6 +116,19 @@ export class OrdersController {
     @Body() body: { weight: number; loaiHangId: number; loaiTien: string; username: string },
   ): Promise<{ shippingFee: number }> {
     return this.ordersService.calculateShipping(body);
+  }
+
+  /**
+   * PUT /orders/:id/can-hang
+   * Update weighed order fields from CanHang.gvDonHang_RowUpdating.
+   */
+  @Put(':id/can-hang')
+  async updateCanHang(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { loaiHangId: number; canHangSoKg: number; canHangTienShipVeVn: number; canHangTienShipTrongNuoc?: number; canHangGhiChuShipVeVn?: string },
+    @Request() req: any,
+  ): Promise<{ success: boolean }> {
+    return this.ordersService.updateCanHang(id, body, req.user?.username || 'system');
   }
 
   // ========== MAIN CRUD ROUTES ==========
@@ -268,8 +282,8 @@ export class OrdersController {
    */
   @Post('mass-delete')
   @HttpCode(HttpStatus.OK)
-  async massDelete(@Body() massDeleteDto: MassDeleteDto): Promise<{ deleted: number }> {
-    return this.ordersService.massDelete(massDeleteDto);
+  async massDelete(@Body() massDeleteDto: MassDeleteDto, @Request() req: any): Promise<{ deleted: number }> {
+    return this.ordersService.massDelete(massDeleteDto, req.user?.username || 'system');
   }
 
   /**
@@ -288,9 +302,9 @@ export class OrdersController {
    */
   @Post('mass-complete')
   @HttpCode(HttpStatus.OK)
-  async massComplete(@Body() massCompleteDto: MassCompleteDto): Promise<{ completed: number }> {
+  async massComplete(@Body() massCompleteDto: MassCompleteDto, @Request() req: any): Promise<{ completed: number }> {
     const ids = massCompleteDto.ids.join(',');
-    return this.ordersService.massComplete(ids, massCompleteDto.username);
+    return this.ordersService.massComplete(ids, req.user?.username || 'system', massCompleteDto.nguon);
   }
 
   /**
@@ -302,9 +316,9 @@ export class OrdersController {
    */
   @Post('mass-received')
   @HttpCode(HttpStatus.OK)
-  async massReceived(@Body() massReceivedDto: MassReceivedDto): Promise<{ received: number }> {
+  async massReceived(@Body() massReceivedDto: MassReceivedDto, @Request() req: any): Promise<{ received: number }> {
     const ids = massReceivedDto.ids.join(',');
-    return this.ordersService.massReceived(ids, massReceivedDto.username);
+    return this.ordersService.massReceived(ids, req.user?.username || 'system');
   }
 
   /**
@@ -316,9 +330,9 @@ export class OrdersController {
    */
   @Post('mass-shipped')
   @HttpCode(HttpStatus.OK)
-  async massShipped(@Body() massShippedDto: MassShippedDto): Promise<{ shipped: number }> {
+  async massShipped(@Body() massShippedDto: MassShippedDto, @Request() req: any): Promise<{ shipped: number }> {
     const ids = massShippedDto.ids.join(',');
-    return this.ordersService.massShipped(ids, massShippedDto.username);
+    return this.ordersService.massShipped(ids, req.user?.username || 'system', massShippedDto.nguon);
   }
 
   /**
@@ -367,8 +381,8 @@ export class OrdersController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.ordersService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number, @Request() req: any): Promise<void> {
+    return this.ordersService.remove(id, req.user?.username || 'system');
   }
 
   /**

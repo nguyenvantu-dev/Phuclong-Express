@@ -83,8 +83,16 @@ export class UsersService {
   /**
    * Create new user
    */
-  async create(userData: Partial<User>): Promise<User> {
-    return this.userModel.create(userData as any);
+  async create(userData: Partial<User>, nguoiTao = 'system'): Promise<User> {
+    const user = await this.userModel.create(userData as any);
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'CreateNewUser',
+      hanhDong: 'Them moi',
+      doiTuong: '',
+      noiDung: `UserName: ${userData.UserName || ''}; HoTen: ${userData.HoTen || ''}; DiaChi: ${userData.DiaChi || ''}; TinhThanh: ${userData.TinhThanh || ''}; PhoneNumber: ${userData.PhoneNumber || ''}; Email: ${userData.Email || ''}; SoTaiKhoan: ${userData.SoTaiKhoan || ''}; HinhThucNhanHang: ${userData.HinhThucNhanHang || ''}; KhachBuon: ${userData.KhachBuon || false}; LinkTaiKhoanMang: ${userData.LinkTaiKhoanMang || ''}; VungMien: ${userData.VungMien || ''}`,
+    });
+    return user;
   }
 
   /**
@@ -114,7 +122,7 @@ export class UsersService {
       );
 
       await this.systemLogsService.create({
-        nguoiTao: nguoiTao || '',
+        nguoiTao: nguoiTao || 'system',
         nguon: 'ClearDuLieuUser:ClearDuLieuTheoUser',
         hanhDong: 'Xoa',
         doiTuong: '',

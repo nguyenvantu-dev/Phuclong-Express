@@ -10,12 +10,15 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { InStockItemsService } from './in-stock-items.service';
 import { InStockItem } from './entities/in-stock-item.entity';
 import { CreateInStockItemDto } from './dto/create-in-stock-item.dto';
 import { UpdateInStockItemDto } from './dto/update-in-stock-item.dto';
 import { QueryInStockItemDto } from './dto/query-in-stock-item.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * In-Stock Items Controller
@@ -55,31 +58,37 @@ export class InStockItemsController {
    * POST /in-stock-items
    */
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(
     @Body() createInStockItemDto: CreateInStockItemDto,
+    @Request() req: any,
   ): Promise<InStockItem> {
-    return this.inStockItemsService.create(createInStockItemDto);
+    return this.inStockItemsService.create(createInStockItemDto, req.user?.username || 'system');
   }
 
   /**
    * PUT /in-stock-items/:id
    */
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateInStockItemDto: UpdateInStockItemDto,
+    @Request() req: any,
   ): Promise<InStockItem> {
-    return this.inStockItemsService.update(id, updateInStockItemDto);
+    return this.inStockItemsService.update(id, updateInStockItemDto, req.user?.username || 'system');
   }
 
   /**
    * DELETE /in-stock-items/:id
    */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
   ): Promise<void> {
-    return this.inStockItemsService.remove(id);
+    return this.inStockItemsService.remove(id, req.user?.username || 'system');
   }
 }

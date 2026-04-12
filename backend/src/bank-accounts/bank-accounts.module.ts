@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { BankAccountsController } from './bank-accounts.controller';
 import { BankAccountsService } from './bank-accounts.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [],
+  imports: [AuthModule],
   controllers: [BankAccountsController],
   providers: [BankAccountsService],
   exports: [BankAccountsService],

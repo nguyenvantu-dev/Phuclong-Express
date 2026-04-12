@@ -12,6 +12,7 @@ import { User, UserModel } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { SystemLogsService } from '../system-logs/system-logs.service';
 
 /**
  * Auth Service
@@ -26,6 +27,7 @@ export class AuthService {
   constructor(
     @Inject('SEQUELIZE') private sequelize: Sequelize,
     private jwtService: JwtService,
+    private readonly systemLogsService: SystemLogsService,
   ) {
     if (!sequelize.models.User) {
       UserModel(sequelize);
@@ -251,7 +253,7 @@ export class AuthService {
   /**
    * Create new role
    */
-  async createRole(roleName: string): Promise<{ success: boolean; message?: string }> {
+  async createRole(roleName: string, nguoiTao = 'system'): Promise<{ success: boolean; message?: string }> {
     try {
       // Check if role exists
       const [existing]: any[] = await this.sequelize.query(`
@@ -265,6 +267,14 @@ export class AuthService {
       await this.sequelize.query(`
         INSERT INTO dbo.AspNetRoles (Id, Name) VALUES (NEWID(), '${roleName}')
       `);
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'CreateNewRole',
+        hanhDong: 'Them moi',
+        doiTuong: '',
+        noiDung: `RoleName: ${roleName}`,
+      });
 
       return { success: true };
     } catch (error: any) {

@@ -10,11 +10,14 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { PurchasedItemsService } from './purchased-items.service';
 import { CreatePurchasedItemDto } from './dto/create-purchased-item.dto';
 import { UpdatePurchasedItemDto } from './dto/update-purchased-item.dto';
 import { QueryPurchasedItemDto, MassUpdatePurchasedItemDto, ShareOrdersDto } from './dto/query-purchased-item.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * Purchased Items Controller
@@ -48,18 +51,22 @@ export class PurchasedItemsController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(
     @Body() createPurchasedItemDto: CreatePurchasedItemDto,
+    @Request() req: any,
   ): Promise<any> {
-    return this.purchasedItemsService.create(createPurchasedItemDto);
+    return this.purchasedItemsService.create(createPurchasedItemDto, req.user?.username || 'system');
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updatePurchasedItemDto: UpdatePurchasedItemDto,
+    @Request() req: any,
   ): Promise<any> {
-    return this.purchasedItemsService.update(id, updatePurchasedItemDto);
+    return this.purchasedItemsService.update(id, updatePurchasedItemDto, req.user?.username || 'system');
   }
 
   @Delete(':id')
@@ -79,18 +86,22 @@ export class PurchasedItemsController {
   }
 
   @Post('mass-update')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async massUpdate(
     @Body() massUpdateDto: MassUpdatePurchasedItemDto,
+    @Request() req: any,
   ): Promise<{ updated: number }> {
-    return this.purchasedItemsService.massUpdate(massUpdateDto);
+    return this.purchasedItemsService.massUpdate(massUpdateDto, req.user?.username || 'system');
   }
 
   @Post('share')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async share(
     @Body() shareOrdersDto: ShareOrdersDto,
+    @Request() req: any,
   ): Promise<{ success: boolean }> {
-    return this.purchasedItemsService.shareOrders(shareOrdersDto);
+    return this.purchasedItemsService.shareOrders(shareOrdersDto, req.user?.username || 'system');
   }
 }
