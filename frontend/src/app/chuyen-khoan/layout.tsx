@@ -1,5 +1,4 @@
 import PublicLayout from '@/app/components/public-home/public-layout';
-import ChuyenKhoanPage from './page';
 
 /**
  * ChuyenKhoan Public Page Layout
@@ -9,7 +8,7 @@ import ChuyenKhoanPage from './page';
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <PublicLayout>
-      <ChuyenKhoanPage />
+      {children}
     </PublicLayout>
   );
 }

@@ -1046,6 +1046,9 @@ export interface CreateDebtParams {
   ghiChu?: string;
   loHangId?: number;
   loaiPhatSinh?: number;
+  bankAccount?: string;
+  status?: number;
+  allowEmptyNoiDung?: boolean;
 }
 
 export const createDebt = async (data: CreateDebtParams): Promise<{ success: boolean; message?: string }> => {
@@ -1090,6 +1093,11 @@ export interface BankAccount {
 
 export const getBankAccounts = async (): Promise<BankAccount[]> => {
   const response = await apiClient.get('/debt-reports/management/bank-accounts');
+  return response.data;
+};
+
+export const getChuyenKhoanPendingList = async (username: string): Promise<DebtManagementItem[]> => {
+  const response = await apiClient.get('/debt-reports/user/chuyen-khoan', { params: { username } });
   return response.data;
 };
 
@@ -1778,27 +1786,69 @@ export const getTrackingDetails = async (id: number): Promise<any> => {
   return response.data;
 };
 
+export interface TrackingSaveData {
+  username?: string;
+  trackingNumber?: string;
+  orderNumber?: string;
+  ngayDatHang?: string;
+  nhaVanChuyenId?: number;
+  quocGiaId?: number;
+  tinhTrang?: string;
+  ghiChu?: string;
+  kien?: string;
+  mawb?: string;
+  hawb?: string;
+  nguoiTao?: string;
+}
+
+/**
+ * Create tracking
+ * POST /tracking
+ */
+export const createTracking = async (data: TrackingSaveData): Promise<any> => {
+  const response = await apiClient.post('/tracking', data);
+  return response.data;
+};
+
 /**
  * Update tracking
  * PUT /tracking/:id
  */
-export const updateTracking = async (
-  id: number,
-  data: {
-    trackingNumber?: string;
-    orderNumber?: string;
-    ngayDatHang?: string;
-    nhaVanChuyenId?: number;
-    quocGiaId?: number;
-    tinhTrang?: string;
-    ghiChu?: string;
-    kien?: string;
-    mawb?: string;
-    hawb?: string;
-  }
-): Promise<any> => {
+export const updateTracking = async (id: number, data: TrackingSaveData): Promise<any> => {
   const response = await apiClient.put(`/tracking/${id}`, data);
   return response.data;
+};
+
+export interface TrackingDetailSaveData {
+  linkHinh: string;
+  soLuong: number;
+  gia: number;
+  ghiChu: string;
+  nguoiTao?: string;
+}
+
+export const addTrackingDetail = async (
+  trackingId: number,
+  data: TrackingDetailSaveData,
+): Promise<any> => {
+  const response = await apiClient.post(`/tracking/${trackingId}/chi-tiet`, data);
+  return response.data;
+};
+
+export const updateTrackingDetail = async (
+  trackingId: number,
+  detailId: number,
+  data: TrackingDetailSaveData,
+): Promise<any> => {
+  const response = await apiClient.put(`/tracking/${trackingId}/chi-tiet/${detailId}`, data);
+  return response.data;
+};
+
+export const deleteTrackingDetail = async (
+  trackingId: number,
+  detailId: number,
+): Promise<void> => {
+  await apiClient.delete(`/tracking/${trackingId}/chi-tiet/${detailId}`);
 };
 
 /**

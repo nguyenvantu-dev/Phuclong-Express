@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getBankAccounts, createDebt, getDebtManagementList, DebtManagementItem } from '@/lib/api';
+import { useState, useRef, useEffect } from 'react';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+import { getBankAccounts, createDebt, getChuyenKhoanPendingList, DebtManagementItem } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth-context';
 
 interface BankAccount {
@@ -17,6 +19,8 @@ interface BankAccount {
  */
 export default function ChuyenKhoanPage() {
   const { user } = useAuth();
+  const transferDateRef = useRef<HTMLInputElement>(null);
+  const transferDatePickerRef = useRef<flatpickr.Instance | null>(null);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [pendingTransfers, setPendingTransfers] = useState<DebtManagementItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,16 +34,44 @@ export default function ChuyenKhoanPage() {
   const [noiDung, setNoiDung] = useState('');
 
   useEffect(() => {
-    loadInitialData();
+    loadBankAccounts();
   }, []);
 
-  const loadInitialData = async () => {
+  useEffect(() => {
+    if (!transferDateRef.current) return;
+
+    transferDatePickerRef.current = flatpickr(transferDateRef.current, {
+      dateFormat: 'd/m/Y',
+      onChange: (dates) => {
+        const selectedDate = dates[0];
+        if (!selectedDate) {
+          setNgayChuyenKhoan('');
+          return;
+        }
+
+        const formatted = `${String(selectedDate.getDate()).padStart(2, '0')}/${String(
+          selectedDate.getMonth() + 1,
+        ).padStart(2, '0')}/${selectedDate.getFullYear()}`;
+        setNgayChuyenKhoan(formatted);
+      },
+    });
+
+    return () => {
+      transferDatePickerRef.current?.destroy();
+      transferDatePickerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    loadPendingTransfers();
+  }, [user?.username]);
+
+  const loadBankAccounts = async () => {
     try {
-      const [banks] = await Promise.all([getBankAccounts()]);
+      const banks = await getBankAccounts();
       setBankAccounts(banks || []);
-      loadPendingTransfers();
     } catch (err) {
-      console.error('Error loading initial data:', err);
+      console.error('Error loading bank accounts:', err);
     }
   };
 
@@ -47,14 +79,8 @@ export default function ChuyenKhoanPage() {
     if (!user?.username) return;
 
     try {
-      const response = await getDebtManagementList({
-        username: user.username,
-        loaiPhatSinh: '2', // style=2 for bank transfer
-        status: 0, // pending
-        page: 1,
-        limit: 100,
-      });
-      setPendingTransfers(response.data || []);
+      const data = await getChuyenKhoanPendingList(user.username);
+      setPendingTransfers(data || []);
     } catch (err) {
       console.error('Error loading pending transfers:', err);
     }
@@ -76,17 +102,25 @@ export default function ChuyenKhoanPage() {
     setSuccess('');
     try {
       // Create debt record (transfer request) - style=2 for bank transfer
-      await createDebt({
+      const result = await createDebt({
         username: user.username,
-        noiDung: noiDung || `Chuyển khoản ${selectedBank}`,
+        noiDung: noiDung.trim(),
         ngay: ngayChuyenKhoan,
         cr: soTienChuyenKhoan,
+        bankAccount: selectedBank,
+        status: 0,
         loaiPhatSinh: 2, // bank transfer style
+        allowEmptyNoiDung: true,
       });
+      if (!result.success) {
+        setError(result.message || 'Có lỗi khi tạo báo chuyển khoản');
+        return;
+      }
       setSuccess('Báo chuyển khoản thành công');
       // Reset form
       setSelectedBank('');
       setNgayChuyenKhoan('');
+      transferDatePickerRef.current?.clear();
       setSoTienChuyenKhoan(0);
       setNoiDung('');
       // Reload pending transfers
@@ -136,10 +170,12 @@ export default function ChuyenKhoanPage() {
               Ngày chuyển khoản <span className="text-red-500">*</span>
             </label>
             <input
-              type="date"
+              ref={transferDateRef}
+              type="text"
               value={ngayChuyenKhoan}
               onChange={(e) => setNgayChuyenKhoan(e.target.value)}
               className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+              placeholder="dd/mm/yyyy"
             />
           </div>
 

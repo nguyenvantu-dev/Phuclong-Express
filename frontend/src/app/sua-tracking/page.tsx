@@ -1,8 +1,19 @@
 'use client';
 
 import { Suspense, useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { getTracking, updateTracking, getNhaVanChuyen, getCountries, getTrackingDetails } from '@/lib/api';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  addTrackingDetail,
+  createTracking,
+  deleteTrackingDetail,
+  getTracking,
+  updateTracking,
+  updateTrackingDetail,
+  getNhaVanChuyen,
+  getCountries,
+  getTrackingDetails,
+} from '@/lib/api';
+import { useAuth } from '@/hooks/use-auth-context';
 
 interface TrackingDetail {
   id: number;
@@ -105,7 +116,15 @@ interface Country {
   TenQuocGia: string;
 }
 
+interface DetailFormData {
+  linkHinh: string;
+  soLuong: string;
+  gia: string;
+  ghiChu: string;
+}
+
 const TRACKING_STATUSES = ['Received', 'InTransit', 'InVN', 'VNTransit', 'Completed', 'Cancelled'];
+const emptyDetailForm: DetailFormData = { linkHinh: '', soLuong: '', gia: '', ghiChu: '' };
 
 const normalizeTrackingDetail = (data: RawTrackingDetail): TrackingDetail => ({
   id: Number(data.id || data.TrackingID || 0),
@@ -152,6 +171,8 @@ export default function SuaTrackingPage() {
 
 function SuaTrackingContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user } = useAuth();
   const [tracking, setTracking] = useState<TrackingDetail | null>(null);
   const [nhaVanChuyen, setNhaVanChuyen] = useState<NhaVanChuyen[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
@@ -170,6 +191,9 @@ function SuaTrackingContent() {
   const [hawb, setHawb] = useState('');
   const [tinhTrang, setTinhTrang] = useState('Received');
   const [ghiChu, setGhiChu] = useState('');
+  const [newDetail, setNewDetail] = useState<DetailFormData>(emptyDetailForm);
+  const [editingDetailId, setEditingDetailId] = useState<number | null>(null);
+  const [editingDetail, setEditingDetail] = useState<DetailFormData>(emptyDetailForm);
 
   useEffect(() => {
     loadInitialData();
@@ -259,14 +283,23 @@ function SuaTrackingContent() {
     setGhiChu(data.ghiChu || '');
   };
 
-  const handleUpdate = async () => {
-    if (!tracking) return;
+  const handleSave = async () => {
+    if (!trackingNumber.trim() || !ngayDatHang.trim()) {
+      setError('Vui lòng nhập đầy đủ thông tin có dấu *');
+      return;
+    }
+
+    if (tracking && tracking.tinhTrang !== 'Received') {
+      setError('Chỉ được sửa những tracking ở trạng thái Received');
+      return;
+    }
 
     setIsLoading(true);
     setError('');
     setSuccess('');
     try {
-      await updateTracking(tracking.id, {
+      const payload = {
+        username: user?.username || tracking?.username || '',
         trackingNumber,
         orderNumber,
         ngayDatHang,
@@ -277,11 +310,115 @@ function SuaTrackingContent() {
         kien,
         mawb,
         hawb,
-      });
-      setSuccess('Cập nhật thành công');
+        nguoiTao: user?.username || '',
+      };
+
+      if (tracking) {
+        await updateTracking(tracking.id, payload);
+        setSuccess('Cập nhật thành công');
+      } else {
+        await createTracking(payload);
+        setSuccess('Thêm mới tracking thành công');
+      }
+
+      router.push('/danh-sach-tracking');
     } catch (err) {
-      console.error('Error updating tracking:', err);
-      setError('Có lỗi khi cập nhật');
+      console.error('Error saving tracking:', err);
+      setError('Có lỗi trong quá trình thao tác!!!!');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshTrackingDetails = async (trackingId: number) => {
+    const details = normalizeTrackingDetail(await getTrackingDetails(trackingId));
+    setTracking(details);
+    fillForm(details);
+  };
+
+  const detailPayload = (detail: DetailFormData) => ({
+    linkHinh: detail.linkHinh.trim(),
+    soLuong: Number(detail.soLuong || 0),
+    gia: Number(detail.gia || 0),
+    ghiChu: detail.ghiChu.trim(),
+    nguoiTao: user?.username || '',
+  });
+
+  const handleAddDetail = async () => {
+    if (!tracking) return;
+    if (tracking.tinhTrang !== 'Received') {
+      setError('Chỉ được sửa những tracking ở trạng thái Received');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const updated = normalizeTrackingDetail(await addTrackingDetail(tracking.id, detailPayload(newDetail)));
+      setTracking(updated);
+      setNewDetail(emptyDetailForm);
+    } catch (err) {
+      console.error('Error adding tracking detail:', err);
+      setError('Có lỗi khi thêm chi tiết tracking');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startEditDetail = (item: ChiTietItem) => {
+    if (tracking?.tinhTrang !== 'Received') {
+      setError('Chỉ được sửa những tracking ở trạng thái Received');
+      return;
+    }
+
+    setEditingDetailId(item.ID);
+    setEditingDetail({
+      linkHinh: item.linkHinhDaiDien || '',
+      soLuong: String(item.soLuong || ''),
+      gia: String(item.gia || ''),
+      ghiChu: item.ghiChu || '',
+    });
+  };
+
+  const handleUpdateDetail = async () => {
+    if (!tracking || !editingDetailId) return;
+    if (tracking.tinhTrang !== 'Received') {
+      setError('Chỉ được sửa những tracking ở trạng thái Received');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const updated = normalizeTrackingDetail(
+        await updateTrackingDetail(tracking.id, editingDetailId, detailPayload(editingDetail)),
+      );
+      setTracking(updated);
+      setEditingDetailId(null);
+      setEditingDetail(emptyDetailForm);
+    } catch (err) {
+      console.error('Error updating tracking detail:', err);
+      setError('Có lỗi khi cập nhật chi tiết tracking');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteDetail = async (detailId: number) => {
+    if (!tracking || !confirm('Xóa chi tiết tracking này?')) return;
+    if (tracking.tinhTrang !== 'Received') {
+      setError('Chỉ được sửa những tracking ở trạng thái Received');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    try {
+      await deleteTrackingDetail(tracking.id, detailId);
+      await refreshTrackingDetails(tracking.id);
+    } catch (err) {
+      console.error('Error deleting tracking detail:', err);
+      setError('Có lỗi khi xóa chi tiết tracking');
     } finally {
       setIsLoading(false);
     }
@@ -313,13 +450,12 @@ function SuaTrackingContent() {
         </button>
       </div>
 
-      {tracking && (
-        <>
+      <>
           {/* Form */}
           <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-4 md:p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-slate-700">Tracking number</label>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Tracking number <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={trackingNumber}
@@ -337,7 +473,7 @@ function SuaTrackingContent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-slate-700">Ngày đặt hàng</label>
+                <label className="block text-sm font-medium mb-1.5 text-slate-700">Ngày đặt hàng <span className="text-red-500">*</span></label>
                 <input
                   type="date"
                   value={ngayDatHang}
@@ -408,7 +544,6 @@ function SuaTrackingContent() {
                   value={tinhTrang}
                   onChange={(e) => setTinhTrang(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
-                  disabled
                 >
                   {TRACKING_STATUSES.map((s) => (
                     <option key={s} value={s}>
@@ -429,15 +564,17 @@ function SuaTrackingContent() {
             </div>
             <div className="mt-4 text-center">
               <button
-                onClick={handleUpdate}
+                onClick={handleSave}
                 disabled={isLoading}
                 className="px-6 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
               >
-                Cập nhật
+                {tracking ? 'Cập nhật' : 'Thêm mới'}
               </button>
             </div>
           </div>
 
+          {tracking && (
+            <>
           {/* Chi tiết tracking */}
           <h3 className="text-xl font-bold mb-3 text-cyan-700">Chi tiết</h3>
           <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm mb-6">
@@ -448,25 +585,120 @@ function SuaTrackingContent() {
                   <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Số lượng</th>
                   <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Giá</th>
                   <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
+                  <th className="border-b border-cyan-200 px-3 py-2.5 text-center text-cyan-700 font-semibold text-xs uppercase tracking-wide">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {(tracking.chiTietTracking || []).map((item) => (
                   <tr key={item.ID} className="bg-white">
                     <td className="border-b border-cyan-100 px-3 py-2.5">
-                      {item.linkHinhDaiDien && (
+                      {editingDetailId === item.ID ? (
+                        <input
+                          type="text"
+                          value={editingDetail.linkHinh}
+                          onChange={(e) => setEditingDetail({ ...editingDetail, linkHinh: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-2 py-1.5"
+                        />
+                      ) : item.linkHinhDaiDien && (
                         <img src={item.linkHinhDaiDien} alt="" height="30" className="rounded-lg" />
                       )}
                     </td>
                     <td className="border-b border-cyan-100 px-3 py-2.5 text-right font-medium text-slate-700">
-                      {item.soLuong}
+                      {editingDetailId === item.ID ? (
+                        <input
+                          type="number"
+                          value={editingDetail.soLuong}
+                          onChange={(e) => setEditingDetail({ ...editingDetail, soLuong: e.target.value })}
+                          className="w-24 border border-slate-300 rounded-lg px-2 py-1.5 text-right"
+                        />
+                      ) : item.soLuong}
                     </td>
                     <td className="border-b border-cyan-100 px-3 py-2.5 text-right text-slate-700">
-                      {item.gia?.toLocaleString('vi-VN')}
+                      {editingDetailId === item.ID ? (
+                        <input
+                          type="number"
+                          value={editingDetail.gia}
+                          onChange={(e) => setEditingDetail({ ...editingDetail, gia: e.target.value })}
+                          className="w-28 border border-slate-300 rounded-lg px-2 py-1.5 text-right"
+                        />
+                      ) : item.gia?.toLocaleString('vi-VN')}
                     </td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">{item.ghiChu}</td>
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
+                      {editingDetailId === item.ID ? (
+                        <input
+                          type="text"
+                          value={editingDetail.ghiChu}
+                          onChange={(e) => setEditingDetail({ ...editingDetail, ghiChu: e.target.value })}
+                          className="w-full border border-slate-300 rounded-lg px-2 py-1.5"
+                        />
+                      ) : item.ghiChu}
+                    </td>
+                    <td className="border-b border-cyan-100 px-3 py-2.5 text-center">
+                      {editingDetailId === item.ID ? (
+                        <div className="flex justify-center gap-2">
+                          <button onClick={handleUpdateDetail} disabled={isLoading} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white">
+                            Lưu
+                          </button>
+                          <button onClick={() => setEditingDetailId(null)} className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">
+                            Hủy
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-center gap-2">
+                          <button onClick={() => startEditDetail(item)} className="px-3 py-1.5 rounded-lg bg-cyan-50 text-cyan-700">
+                            Sửa
+                          </button>
+                          <button onClick={() => handleDeleteDetail(item.ID)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600">
+                            Xóa
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
+                <tr className="bg-cyan-50">
+                  <td className="border-b border-cyan-100 px-3 py-2.5">
+                    <input
+                      type="text"
+                      value={newDetail.linkHinh}
+                      onChange={(e) => setNewDetail({ ...newDetail, linkHinh: e.target.value })}
+                      placeholder="Link hình"
+                      className="w-full border border-slate-300 rounded-lg px-2 py-1.5"
+                    />
+                  </td>
+                  <td className="border-b border-cyan-100 px-3 py-2.5 text-right">
+                    <input
+                      type="number"
+                      value={newDetail.soLuong}
+                      onChange={(e) => setNewDetail({ ...newDetail, soLuong: e.target.value })}
+                      placeholder="SL"
+                      className="w-24 border border-slate-300 rounded-lg px-2 py-1.5 text-right"
+                    />
+                  </td>
+                  <td className="border-b border-cyan-100 px-3 py-2.5 text-right">
+                    <input
+                      type="number"
+                      value={newDetail.gia}
+                      onChange={(e) => setNewDetail({ ...newDetail, gia: e.target.value })}
+                      placeholder="Giá"
+                      className="w-28 border border-slate-300 rounded-lg px-2 py-1.5 text-right"
+                    />
+                  </td>
+                  <td className="border-b border-cyan-100 px-3 py-2.5">
+                    <input
+                      type="text"
+                      value={newDetail.ghiChu}
+                      onChange={(e) => setNewDetail({ ...newDetail, ghiChu: e.target.value })}
+                      placeholder="Ghi chú"
+                      className="w-full border border-slate-300 rounded-lg px-2 py-1.5"
+                    />
+                  </td>
+                  <td className="border-b border-cyan-100 px-3 py-2.5 text-center">
+                    <button onClick={handleAddDetail} disabled={isLoading} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white">
+                      Thêm
+                    </button>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -507,6 +739,7 @@ function SuaTrackingContent() {
           </div>
         </>
       )}
+      </>
     </div>
   );
 }

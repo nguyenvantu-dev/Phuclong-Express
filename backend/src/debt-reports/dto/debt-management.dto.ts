@@ -1,4 +1,4 @@
-import { IsOptional, IsNumber, IsString, Min } from 'class-validator';
+import { IsBoolean, IsOptional, IsNumber, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -85,6 +85,16 @@ export class CreateDebtDto {
   @IsOptional()
   @IsString()
   bankAccount?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  status?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  allowEmptyNoiDung?: boolean;
 }
 
 /**

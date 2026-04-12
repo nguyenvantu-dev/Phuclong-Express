@@ -1256,11 +1256,15 @@ export class DebtReportsService {
       loHangId?: number;
       loaiPhatSinh?: number;
       bankAccount?: string;
+      status?: number;
+      allowEmptyNoiDung?: boolean;
     },
     username?: string,
   ): Promise<{ success: boolean; message?: string }> {
     try {
-      if (!dto.noiDung || dto.noiDung.trim() === '') {
+      const noiDung = dto.noiDung?.trim() || '';
+
+      if (!dto.allowEmptyNoiDung && noiDung === '') {
         return { success: false, message: 'Bạn phải nhập nội dung công nợ' };
       }
 
@@ -1300,12 +1304,12 @@ export class DebtReportsService {
         {
           replacements: {
             username: dto.username,
-            noiDung: dto.noiDung.trim(),
+            noiDung,
             ngayGhiNo,
             dr,
             cr,
             ghiChu: ghiChu.trim(),
-            status: 1,
+            status: dto.status ?? 1,
             loHangID: dto.loHangId || null,
             nguoiTao: username || 'system',
             loaiPhatSinh: dto.loaiPhatSinh || 2,
@@ -1326,10 +1330,10 @@ export class DebtReportsService {
           {
             replacements: {
               username,
-              chucNang: 'ManageCongNo:Insert_CongNo',
+              chucNang: dto.status === 0 ? 'ChuyenKhoan:Insert_CongNo' : 'ManageCongNo:Insert_CongNo',
               hanhDong: 'Them moi',
               ma: '',
-              ghiChu: `UserName: ${dto.username}; NoiDung: ${dto.noiDung}; Ngay: ${dto.ngay}; DR: ${dr}; CR: ${cr}; GhiChu: ${ghiChu}; LoaiPhatSinh: ${dto.loaiPhatSinh || 2}`,
+              ghiChu: `UserName: ${dto.username}; NoiDung: ${noiDung}; Ngay: ${dto.ngay}; DR: ${dr}; CR: ${cr}; GhiChu: ${ghiChu}; LoaiPhatSinh: ${dto.loaiPhatSinh || 2}`,
             },
             type: 'SELECT' as const,
           },
@@ -1499,7 +1503,7 @@ export class DebtReportsService {
   async approveDebt(id: number, username?: string): Promise<{ success: boolean; message?: string }> {
     try {
       await this.sequelize.query(
-        `EXEC SP_Approve_CongNo @CongNo_ID = :id, @NguoiDuyet = :username`,
+        `EXEC SP_Approve_CongNo @CongNo_ID = :id, @NguoiTao = :username`,
         {
           replacements: { id, username: username || 'system' },
           type: 'SELECT' as const,
@@ -1590,9 +1594,10 @@ export class DebtReportsService {
           @PageNum = 1,
           @TuNgay = NULL,
           @DenNgay = NULL`,
-        { replacements: { username }, type: 'SELECT' as const },
+        { replacements: { username } },
       );
-      return Array.isArray(results) ? results : [];
+      const data = Array.isArray(results) ? (results as Record<string, unknown>[]) : [];
+      return data.length > 0 && 'TOTALROW' in data[0] ? data.slice(1) : data;
     } catch (error) {
       console.error('Error in getChuyenKhoanPendingList:', (error as any).message);
       return [];
