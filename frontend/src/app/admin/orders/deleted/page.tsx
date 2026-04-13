@@ -78,7 +78,7 @@ export default function DeletedOrdersPage() {
 
   // Fetch deleted orders
   const { data, isLoading, error, isFetching, refetch } = useQuery({
-    queryKey: ['orders-deleted', { ...filters, statuses: selectedStatuses, _t: Date.now() }],
+    queryKey: ['orders-deleted', { ...filters, statuses: selectedStatuses }],
     queryFn: async () => {
       const result = await getDeletedOrders({ ...filters, statuses: selectedStatuses });
       console.log('Deleted orders response:', result);

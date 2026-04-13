@@ -106,8 +106,8 @@ export default function PeriodsPage() {
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-            <FiCalendar className="h-5 w-5 text-[#5cc6ee]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+            <FiCalendar className="h-5 w-5 text-[#14264b]" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-800">Danh sách kỳ công nợ</h1>
@@ -123,7 +123,7 @@ export default function PeriodsPage() {
 
         <Link
           href="/admin/periods/new"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-[#5cc6ee] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#3db8e4] cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[#14264b] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#3db8e4] cursor-pointer"
         >
           <FiPlus className="h-4 w-4" />
           Tạo mới kỳ
@@ -172,7 +172,7 @@ export default function PeriodsPage() {
             <p className="mt-1 text-xs text-slate-400">Tạo kỳ công nợ đầu tiên để bắt đầu</p>
             <Link
               href="/admin/periods/new"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#5cc6ee] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3db8e4] cursor-pointer"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#14264b] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3db8e4] cursor-pointer"
             >
               <FiPlus className="h-4 w-4" />
               Tạo mới
@@ -198,7 +198,7 @@ export default function PeriodsPage() {
                   const isBusy = isClosing || isDeleting;
 
                   return (
-                    <tr key={period.KyID} className="group transition-colors hover:bg-[#5cc6ee]/5">
+                    <tr key={period.KyID} className="group transition-colors hover:bg-[#14264b]/5">
                       <td className="px-4 py-3 font-medium text-slate-800">{period.Nam}</td>
                       <td className="px-4 py-3 text-slate-600">{period.Thang}</td>
                       <td className="px-4 py-3">

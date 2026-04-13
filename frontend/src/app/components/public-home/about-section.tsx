@@ -5,11 +5,11 @@ import { FaCalendar, FaFacebook } from 'react-icons/fa';
  * About Section Component
  *
  * Displays company story and CSKH contact card.
- * Uses #5cc6ee as primary color.
+ * Uses #14264b as primary color.
  */
 export default function AboutSection() {
   const colors = {
-    primary: '#5cc6ee',
+    primary: '#14264b',
     primaryLight: '#e0f7ff',
     primaryDark: '#2a8fb3',
     text: '#1e293b',

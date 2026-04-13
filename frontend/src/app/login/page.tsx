@@ -37,25 +37,25 @@ export default function LoginPage() {
         <div
           className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, #5cc6ee 1px, transparent 1px),
-                             radial-gradient(circle at 75% 75%, #5cc6ee 1px, transparent 1px)`,
+            backgroundImage: `radial-gradient(circle at 25% 25%, #14264b 1px, transparent 1px),
+                             radial-gradient(circle at 75% 75%, #14264b 1px, transparent 1px)`,
             backgroundSize: '40px 40px'
           }}
         />
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute top-20 left-20 w-64 h-64 bg-[#5cc6ee]/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-20 right-20 w-80 h-80 bg-[#5cc6ee]/10 rounded-full blur-3xl" />
+      <div className="absolute top-20 left-20 w-64 h-64 bg-[#14264b]/20 rounded-full blur-3xl" />
+      <div className="absolute bottom-20 right-20 w-80 h-80 bg-[#14264b]/10 rounded-full blur-3xl" />
 
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-md px-4">
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-[#5cc6ee]/20 p-8">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-[#14264b]/20 p-8">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <img src="/image1/logo2.png" alt="Phuc Long Express" className="h-20 object-contain mb-4" />
+            <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL.png" alt="Phuc Long Express" className="h-20 object-contain mb-4" />
             <h1 className="text-2xl font-bold text-[#1E293B]">Phuc Long Express</h1>
-            <p className="text-sm text-[#5cc6ee]/70 mt-1">Vận chuyển & Logistics</p>
+            <p className="text-sm text-[#14264b]/70 mt-1">Vận chuyển & Logistics</p>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -73,7 +73,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl
-                         focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/30 focus:border-[#5cc6ee]
+                         focus:outline-none focus:ring-2 focus:ring-[#14264b]/30 focus:border-[#14264b]
                          transition-all duration-200 text-[#1E293B] placeholder-[#94A3B8]"
                 placeholder="Nhập tên đăng nhập"
                 required
@@ -94,7 +94,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl
-                         focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/30 focus:border-[#5cc6ee]
+                         focus:outline-none focus:ring-2 focus:ring-[#14264b]/30 focus:border-[#14264b]
                          transition-all duration-200 text-[#1E293B] placeholder-[#94A3B8]"
                 placeholder="Nhập mật khẩu"
                 required
@@ -112,10 +112,10 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-[#5cc6ee] to-[#0EA5E9] text-white py-3 px-6
-                       rounded-xl font-medium hover:from-[#4AB8DC] hover:to-[#0D95D6]
+              className="w-full bg-gradient-to-r from-[#14264b] to-[#eb7325] text-white py-3 px-6
+                       rounded-xl font-medium hover:from-[#1e3a6e] hover:to-[#c55a14]
                        disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-all duration-300 shadow-lg hover:shadow-xl shadow-[#5cc6ee]/20
+                       transition-all duration-300 shadow-lg hover:shadow-xl shadow-[#14264b]/20
                        transform hover:-translate-y-0.5 cursor-pointer"
             >
               {loading ? (

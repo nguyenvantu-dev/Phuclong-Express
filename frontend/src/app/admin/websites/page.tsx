@@ -93,7 +93,7 @@ export default function WebsitesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5cc6ee]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#14264b]"></div>
       </div>
     );
   }
@@ -134,7 +134,7 @@ export default function WebsitesPage() {
                 value={websiteName}
                 onChange={(e) => setWebsiteName(e.target.value)}
                 placeholder="Nhập tên website"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5cc6ee] focus:border-[#5cc6ee] outline-none transition-colors"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] outline-none transition-colors"
               />
             </div>
             <div>
@@ -144,7 +144,7 @@ export default function WebsitesPage() {
                 value={ghiChu}
                 onChange={(e) => setGhiChu(e.target.value)}
                 placeholder="Nhập ghi chú"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5cc6ee] focus:border-[#5cc6ee] outline-none transition-colors"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] outline-none transition-colors"
               />
             </div>
           </div>
@@ -152,7 +152,7 @@ export default function WebsitesPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2 bg-[#5cc6ee] text-white font-medium rounded-lg hover:bg-[#4ab5dd] focus:ring-2 focus:ring-[#5cc6ee] focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-6 py-2 bg-[#14264b] text-white font-medium rounded-lg hover:bg-[#4ab5dd] focus:ring-2 focus:ring-[#14264b] focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {submitting ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Lưu'}
             </button>
@@ -197,7 +197,7 @@ export default function WebsitesPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleEdit(website)}
-                          className="p-1.5 text-[#5cc6ee] hover:text-[#2a9bc0] hover:bg-[#e6f7fc] rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-[#14264b] hover:text-[#2a9bc0] hover:bg-[#e6f7fc] rounded-lg transition-colors cursor-pointer"
                           title="Chỉnh sửa"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

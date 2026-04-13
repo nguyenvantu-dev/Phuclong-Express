@@ -115,7 +115,7 @@ export default function ClearUserDataPage() {
                   setMessageType(null);
                 }}
                 disabled={loadingUsers}
-                className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm text-slate-700 shadow-sm transition-all focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer"
+                className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm text-slate-700 shadow-sm transition-all focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer"
               >
                 <option value="">
                   {loadingUsers ? 'Đang tải...' : '-- Chọn User --'}

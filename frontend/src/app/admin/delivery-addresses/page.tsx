@@ -145,8 +145,8 @@ export default function DeliveryAddressesPage() {
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-          <FiMapPin className="h-5 w-5 text-[#5cc6ee]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+          <FiMapPin className="h-5 w-5 text-[#14264b]" />
         </div>
         <div>
           <h1 className="text-lg font-bold text-slate-800">Địa chỉ nhận hàng</h1>
@@ -172,12 +172,12 @@ export default function DeliveryAddressesPage() {
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
             {editingId !== null ? (
               <>
-                <FiEdit2 className="h-4 w-4 text-[#5cc6ee]" />
+                <FiEdit2 className="h-4 w-4 text-[#14264b]" />
                 Chỉnh sửa địa chỉ
               </>
             ) : (
               <>
-                <FiPlus className="h-4 w-4 text-[#5cc6ee]" />
+                <FiPlus className="h-4 w-4 text-[#14264b]" />
                 Thêm địa chỉ mới
               </>
             )}
@@ -198,7 +198,7 @@ export default function DeliveryAddressesPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={editingId !== null}
-                className="h-9 min-w-[200px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                className="h-9 min-w-[200px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
               >
                 <option value="">-- Chọn --</option>
                 {users.map((u) => (
@@ -215,7 +215,7 @@ export default function DeliveryAddressesPage() {
                 value={diaChi}
                 onChange={(e) => setDiaChi(e.target.value)}
                 placeholder="Nhập địa chỉ nhận hàng..."
-                className="h-9 min-w-[260px] rounded-lg border border-slate-200 px-3 text-sm text-slate-700 placeholder-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                className="h-9 min-w-[260px] rounded-lg border border-slate-200 px-3 text-sm text-slate-700 placeholder-slate-400 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
               />
             </div>
 
@@ -224,7 +224,7 @@ export default function DeliveryAddressesPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#5cc6ee] px-4 py-2 text-sm font-medium text-white hover:bg-[#3db8e4] disabled:opacity-60"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#3db8e4] disabled:opacity-60"
               >
                 {saving ? (
                   <FiRefreshCw className="h-4 w-4 animate-spin" />
@@ -258,7 +258,7 @@ export default function DeliveryAddressesPage() {
             <select
               value={usernameFilter}
               onChange={(e) => setUsernameFilter(e.target.value)}
-              className="h-9 min-w-[180px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+              className="h-9 min-w-[180px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
             >
               <option value="">-- Tất cả --</option>
               {users.map((u) => (
@@ -275,7 +275,7 @@ export default function DeliveryAddressesPage() {
               onChange={(e) => setSearchText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Tìm theo địa chỉ..."
-              className="h-9 min-w-[200px] rounded-lg border border-slate-200 px-3 text-sm text-slate-700 placeholder-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+              className="h-9 min-w-[200px] rounded-lg border border-slate-200 px-3 text-sm text-slate-700 placeholder-slate-400 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
             />
           </div>
 
@@ -329,7 +329,7 @@ export default function DeliveryAddressesPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {addresses.map((address) => (
-                <tr key={address.ID} className="group transition-colors hover:bg-[#5cc6ee]/5">
+                <tr key={address.ID} className="group transition-colors hover:bg-[#14264b]/5">
                   <td className="px-6 py-3">
                     <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
                       {address.UserName}
@@ -395,7 +395,7 @@ export default function DeliveryAddressesPage() {
                   onClick={() => setPage(pageNum)}
                   className={`inline-flex cursor-pointer items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
                     page === pageNum
-                      ? 'border-[#5cc6ee] bg-[#5cc6ee] text-white'
+                      ? 'border-[#14264b] bg-[#14264b] text-white'
                       : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >

@@ -282,7 +282,7 @@ export default function DebtManagementPage() {
                 bankAccount: '',
               });
             }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#5cc6ee] to-cyan-400 text-white rounded-xl hover:from-[#4bb3dd] hover:to-cyan-300 transition-all duration-200 font-medium shadow-lg shadow-cyan-500/25 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#14264b] to-cyan-400 text-white rounded-xl hover:from-[#4bb3dd] hover:to-cyan-300 transition-all duration-200 font-medium shadow-lg shadow-cyan-500/25 cursor-pointer"
           >
             <FiPlus className="w-4 h-4" />
             <span className="hidden sm:inline">Thêm mới</span>
@@ -298,8 +298,8 @@ export default function DebtManagementPage() {
           className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-[#5cc6ee]/10 rounded-lg">
-              <FiFilter className="w-4 h-4 text-[#5cc6ee]" />
+            <div className="p-1.5 bg-[#14264b]/10 rounded-lg">
+              <FiFilter className="w-4 h-4 text-[#14264b]" />
             </div>
             <span className="font-semibold text-slate-700">Bộ lọc</span>
             <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
@@ -325,7 +325,7 @@ export default function DebtManagementPage() {
                 <select
                   value={filters.username}
                   onChange={(e) => handleFilterChange('username', e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all bg-white cursor-pointer"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer"
                 >
                   <option value="">--Tất cả User--</option>
                   {users?.map((user) => (
@@ -340,7 +340,7 @@ export default function DebtManagementPage() {
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', Number(e.target.value))}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all bg-white cursor-pointer"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer"
                 >
                   <option value={-1}>Tất cả</option>
                   <option value={1}>Approved</option>
@@ -355,7 +355,7 @@ export default function DebtManagementPage() {
                 <select
                   value={filters.bankAccount}
                   onChange={(e) => handleFilterChange('bankAccount', e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all bg-white cursor-pointer"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer"
                 >
                   <option value="">--Tất cả tài khoản--</option>
                   {bankAccounts?.map((bank) => (
@@ -375,7 +375,7 @@ export default function DebtManagementPage() {
                   type="text"
                   value={filters.fromDate}
                   onChange={(e) => handleFilterChange('fromDate', e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                   placeholder="dd/mm/yyyy"
                 />
               </div>
@@ -389,7 +389,7 @@ export default function DebtManagementPage() {
                   type="text"
                   value={filters.toDate}
                   onChange={(e) => handleFilterChange('toDate', e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                   placeholder="dd/mm/yyyy"
                 />
               </div>
@@ -398,7 +398,7 @@ export default function DebtManagementPage() {
                 <select
                   value={filters.loaiPhatSinh ?? ''}
                   onChange={(e) => handleFilterChange('loaiPhatSinh', e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all bg-white cursor-pointer"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer"
                 >
                   <option value="-1">Tất cả loại phát sinh</option>
                   <option value="1,2,3,4,5,6,7">Phí mua hàng và phát sinh khác</option>
@@ -414,7 +414,7 @@ export default function DebtManagementPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <FiLoader className="w-8 h-8 text-[#5cc6ee] animate-spin" />
+            <FiLoader className="w-8 h-8 text-[#14264b] animate-spin" />
             <span className="ml-3 text-slate-500">Đang tải dữ liệu...</span>
           </div>
         ) : error ? (
@@ -611,14 +611,14 @@ export default function DebtManagementPage() {
               {/* User Selection */}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                  <FiUser className="w-4 h-4 text-[#5cc6ee]" />
+                  <FiUser className="w-4 h-4 text-[#14264b]" />
                   User <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <select
                     value={newDebt.username}
                     onChange={(e) => setNewDebt({ ...newDebt, username: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all bg-white cursor-pointer appearance-none"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
                     required
                   >
                     <option value="">--Chọn User--</option>
@@ -635,14 +635,14 @@ export default function DebtManagementPage() {
               {/* Content */}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                  <FiFileText className="w-4 h-4 text-[#5cc6ee]" />
+                  <FiFileText className="w-4 h-4 text-[#14264b]" />
                   Nội dung <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={newDebt.noiDung}
                   onChange={(e) => setNewDebt({ ...newDebt, noiDung: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                   required
                   placeholder="Nhập nội dung công nợ"
                 />
@@ -651,7 +651,7 @@ export default function DebtManagementPage() {
               {/* Date */}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                  <FiCalendar className="w-4 h-4 text-[#5cc6ee]" />
+                  <FiCalendar className="w-4 h-4 text-[#14264b]" />
                   Ngày <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -659,7 +659,7 @@ export default function DebtManagementPage() {
                   type="text"
                   value={newDebt.ngay}
                   onChange={(e) => setNewDebt({ ...newDebt, ngay: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                   placeholder="dd/mm/yyyy"
                   required
                 />
@@ -672,7 +672,7 @@ export default function DebtManagementPage() {
                   <select
                     value={newDebt.loaiPhatSinh}
                     onChange={(e) => setNewDebt({ ...newDebt, loaiPhatSinh: Number(e.target.value) })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all bg-white cursor-pointer appearance-none"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
                   >
                     <option value={2}>Phí mua hàng và phát sinh khác</option>
                     <option value={8}>Cân Kg</option>
@@ -688,7 +688,7 @@ export default function DebtManagementPage() {
                   <select
                     value={newDebt.bankAccount}
                     onChange={(e) => setNewDebt({ ...newDebt, bankAccount: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all bg-white cursor-pointer appearance-none"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
                   >
                     <option value="">--Chọn tài khoản--</option>
                     {bankAccounts?.map((bank) => (
@@ -709,7 +709,7 @@ export default function DebtManagementPage() {
                     type="number"
                     value={newDebt.dr}
                     onChange={(e) => setNewDebt({ ...newDebt, dr: Number(e.target.value) })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                     placeholder="0"
                   />
                 </div>
@@ -719,7 +719,7 @@ export default function DebtManagementPage() {
                     type="number"
                     value={newDebt.cr}
                     onChange={(e) => setNewDebt({ ...newDebt, cr: Number(e.target.value) })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                     placeholder="0"
                   />
                 </div>
@@ -735,7 +735,7 @@ export default function DebtManagementPage() {
                       onChange={(e) =>
                         setNewDebt({ ...newDebt, loHangId: e.target.value ? Number(e.target.value) : undefined })
                       }
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all bg-white cursor-pointer appearance-none"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
                     >
                       <option value="">--Chọn lô hàng--</option>
                       {batches?.map((batch: BatchItem) => (
@@ -755,7 +755,7 @@ export default function DebtManagementPage() {
                 <textarea
                   value={newDebt.ghiChu}
                   onChange={(e) => setNewDebt({ ...newDebt, ghiChu: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all resize-none"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all resize-none"
                   rows={3}
                   placeholder="Nhập ghi chú (nếu có)"
                 />
@@ -794,7 +794,7 @@ export default function DebtManagementPage() {
                     createMutation.mutate(newDebt);
                   }
                 }}
-                className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-[#5cc6ee] to-cyan-400 rounded-xl hover:from-[#4bb3dd] hover:to-cyan-300 transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-[#14264b] to-cyan-400 rounded-xl hover:from-[#4bb3dd] hover:to-cyan-300 transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
               >
                 {(createMutation.isPending || updateMutation.isPending) && <FiLoader className="w-4 h-4 animate-spin" />}
                 {editingId ? 'Cập nhật' : 'Lưu'}

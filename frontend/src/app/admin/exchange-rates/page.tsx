@@ -100,8 +100,8 @@ export default function ExchangeRatesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-            <FiTrendingUp className="h-5 w-5 text-[#5cc6ee]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+            <FiTrendingUp className="h-5 w-5 text-[#14264b]" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-800">Danh mục tỷ giá</h1>
@@ -170,7 +170,7 @@ export default function ExchangeRatesPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rates.map(rate => (
-                <tr key={rate.Name} className="group transition-colors hover:bg-[#5cc6ee]/5">
+                <tr key={rate.Name} className="group transition-colors hover:bg-[#14264b]/5">
                   {/* Loại tiền */}
                   <td className="px-6 py-3">
                     <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
@@ -190,7 +190,7 @@ export default function ExchangeRatesPage() {
                           if (e.key === 'Escape') cancelEdit();
                         }}
                         autoFocus
-                        className="w-36 rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-right text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                        className="w-36 rounded-lg border border-[#14264b] px-3 py-1.5 text-right text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
                       />
                     ) : (
                       <span className="font-medium tabular-nums text-slate-800">
@@ -210,7 +210,7 @@ export default function ExchangeRatesPage() {
                           if (e.key === 'Enter') handleSave();
                           if (e.key === 'Escape') cancelEdit();
                         }}
-                        className="w-36 rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-right text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                        className="w-36 rounded-lg border border-[#14264b] px-3 py-1.5 text-right text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
                       />
                     ) : (
                       <span className="font-medium tabular-nums text-slate-800">

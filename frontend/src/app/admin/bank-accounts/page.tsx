@@ -120,8 +120,8 @@ export default function BankAccountsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-            <FiCreditCard className="h-5 w-5 text-[#5cc6ee]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+            <FiCreditCard className="h-5 w-5 text-[#14264b]" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-800">Danh mục tài khoản ngân hàng</h1>
@@ -134,7 +134,7 @@ export default function BankAccountsPage() {
         </div>
         <button
           onClick={() => { setShowAddForm(true); setEditingId(null); }}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#5cc6ee] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#4ab5dd] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/30"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#14264b] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#4ab5dd] focus:outline-none focus:ring-2 focus:ring-[#14264b]/30"
         >
           <FiPlus className="h-4 w-4" />
           Thêm mới
@@ -151,7 +151,7 @@ export default function BankAccountsPage() {
 
       {/* Add Form */}
       {showAddForm && (
-        <div className="overflow-hidden rounded-2xl border border-[#5cc6ee]/30 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-[#14264b]/30 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50/60 px-6 py-3">
             <h2 className="text-sm font-semibold text-slate-700">Thêm tài khoản mới</h2>
           </div>
@@ -174,7 +174,7 @@ export default function BankAccountsPage() {
                   onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') cancelAdd(); }}
                   autoFocus
                   placeholder="Nhập tên tài khoản..."
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
                 />
               </div>
               <div className="space-y-1.5">
@@ -185,7 +185,7 @@ export default function BankAccountsPage() {
                   onChange={e => setNewGhiChu(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') cancelAdd(); }}
                   placeholder="Ghi chú (tùy chọn)..."
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
                 />
               </div>
             </div>
@@ -193,7 +193,7 @@ export default function BankAccountsPage() {
               <button
                 onClick={handleAdd}
                 disabled={adding}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#5cc6ee] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#4ab5dd] disabled:opacity-50"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#4ab5dd] disabled:opacity-50"
               >
                 {adding ? <FiRefreshCw className="h-3.5 w-3.5 animate-spin" /> : <FiCheck className="h-3.5 w-3.5" />}
                 Lưu
@@ -255,7 +255,7 @@ export default function BankAccountsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {accounts.map(account => (
-                <tr key={account.ID} className="group transition-colors hover:bg-[#5cc6ee]/5">
+                <tr key={account.ID} className="group transition-colors hover:bg-[#14264b]/5">
                   {/* Tên tài khoản */}
                   <td className="px-6 py-3">
                     {editingId === account.ID ? (
@@ -265,7 +265,7 @@ export default function BankAccountsPage() {
                         onChange={e => setEditTen(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') cancelEdit(); }}
                         autoFocus
-                        className="w-full max-w-xs rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                        className="w-full max-w-xs rounded-lg border border-[#14264b] px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
                       />
                     ) : (
                       <span className="font-medium text-slate-800">{account.TenTaiKhoanNganHang}</span>
@@ -280,7 +280,7 @@ export default function BankAccountsPage() {
                         value={editGhiChu}
                         onChange={e => setEditGhiChu(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') cancelEdit(); }}
-                        className="w-full max-w-sm rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                        className="w-full max-w-sm rounded-lg border border-[#14264b] px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
                       />
                     ) : (
                       <span className="text-slate-500">{account.GhiChu || '—'}</span>

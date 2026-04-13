@@ -105,8 +105,8 @@ function NewPeriodPageContent() {
 
       {/* Page header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-          <FiCalendar className="h-5 w-5 text-[#5cc6ee]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+          <FiCalendar className="h-5 w-5 text-[#14264b]" />
         </div>
         <div>
           <h1 className="text-lg font-bold text-slate-800">{pageTitle}</h1>
@@ -158,7 +158,7 @@ function NewPeriodPageContent() {
                 disabled={isClosed}
                 placeholder="Ví dụ: 2024"
                 className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400
-                  focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20
+                  focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20
                   disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400
                   transition-colors"
               />
@@ -175,7 +175,7 @@ function NewPeriodPageContent() {
                 onChange={(e) => setThang(e.target.value)}
                 disabled={isClosed}
                 className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800
-                  focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20
+                  focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20
                   disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400
                   transition-colors cursor-pointer"
               >
@@ -192,10 +192,10 @@ function NewPeriodPageContent() {
               <button
                 type="submit"
                 disabled={loading || isClosed}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#5cc6ee] px-4 py-2.5 text-sm font-semibold text-white shadow-sm
+                className="inline-flex items-center gap-2 rounded-xl bg-[#14264b] px-4 py-2.5 text-sm font-semibold text-white shadow-sm
                   hover:bg-[#3db8e4] transition-colors
                   disabled:cursor-not-allowed disabled:opacity-50
-                  focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/40
+                  focus:outline-none focus:ring-2 focus:ring-[#14264b]/40
                   cursor-pointer"
               >
                 {loading ? (

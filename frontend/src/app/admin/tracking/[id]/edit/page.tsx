@@ -65,7 +65,7 @@ interface CountryOption {
 
 const tinhTrangOptions = ['Received', 'InTransit', 'InVN', 'VNTransit', 'Completed', 'Cancelled'];
 
-const inputCls = 'w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 focus:outline-none transition-all placeholder:text-slate-400 bg-white';
+const inputCls = 'w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 focus:outline-none transition-all placeholder:text-slate-400 bg-white';
 const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5';
 
 function FieldWithIcon({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
@@ -182,7 +182,7 @@ export default function EditTrackingPage() {
   if (isFetching) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="h-8 w-8 border-2 border-[#5cc6ee] border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 border-2 border-[#14264b] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -205,7 +205,7 @@ export default function EditTrackingPage() {
       {/* Breadcrumb + header */}
       <div className="flex items-center gap-3 mb-6">
         <Link href="/admin/tracking"
-          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#5cc6ee] transition-colors cursor-pointer">
+          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#14264b] transition-colors cursor-pointer">
           <FiArrowLeft className="h-4 w-4" />
           Danh sách tracking
         </Link>
@@ -216,8 +216,8 @@ export default function EditTrackingPage() {
       </div>
 
       <div className="flex items-center gap-3 mb-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-          <FiPackage className="h-5 w-5 text-[#5cc6ee]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+          <FiPackage className="h-5 w-5 text-[#14264b]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-slate-900">Chỉnh sửa Tracking</h1>
@@ -337,14 +337,14 @@ export default function EditTrackingPage() {
             Ghi chú
           </label>
           <textarea name="ghiChu" value={formData.ghiChu} onChange={handleChange} rows={3}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 focus:outline-none transition-all placeholder:text-slate-400 bg-white resize-none"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 focus:outline-none transition-all placeholder:text-slate-400 bg-white resize-none"
             placeholder="Ghi chú thêm về đơn hàng..." />
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-3">
           <button type="submit" disabled={loading}
-            className="flex items-center gap-2 bg-[#5cc6ee] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer disabled:opacity-50 shadow-sm shadow-cyan-300/40">
+            className="flex items-center gap-2 bg-[#14264b] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer disabled:opacity-50 shadow-sm shadow-cyan-300/40">
             <FiSave className="h-4 w-4" />
             {loading ? 'Đang lưu...' : 'Cập nhật tracking'}
           </button>

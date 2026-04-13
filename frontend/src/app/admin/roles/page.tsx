@@ -79,8 +79,8 @@ export default function ListRolePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-            <FiShield className="h-5 w-5 text-[#5cc6ee]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+            <FiShield className="h-5 w-5 text-[#14264b]" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-800">Quản lý Role</h1>
@@ -93,7 +93,7 @@ export default function ListRolePage() {
         </div>
         <Link
           href="/admin/roles/new"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-[#5cc6ee] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#3db8e4]"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[#14264b] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#3db8e4]"
         >
           <FiPlus className="h-4 w-4" />
           Tạo mới role
@@ -136,7 +136,7 @@ export default function ListRolePage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {roles.map(role => (
-                <tr key={role.Id} className="group transition-colors hover:bg-[#5cc6ee]/5">
+                <tr key={role.Id} className="group transition-colors hover:bg-[#14264b]/5">
                   <td className="px-6 py-3">
                     {editingId === role.Id ? (
                       <input
@@ -148,7 +148,7 @@ export default function ListRolePage() {
                           if (e.key === 'Escape') cancelEdit();
                         }}
                         autoFocus
-                        className="w-full max-w-xs rounded-lg border border-[#5cc6ee] px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20"
+                        className="w-full max-w-xs rounded-lg border border-[#14264b] px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
                       />
                     ) : (
                       <span className="font-medium text-slate-800">{role.Name}</span>

@@ -5,7 +5,7 @@ import apiClient, { getUsernames } from '@/lib/api';
 
 // Theme colors
 const THEME = {
-  primary: '#5cc6ee',
+  primary: '#14264b',
   primaryDark: '#3eb5d9',
   primaryLight: '#7dd3f3',
   bg: '#f8fafc',

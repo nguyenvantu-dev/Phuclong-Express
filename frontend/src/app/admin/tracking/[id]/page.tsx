@@ -105,7 +105,7 @@ export default function TrackingDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="h-8 w-8 border-2 border-[#5cc6ee] border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 border-2 border-[#14264b] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -130,7 +130,7 @@ export default function TrackingDetailPage() {
       {/* Breadcrumb */}
       <div className="flex items-center gap-3">
         <Link href="/admin/tracking"
-          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#5cc6ee] transition-colors cursor-pointer">
+          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#14264b] transition-colors cursor-pointer">
           <FiArrowLeft className="h-4 w-4" />
           Danh sách tracking
         </Link>
@@ -141,8 +141,8 @@ export default function TrackingDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-            <FiPackage className="h-5 w-5 text-[#5cc6ee]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+            <FiPackage className="h-5 w-5 text-[#14264b]" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900 font-mono">{tracking.TrackingNumber}</h1>
@@ -156,7 +156,7 @@ export default function TrackingDetailPage() {
           </div>
         </div>
         <button onClick={() => router.push(`/admin/tracking/${id}/edit`)}
-          className="flex items-center gap-2 bg-[#5cc6ee] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer shadow-sm shadow-cyan-300/40">
+          className="flex items-center gap-2 bg-[#14264b] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer shadow-sm shadow-cyan-300/40">
           <FiEdit2 className="h-4 w-4" />
           Chỉnh sửa
         </button>
@@ -259,7 +259,7 @@ export default function TrackingDetailPage() {
                     <td className="px-4 py-2.5 text-sm">
                       {item.LinkHinh ? (
                         <a href={item.LinkHinh} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[#5cc6ee] hover:text-cyan-600 transition-colors text-xs font-medium cursor-pointer">
+                          className="flex items-center gap-1 text-[#14264b] hover:text-cyan-600 transition-colors text-xs font-medium cursor-pointer">
                           <FiImage className="h-3.5 w-3.5" /> Xem hình
                         </a>
                       ) : '-'}

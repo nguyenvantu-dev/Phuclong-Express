@@ -8,16 +8,15 @@ import { FiPackage, FiFileText, FiUsers, FiUserCheck } from 'react-icons/fi';
  *
  * Displays animated counters for package counts, orders, customers, and partners.
  * Uses Intersection Observer to trigger count-up animation on scroll.
- * Uses #5cc6ee as primary color.
+ * Uses #14264b as primary color.
  */
 export default function StatsSection() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
   const colors = {
-    primary: '#5cc6ee',
-    primaryLight: '#e0f7ff',
-    primaryDark: '#2a8fb3',
+    primary: '#14264b',
+    accent: '#eb7325',
     text: '#1e293b',
     textMuted: '#64748b',
   };
@@ -54,15 +53,13 @@ export default function StatsSection() {
       style={{ backgroundColor: '#1e293b' }}
     >
       <div className="container mx-auto px-4">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-4 text-white"
-        >
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-3 text-white">
           Thành tựu của chúng tôi
         </h2>
-        <p
-          className="text-center mb-12 max-w-2xl mx-auto"
-          style={{ color: colors.primary }}
-        >
+        <div className="flex justify-center mb-4">
+          <div className="h-1 w-16 rounded-full" style={{ backgroundColor: colors.accent }} />
+        </div>
+        <p className="text-center mb-12 max-w-2xl mx-auto text-white/60">
           Những con số khẳng định uy tín và chất lượng dịch vụ
         </p>
 
@@ -80,7 +77,7 @@ export default function StatsSection() {
               </div>
               <span
                 className="block text-4xl md:text-5xl font-black mb-2"
-                style={{ color: colors.primary }}
+                style={{ color: colors.accent }}
               >
                 {isVisible ? stat.value.toLocaleString() : '0'}
               </span>

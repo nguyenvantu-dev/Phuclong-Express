@@ -37,7 +37,7 @@ const VIETNAM_CITIES = [
 const VUNG_MIEN = ['', 'Bắc', 'Trung', 'Nam'];
 
 const INPUT_BASE =
-  'w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all disabled:cursor-not-allowed disabled:opacity-50';
+  'w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 transition-all disabled:cursor-not-allowed disabled:opacity-50';
 
 const INPUT_ERROR =
   'w-full rounded-xl border border-red-300 bg-white py-2.5 pl-4 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-100 transition-all';
@@ -137,8 +137,8 @@ export default function CreateUserPage() {
           <FiArrowLeft className="h-4 w-4" />
         </Link>
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-            <FiUserPlus className="h-5 w-5 text-[#5cc6ee]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+            <FiUserPlus className="h-5 w-5 text-[#14264b]" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-800">Tạo tài khoản mới</h1>
@@ -417,8 +417,8 @@ export default function CreateUserPage() {
                       role="switch"
                       aria-checked={formData.khachBuon}
                       onClick={() => handleChange('khachBuon', !formData.khachBuon)}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#5cc6ee] focus:ring-offset-2 cursor-pointer ${
-                        formData.khachBuon ? 'bg-[#5cc6ee]' : 'bg-slate-200'
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:ring-offset-2 cursor-pointer ${
+                        formData.khachBuon ? 'bg-[#14264b]' : 'bg-slate-200'
                       }`}
                     >
                       <span

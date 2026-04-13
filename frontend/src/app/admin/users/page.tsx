@@ -93,8 +93,8 @@ export default function ListUserPage() {
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-            <FiUsers className="h-5 w-5 text-[#5cc6ee]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+            <FiUsers className="h-5 w-5 text-[#14264b]" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-800">Danh sách User</h1>
@@ -118,7 +118,7 @@ export default function ListUserPage() {
           </button>
           <Link
             href="/admin/users/new"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#5cc6ee] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#3db8e4] cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#14264b] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#3db8e4] cursor-pointer"
           >
             <FiPlus className="h-4 w-4" />
             Tạo mới
@@ -136,7 +136,7 @@ export default function ListUserPage() {
             value={keyword}
             onChange={e => setKeyword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 transition-all"
           />
         </div>
         <button
@@ -208,7 +208,7 @@ export default function ListUserPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {users.map(user => (
-                  <tr key={user.Id} className="group transition-colors hover:bg-[#5cc6ee]/5">
+                  <tr key={user.Id} className="group transition-colors hover:bg-[#14264b]/5">
                     <td className="px-3 py-2.5 truncate" title={user.UserName}>
                       <span className="font-medium text-slate-800">{user.UserName}</span>
                     </td>
@@ -232,7 +232,7 @@ export default function ListUserPage() {
                           href={user.LinkTaiKhoanMang}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center justify-center text-[#5cc6ee] hover:text-[#3db8e4] transition-colors cursor-pointer"
+                          className="inline-flex items-center justify-center text-[#14264b] hover:text-[#3db8e4] transition-colors cursor-pointer"
                           title={user.LinkTaiKhoanMang}
                         >
                           <FiExternalLink className="h-4 w-4" />

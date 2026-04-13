@@ -5,11 +5,11 @@ import { FiShield, FiAward, FiClock, FiLock } from 'react-icons/fi';
  *
  * Displays 4 benefit items with icons and an image.
  * Two-column layout: list on left, image on right.
- * Uses #5cc6ee as primary color.
+ * Uses #14264b as primary color.
  */
 export default function BenefitsSection() {
   const colors = {
-    primary: '#5cc6ee',
+    primary: '#14264b',
     primaryLight: '#e0f7ff',
     primaryDark: '#2a8fb3',
     text: '#1e293b',

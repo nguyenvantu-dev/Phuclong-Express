@@ -10,7 +10,7 @@ import { FiCheckCircle, FiGlobe, FiTruck, FiShield } from 'react-icons/fi';
  * Mission Section Component
  *
  * Displays mission statements with a modern image carousel.
- * Uses #5cc6ee as primary color.
+ * Uses #14264b as primary color.
  */
 export default function MissionSection() {
   // Background images cycling for carousel cards
@@ -22,7 +22,7 @@ export default function MissionSection() {
   ];
 
   const colors = {
-    primary: '#5cc6ee',
+    primary: '#14264b',
     primaryLight: '#e0f7ff',
     primaryDark: '#2a8fb3',
     text: '#1e293b',

@@ -15,23 +15,23 @@
   --coffee-900: #3B2F2A;
   --coffee-950: #2C2416;
 
-  --accent: #E07850;
-  --accent-hover: #C85A30;
+  --accent: #eb7325;
+  --accent-hover: #c55a14;
 
   --background: #FDFBF7;
   --foreground: #2C2416;
 
   /* Admin Dashboard Design System - Data-Dense Dashboard Style */
-  --admin-primary: #5cc6ee;
-  --admin-primary-light: #7dd4f5;
-  --admin-primary-dark: #42a8cc;
-  --admin-secondary: #7dd4f5;
-  --admin-cta: #F97316;
-  --admin-cta-hover: #EA580C;
-  --admin-bg: #f0f9fc;
-  --admin-text: #0d3b4d;
-  --admin-text-muted: #5cc6ee;
-  --admin-border: #b3e5fc;
+  --admin-primary: #14264b;
+  --admin-primary-light: #1e3a6e;
+  --admin-primary-dark: #0d1833;
+  --admin-secondary: #eb7325;
+  --admin-cta: #eb7325;
+  --admin-cta-hover: #c55a14;
+  --admin-bg: #f0f4f9;
+  --admin-text: #14264b;
+  --admin-text-muted: #4a6d9c;
+  --admin-border: #c5d1e4;
   --admin-success: #10B981;
   --admin-warning: #F59E0B;
   --admin-error: #EF4444;
@@ -201,7 +201,7 @@ header {
 }
 
 .request-form__header {
-  background-color: #5cc6ee;
+  background-color: #14264b;
   padding: 20px 30px;
 }
 
@@ -368,13 +368,13 @@ header {
 }
 
 .container1 i {
-  color: #5cc6ee;
+  color: #14264b;
   font-size: 2.5em;
   text-align: center;
 }
 
 .container1__end {
-  border-bottom: 10px solid #5cc6ee;
+  border-bottom: 10px solid #14264b;
 }
 
 span.num {

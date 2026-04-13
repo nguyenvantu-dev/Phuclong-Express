@@ -228,7 +228,7 @@ export default function UserDetailPage() {
           <FiUser className="h-8 w-8 text-slate-400" />
         </div>
         <p className="text-sm font-medium text-slate-600">Không tìm thấy user</p>
-        <Link href="/admin/users" className="mt-4 text-sm text-[#5cc6ee] hover:underline cursor-pointer">
+        <Link href="/admin/users" className="mt-4 text-sm text-[#14264b] hover:underline cursor-pointer">
           Quay lại danh sách
         </Link>
       </div>
@@ -249,8 +249,8 @@ export default function UserDetailPage() {
           <FiArrowLeft className="h-4 w-4" />
         </Link>
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#5cc6ee]/10">
-            <FiUser className="h-5 w-5 text-[#5cc6ee]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14264b]/10">
+            <FiUser className="h-5 w-5 text-[#14264b]" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-800">{user.UserName}</h1>
@@ -305,7 +305,7 @@ export default function UserDetailPage() {
                   <button
                     onClick={handleSaveInfo}
                     disabled={saving}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#5cc6ee] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#3db8e4] disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#14264b] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#3db8e4] disabled:opacity-50 cursor-pointer"
                   >
                     {saving ? <FiRefreshCw className="h-3.5 w-3.5 animate-spin" /> : <FiSave className="h-3.5 w-3.5" />}
                     Lưu
@@ -344,7 +344,7 @@ export default function UserDetailPage() {
                       type="text"
                       value={(editForm as Record<string, string>)[key] ?? ''}
                       onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                     />
                   </div>
                 ))}
@@ -353,7 +353,7 @@ export default function UserDetailPage() {
                   <select
                     value={editForm.KhachBuon ? 'true' : 'false'}
                     onChange={e => setEditForm(f => ({ ...f, KhachBuon: e.target.value === 'true' }))}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all cursor-pointer"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 transition-all cursor-pointer"
                   >
                     <option value="false">Không</option>
                     <option value="true">Có</option>
@@ -381,7 +381,7 @@ export default function UserDetailPage() {
                     defaultValue=""
                     disabled={addingRole || availableRoles.length === 0}
                     onChange={e => { handleAddRole(e.target.value); e.target.value = ''; }}
-                    className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 pl-3 pr-8 text-sm text-slate-700 shadow-sm focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-all"
+                    className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 pl-3 pr-8 text-sm text-slate-700 shadow-sm focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-all"
                   >
                     <option value="">{availableRoles.length === 0 ? 'Đã thêm tất cả' : '— Chọn role —'}</option>
                     {availableRoles.map((r, i) => (
@@ -411,7 +411,7 @@ export default function UserDetailPage() {
                         className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5"
                       >
                         <div className="flex items-center gap-2">
-                          <FiShield className="h-3.5 w-3.5 text-[#5cc6ee]" />
+                          <FiShield className="h-3.5 w-3.5 text-[#14264b]" />
                           <span className="text-sm font-medium text-slate-700">{roleName(role)}</span>
                         </div>
                         <button
@@ -448,7 +448,7 @@ export default function UserDetailPage() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Nhập mật khẩu..."
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-[#5cc6ee] focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                     required
                   />
                   <button
@@ -473,7 +473,7 @@ export default function UserDetailPage() {
                     className={`w-full rounded-xl border bg-white py-2.5 pl-4 pr-10 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
                       confirmPassword && password !== confirmPassword
                         ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                        : 'border-slate-200 focus:border-[#5cc6ee] focus:ring-[#5cc6ee]/20'
+                        : 'border-slate-200 focus:border-[#14264b] focus:ring-[#14264b]/20'
                     }`}
                     required
                   />

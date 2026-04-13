@@ -10,11 +10,11 @@ import { FiAward, FiTruck, FiShield, FiClock } from 'react-icons/fi';
  * Clients Section Component
  *
  * Displays client logos and company advantages.
- * Uses #5cc6ee as primary color.
+ * Uses #14264b as primary color.
  */
 export default function ClientsSection() {
   const colors = {
-    primary: '#5cc6ee',
+    primary: '#14264b',
     primaryLight: '#e0f7ff',
     primaryDark: '#2a8fb3',
     text: '#1e293b',
@@ -45,7 +45,7 @@ export default function ClientsSection() {
   ];
 
   const companyIntro = {
-    logo: '/image1/logo2.png',
+    logo: '/image1/LOGO_PHUC_LONG_EXPRESS_FULL.png',
     name: 'Phuc Long Express',
     text: `Với hơn 10 năm kinh nghiệm thực tiễn trong lĩnh vực vận chuyển Quốc tế, thế mạnh về mạng lưới vận chuyển trong nước và Quốc tế, cùng đội ngũ Nhân viên chuyên nghiệp, Phuc Long Express tự hào là đơn vị vận chuyển uy tín mang đến chất lượng dịch vụ tốt nhất cho khách hàng.`,
   };

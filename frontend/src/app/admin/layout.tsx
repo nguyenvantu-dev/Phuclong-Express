@@ -24,7 +24,7 @@ import {
  *
  * Provides the main layout for admin pages with sidebar navigation and header.
  * Uses localStorage-based authentication (no NextAuth).
- * Color theme: #5cc6ee (primary cyan)
+ * Color theme: #14264b (primary cyan)
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -144,7 +144,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-50 h-full transform bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-2xl transition-all duration-300 ease-out lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 h-full transform bg-gradient-to-b from-[#14264b] via-[#1a3060] to-[#14264b] shadow-2xl transition-all duration-300 ease-out lg:translate-x-0 ${
           sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
         } ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -159,14 +159,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
 
         {/* Logo */}
-        <div className="relative flex h-16 items-center justify-center border-b border-slate-700/50 bg-slate-900/30 px-3">
+        <div className="relative flex h-16 items-center justify-center border-b border-white/10 bg-black/20 px-3">
           <Link href="/admin" className="inline-flex items-center justify-center" onClick={() => setSidebarOpen(false)}>
             <Image
-              src="/image1/logo3.png"
+              src={sidebarCollapsed ? '/image1/LOGO_ONLY_PHUC_LONG_EXPRESS_WHITE.png' : '/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png'}
               alt="Phuc Long Express"
               width={160}
               height={48}
-              className={`h-12 object-contain transition-all duration-300 ${sidebarCollapsed ? 'w-10' : 'w-auto'}`}
+              className="h-12 object-contain transition-all duration-300"
             />
           </Link>
         </div>
@@ -200,8 +200,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   onClick={() => toggleSubmenu(item.label)}
                   className={`group flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#5cc6ee]/20 to-transparent text-[#5cc6ee] border-l-2 border-[#5cc6ee]'
-                      : 'text-slate-300 hover:bg-slate-700/50 hover:text-white border-l-2 border-transparent'
+                      ? 'bg-gradient-to-r from-[#eb7325]/20 to-transparent text-[#eb7325] border-l-2 border-[#eb7325]'
+                      : 'text-white/70 hover:bg-white/10 hover:text-white border-l-2 border-transparent'
                   } ${sidebarCollapsed ? 'justify-center lg:px-2' : ''}`}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
@@ -217,10 +217,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </button>
                 {/* Submenu */}
                 {item.submenu && isOpen && !sidebarCollapsed && (
-                  <div className="mt-1 ml-3 space-y-0.5 border-l border-slate-700 pl-3">
+                  <div className="mt-1 ml-3 space-y-0.5 border-l border-white/15 pl-3">
                     {item.submenu.map((subItem, idx) =>
                       subItem.type === 'divider' || !subItem.href ? (
-                        <div key={idx} className="py-2 text-[10px] font-bold text-slate-500 tracking-wider uppercase">
+                        <div key={idx} className="py-2 text-[10px] font-bold text-white/30 tracking-wider uppercase">
                           {subItem.label}
                         </div>
                       ) : (
@@ -229,8 +229,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           href={subItem.href}
                           className={`flex items-center rounded-lg px-3 py-2 text-sm transition-all duration-150 ${
                             pathname === subItem.href
-                              ? 'bg-[#5cc6ee]/15 text-[#5cc6ee] font-medium'
-                              : 'text-slate-400 hover:bg-slate-700/40 hover:text-white'
+                              ? 'bg-[#eb7325]/15 text-[#eb7325] font-medium'
+                              : 'text-white/55 hover:bg-white/10 hover:text-white'
                           }`}
                           onClick={() => setSidebarOpen(false)}
                         >
@@ -243,14 +243,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 )}
                 {item.submenu && sidebarCollapsed && (
                   <div className="pointer-events-none absolute left-full top-0 z-20 hidden w-[19rem] pr-3 opacity-0 transition-all duration-200 group-hover/item:pointer-events-auto group-hover/item:opacity-100 lg:block">
-                    <div className="ml-3 rounded-2xl border border-slate-700 bg-slate-900/95 p-3 shadow-2xl">
-                      <div className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.24em] text-[#5cc6ee]">
+                    <div className="ml-3 rounded-2xl border border-white/10 bg-[#14264b]/98 p-3 shadow-2xl">
+                      <div className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.24em] text-[#eb7325]">
                         {item.label}
                       </div>
                       <div className="space-y-1">
                         {item.submenu.map((subItem, idx) =>
                           subItem.type === 'divider' || !subItem.href ? (
-                            <div key={idx} className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            <div key={idx} className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-white/30">
                               {subItem.label}
                             </div>
                           ) : (
@@ -259,8 +259,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                               href={subItem.href}
                               className={`flex items-center rounded-xl px-3 py-2 text-sm transition-all duration-150 ${
                                 pathname === subItem.href
-                                  ? 'bg-[#5cc6ee]/15 text-[#5cc6ee] font-medium'
-                                  : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
+                                  ? 'bg-[#eb7325]/15 text-[#eb7325] font-medium'
+                                  : 'text-white/65 hover:bg-white/10 hover:text-white'
                               }`}
                               onClick={() => setSidebarOpen(false)}
                             >
@@ -280,7 +280,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Sidebar footer */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700/50 bg-slate-900/30 p-3">
+        <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-black/20 p-3">
           <div className={`flex items-center text-xs text-slate-400 ${sidebarCollapsed ? 'justify-center' : 'gap-2'}`}>
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
             {!sidebarCollapsed && <span>Hệ thống hoạt động</span>}
@@ -295,13 +295,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-2">
             {/* Mobile menu button */}
             <button
-              className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-[#5cc6ee] lg:hidden"
+              className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-[#14264b] lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               <FiMenu className="h-6 w-6" />
             </button>
             <button
-              className="hidden rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-[#5cc6ee] lg:inline-flex"
+              className="hidden rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-[#14264b] lg:inline-flex"
               onClick={toggleSidebarCollapsed}
               title={sidebarCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
             >
@@ -315,16 +315,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <input
                 type="text"
                 placeholder="Tìm kiếm đơn hàng, khách hàng..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm focus:border-[#5cc6ee] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5cc6ee]/20 transition-all placeholder:text-slate-400"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm focus:border-[#14264b] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 transition-all placeholder:text-slate-400"
               />
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#5cc6ee] transition-colors" />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#14264b] transition-colors" />
             </div>
           </div>
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">
             {/* Notifications */}
-            <button className="relative rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 hover:text-[#5cc6ee] transition-colors cursor-pointer">
+            <button className="relative rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 hover:text-[#14264b] transition-colors cursor-pointer">
               <FiBell className="h-5 w-5" />
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
             </button>
@@ -334,7 +334,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* User menu */}
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#5cc6ee] to-cyan-400 text-white font-bold shadow-lg shadow-cyan-500/30">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#eb7325] to-[#14264b] text-white font-bold shadow-lg shadow-[#eb7325]/30">
                 {user?.username?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="hidden md:block">

@@ -7,13 +7,13 @@ import { FaQuoteLeft, FaStar } from 'react-icons/fa';
  * Testimonials Section Component
  *
  * Displays 3 customer testimonials in a responsive grid with star ratings.
- * Uses #5cc6ee as primary color.
+ * Uses #14264b as primary color.
  */
 export default function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const colors = {
-    primary: '#5cc6ee',
+    primary: '#14264b',
     primaryLight: '#e0f7ff',
     primaryDark: '#2a8fb3',
     text: '#1e293b',

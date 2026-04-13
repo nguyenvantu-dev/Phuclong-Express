@@ -22,12 +22,12 @@ interface TrackingResultState {
   history?: TrackingHistoryItem[];
 }
 
-// Custom colors based on #5cc6ee
+// Brand colors: #14264b (navy) + #eb7325 (orange)
 const colors = {
-  primary: '#5cc6ee',
-  primaryHover: '#4ab3dc',
-  primaryDark: '#2a8fb3',
-  accent: '#ff6b35',
+  primary: '#14264b',
+  primaryHover: '#1e3a6e',
+  accent: '#eb7325',
+  accentHover: '#c55a14',
   text: '#1e293b',
   textLight: '#f8fafc',
 };
@@ -36,7 +36,7 @@ const colors = {
  * Hero Section Component
  *
  * Modern hero with full-width slider, glass tracking form, and bold typography.
- * Uses #5cc6ee as primary color.
+ * Uses #14264b as primary color.
  */
 export default function HeroSection() {
   const [trackingCode, setTrackingCode] = useState('');
@@ -127,8 +127,8 @@ export default function HeroSection() {
           {/* Left: Headline */}
           <div className="flex-1 text-left">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-0.5" style={{ backgroundColor: colors.primary }} />
-              <span className="text-sm font-semibold tracking-widest uppercase" style={{ color: colors.primary }}>
+              <div className="w-8 h-0.5" style={{ backgroundColor: colors.accent }} />
+              <span className="text-sm font-semibold tracking-widest uppercase" style={{ color: colors.accent }}>
                 PLE Logistics
               </span>
             </div>
@@ -138,7 +138,7 @@ export default function HeroSection() {
             >
               Mua hộ
               <br />
-              <span style={{ color: colors.primary }}>Vận chuyển</span>
+              <span style={{ color: colors.accent }}>Vận chuyển</span>
               <br />
               <span className="text-3xl md:text-4xl lg:text-5xl font-bold" style={{ color: 'rgba(255,255,255,0.75)' }}>
                 USA &amp; Toàn quốc
@@ -150,14 +150,14 @@ export default function HeroSection() {
                 className="px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-md text-sm font-medium"
                 style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
               >
-                <FiShield className="w-3.5 h-3.5" style={{ color: colors.primary }} />
+                <FiShield className="w-3.5 h-3.5" style={{ color: colors.accent }} />
                 Bảo hiểm hàng hóa
               </div>
               <div
                 className="px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-md text-sm font-medium"
                 style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}
               >
-                <FiTruck className="w-3.5 h-3.5" style={{ color: colors.primary }} />
+                <FiTruck className="w-3.5 h-3.5" style={{ color: colors.accent }} />
                 Giao hàng toàn quốc
               </div>
             </div>
@@ -173,7 +173,7 @@ export default function HeroSection() {
             }}
           >
             <h3 className="flex items-center justify-center gap-2 text-base font-bold mb-4 text-white">
-              <FiPackage className="w-5 h-5" style={{ color: colors.primary }} />
+              <FiPackage className="w-5 h-5" style={{ color: colors.accent }} />
               TRA CỨU TRACKING
             </h3>
             <form onSubmit={handleTrackingSearch} className="space-y-3">
@@ -188,7 +188,7 @@ export default function HeroSection() {
               <button
                 type="submit"
                 className="w-full py-3 rounded-xl font-bold transition-all duration-200 cursor-pointer hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2 text-white"
-                style={{ backgroundColor: colors.primary }}
+                style={{ backgroundColor: colors.accent }}
               >
                 <FiSearch className="w-4 h-4" />
                 Tìm kiếm
@@ -267,7 +267,7 @@ export default function HeroSection() {
               style={{
                 width: activeIndex === idx ? '24px' : '8px',
                 height: '8px',
-                backgroundColor: activeIndex === idx ? colors.primary : 'rgba(255,255,255,0.4)',
+                backgroundColor: activeIndex === idx ? colors.accent : 'rgba(255,255,255,0.4)',
               }}
             />
           ))}

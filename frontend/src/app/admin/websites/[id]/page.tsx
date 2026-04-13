@@ -74,7 +74,7 @@ export default function WebsiteDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5cc6ee]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#14264b]"></div>
       </div>
     );
   }
@@ -85,7 +85,7 @@ export default function WebsiteDetailPage() {
       <nav className="flex items-center gap-2 text-sm mb-6">
         <Link
           href="/admin/websites"
-          className="text-[#5cc6ee] hover:text-[#4ab5dd] transition-colors cursor-pointer"
+          className="text-[#14264b] hover:text-[#4ab5dd] transition-colors cursor-pointer"
         >
           Danh sách website
         </Link>
@@ -134,7 +134,7 @@ export default function WebsiteDetailPage() {
               value={websiteName}
               onChange={(e) => setWebsiteName(e.target.value)}
               placeholder="Nhập tên website"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5cc6ee] focus:border-[#5cc6ee] outline-none transition-colors"
+              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] outline-none transition-colors"
             />
           </div>
 
@@ -146,7 +146,7 @@ export default function WebsiteDetailPage() {
               value={ghiChu}
               onChange={(e) => setGhiChu(e.target.value)}
               placeholder="Nhập ghi chú"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5cc6ee] focus:border-[#5cc6ee] outline-none transition-colors"
+              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] outline-none transition-colors"
             />
           </div>
 
@@ -155,7 +155,7 @@ export default function WebsiteDetailPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 bg-[#5cc6ee] text-white font-medium rounded-lg hover:bg-[#4ab5dd] focus:ring-2 focus:ring-[#5cc6ee] focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-6 py-2.5 bg-[#14264b] text-white font-medium rounded-lg hover:bg-[#4ab5dd] focus:ring-2 focus:ring-[#14264b] focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {saving ? 'Đang lưu...' : 'Cập nhật'}
             </button>
@@ -173,7 +173,7 @@ export default function WebsiteDetailPage() {
       <div className="mt-6">
         <Link
           href="/admin/websites"
-          className="inline-flex items-center gap-2 text-[#5cc6ee] hover:text-[#4ab5dd] transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 text-[#14264b] hover:text-[#4ab5dd] transition-colors cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

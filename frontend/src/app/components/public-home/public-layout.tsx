@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/use-auth-context';
  * Public Layout Component
  *
  * Provides header and footer for public pages (home page).
- * Modern glass navbar design with #5cc6ee primary color.
+ * Modern glass navbar design with #14264b primary color.
  */
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,12 +18,13 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
-  // Custom colors based on #5cc6ee
+  // Brand colors: #14264b (navy) + #eb7325 (orange)
   const colors = {
-    primary: '#5cc6ee',
-    primaryHover: '#4ab3dc',
-    primaryLight: '#e0f7ff',
-    primaryDark: '#2a8fb3',
+    primary: '#14264b',
+    primaryHover: '#1e3a6e',
+    primaryLight: 'rgba(235,115,37,0.08)',
+    accent: '#eb7325',
+    accentHover: '#c55a14',
     text: '#1e293b',
     textMuted: '#64748b',
     bg: '#f8fafc',
@@ -68,7 +69,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 cursor-pointer group">
-              <img src="/image1/logo2.png" alt="Phuc Long Express" className="h-23 object-contain transition-transform group-hover:scale-105" />
+              <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL.png" alt="Phuc Long Express" className="h-23 object-contain transition-transform group-hover:scale-105" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -104,7 +105,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                                   style={{ color: colors.textMuted }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.backgroundColor = colors.primaryLight;
-                                    e.currentTarget.style.color = colors.primaryDark;
+                                    e.currentTarget.style.color = colors.accent;
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.backgroundColor = 'transparent';
@@ -137,7 +138,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               <div className="relative hidden lg:block">
                 <button
                   type="button"
-                  className="flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-xl transition-all cursor-pointer hover:shadow-lg hover:shadow-cyan-500/30"
+                  className="flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-xl transition-all cursor-pointer hover:shadow-lg hover:shadow-[#eb7325]/30"
                   style={{ backgroundColor: colors.primary }}
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
@@ -176,7 +177,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             ) : (
               <Link
                 href="/admin"
-                className="hidden lg:flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-xl transition-all cursor-pointer hover:shadow-lg hover:shadow-cyan-500/30 hover:-translate-y-0.5"
+                className="hidden lg:flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-xl transition-all cursor-pointer hover:shadow-lg hover:shadow-[#eb7325]/30 hover:-translate-y-0.5"
                 style={{ backgroundColor: colors.primary }}
               >
                 Quản trị
@@ -262,7 +263,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                     <button
                       type="button"
                       className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors cursor-pointer"
-                      style={{ color: colors.primaryDark }}
+                      style={{ color: colors.accent }}
                       onClick={() => {
                         logout();
                         setMobileMenuOpen(false);
@@ -283,14 +284,14 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <main className="flex-1 pt-20">{children}</main>
 
       {/* Footer */}
-      <footer style={{ backgroundColor: '#0f1f2e' }}>
+      <footer style={{ backgroundColor: '#14264b' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
 
             {/* Col 1: Brand */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img src="/image1/logo3.png" alt="Phuc Long Express" className="h-12 object-contain" />
+                <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png" alt="Phuc Long Express" className="h-20 object-contain" />
               </div>
               <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 Dịch vụ logistics uy tín — chuyên mua hộ &amp; vận chuyển hàng hóa toàn quốc từ năm 2018.
@@ -333,7 +334,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                     className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
                     style={{ color: 'rgba(255,255,255,0.5)' }}
                   >
-                    <FiMail className="w-4 h-4 flex-shrink-0" style={{ color: colors.primary }} />
+                    <FiMail className="w-4 h-4 flex-shrink-0" style={{ color: colors.accent }} />
                     phuclongexpress@gmail.com
                   </a>
                 </li>
@@ -343,7 +344,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                     className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white group"
                     style={{ color: 'rgba(255,255,255,0.5)' }}
                   >
-                    <FiPhone className="w-4 h-4 flex-shrink-0" style={{ color: colors.primary }} />
+                    <FiPhone className="w-4 h-4 flex-shrink-0" style={{ color: colors.accent }} />
                     (+84) 344.415.213
                   </a>
                 </li>
@@ -361,7 +362,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 </li>
                 <li>
                   <span className="flex items-start gap-3 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    <FiMapPin className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors.primary }} />
+                    <FiMapPin className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors.accent }} />
                     Hà Nội, Việt Nam
                   </span>
                 </li>

@@ -71,7 +71,7 @@ const statusConfig: Record<string, { badge: string; card: string; dot: string }>
   Cancelled: { badge: 'bg-rose-50 text-rose-700 border border-rose-200',   card: 'border-l-4 border-rose-400 bg-rose-50',   dot: 'bg-rose-400' },
 };
 
-const inputCls = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#5cc6ee] focus:ring-2 focus:ring-[#5cc6ee]/20 focus:outline-none transition-all placeholder:text-slate-400 bg-white';
+const inputCls = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 focus:outline-none transition-all placeholder:text-slate-400 bg-white';
 
 export default function TrackingPage() {
   const queryClient = useQueryClient();
@@ -190,7 +190,7 @@ export default function TrackingPage() {
         </div>
         <Link
           href="/admin/tracking/new"
-          className="flex items-center gap-2 bg-[#5cc6ee] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer shadow-sm shadow-cyan-300/40"
+          className="flex items-center gap-2 bg-[#14264b] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer shadow-sm shadow-cyan-300/40"
         >
           <FiPlus className="h-4 w-4" />
           Thêm mới tracking
@@ -213,7 +213,7 @@ export default function TrackingPage() {
             <button
               key={status}
               onClick={toggleStatus}
-              className={`rounded-xl px-3 py-3 text-left transition-all cursor-pointer ${cfg?.card || 'bg-slate-50 border-l-4 border-slate-300'} ${isActive ? 'ring-2 ring-offset-1 ring-[#5cc6ee]' : 'hover:brightness-95'}`}
+              className={`rounded-xl px-3 py-3 text-left transition-all cursor-pointer ${cfg?.card || 'bg-slate-50 border-l-4 border-slate-300'} ${isActive ? 'ring-2 ring-offset-1 ring-[#14264b]' : 'hover:brightness-95'}`}
             >
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`h-2 w-2 rounded-full ${cfg?.dot || 'bg-slate-400'}`} />
@@ -284,7 +284,7 @@ export default function TrackingPage() {
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="h-8 w-8 border-2 border-[#5cc6ee] border-t-transparent rounded-full animate-spin" />
+            <div className="h-8 w-8 border-2 border-[#14264b] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center gap-2 py-16 text-rose-500">
@@ -300,7 +300,7 @@ export default function TrackingPage() {
                     <th className="px-4 py-3 w-10">
                       <input ref={selectAllRef} type="checkbox" checked={allSelected}
                         onChange={handleSelectAll}
-                        className="h-4 w-4 rounded border-slate-300 accent-[#5cc6ee] cursor-pointer" />
+                        className="h-4 w-4 rounded border-slate-300 accent-[#14264b] cursor-pointer" />
                     </th>
                     {['ID', 'Username', 'Tracking Number', 'Order Number', 'Lô hàng', 'Ngày đặt', 'Tình trạng', 'Thao tác'].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
@@ -312,7 +312,7 @@ export default function TrackingPage() {
                     <tr key={tracking.TrackingID} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="px-4 py-3">
                         <input type="checkbox" checked={selectedIds.includes(tracking.TrackingID)} onChange={() => handleSelect(tracking.TrackingID)}
-                          className="h-4 w-4 rounded border-slate-300 accent-[#5cc6ee] cursor-pointer" />
+                          className="h-4 w-4 rounded border-slate-300 accent-[#14264b] cursor-pointer" />
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-slate-500">{tracking.TrackingID}</td>
                       <td className="px-4 py-3 text-sm font-medium text-slate-800">{tracking.UserName}</td>
