@@ -116,7 +116,7 @@ export default function ImportOrdersPage() {
             onClick={() => setMode('0')}
             className={`rounded-lg px-4 py-2 text-sm font-medium ${
               mode === '0'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#14264b] text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -126,7 +126,7 @@ export default function ImportOrdersPage() {
             onClick={() => setMode('1')}
             className={`rounded-lg px-4 py-2 text-sm font-medium ${
               mode === '1'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#14264b] text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -151,7 +151,7 @@ export default function ImportOrdersPage() {
                 type="file"
                 accept=".xlsx"
                 onChange={handleFileChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#14264b] focus:outline-none"
               />
             </div>
             <p className="text-sm text-gray-500">
@@ -173,7 +173,7 @@ export default function ImportOrdersPage() {
               <select
                 value={sheetName}
                 onChange={(e) => setSheetName(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#14264b] focus:outline-none"
               >
                 <option value="">-- Chọn Sheet --</option>
                 {mockSheets.map((sheet) => (
@@ -192,7 +192,7 @@ export default function ImportOrdersPage() {
               </button>
               <button
                 onClick={handleSheetSelect}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e]"
               >
                 Tiếp theo
               </button>
@@ -262,7 +262,7 @@ export default function ImportOrdersPage() {
             <div className="flex gap-4">
               <button
                 onClick={handleFinish}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e]"
               >
                 Import tiếp
               </button>

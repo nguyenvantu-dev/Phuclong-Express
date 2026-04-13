@@ -366,7 +366,7 @@ export default function DebtReconciliationPage() {
             <input
               ref={fromDateRef}
               type="text"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               placeholder="dd/mm/yyyy"
               value={filters.fromDate}
               readOnly
@@ -381,7 +381,7 @@ export default function DebtReconciliationPage() {
             <input
               ref={toDateRef}
               type="text"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               placeholder="dd/mm/yyyy"
               value={filters.toDate}
               readOnly
@@ -396,7 +396,7 @@ export default function DebtReconciliationPage() {
             <input
               id="debt-reconciliation-username-filter"
               type="text"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               value={usernameInput}
               onChange={(e) => handleUsernameInputChange(e.target.value)}
               onKeyDown={handleUsernameKeyDown}
@@ -412,7 +412,7 @@ export default function DebtReconciliationPage() {
                 <button
                   type="button"
                   onClick={() => handleUsernameSelect('')}
-                  className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                  className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-[#14264b]/5 hover:text-[#14264b]"
                 >
                   --All--
                 </button>
@@ -422,9 +422,9 @@ export default function DebtReconciliationPage() {
                     type="button"
                     onClick={() => handleUsernameSelect(user.UserName)}
                     onMouseEnter={() => setActiveUsernameIndex(index)}
-                    className={`block w-full px-3 py-2 text-left font-medium hover:bg-blue-50 hover:text-blue-700 ${
+                    className={`block w-full px-3 py-2 text-left font-medium hover:bg-[#14264b]/5 hover:text-[#14264b] ${
                       index === activeUsernameIndex
-                        ? 'bg-blue-50 text-blue-700'
+                        ? 'bg-[#14264b]/5 text-[#14264b]'
                         : 'text-gray-900'
                     }`}
                   >
@@ -445,7 +445,7 @@ export default function DebtReconciliationPage() {
             </label>
             <input
               type="text"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               value={filters.orderNumber}
               onChange={(e) => handleFilterChange('orderNumber', e.target.value)}
               placeholder="Order number"
@@ -463,7 +463,7 @@ export default function DebtReconciliationPage() {
             <button
               onClick={handleExport}
               disabled={!data?.length || exportMutation.isPending}
-              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+              className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50"
             >
               {exportMutation.isPending ? 'Đang xuất...' : 'Export to excel'}
             </button>
@@ -474,7 +474,7 @@ export default function DebtReconciliationPage() {
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#14264b] border-t-transparent"></div>
         </div>
       )}
 
@@ -560,7 +560,7 @@ export default function DebtReconciliationPage() {
                         ) : (
                           <button
                             onClick={() => handleEdit(item)}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-[#14264b] hover:text-[#14264b]"
                           >
                             Edit
                           </button>
@@ -627,7 +627,7 @@ export default function DebtReconciliationPage() {
                         <button
                           onClick={() => handleMoveToReceived(item.ordernumber)}
                           disabled={moveToReceivedMutation.isPending}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-[#14264b] hover:text-[#14264b]"
                         >
                           Chuyển về Received
                         </button>

@@ -201,14 +201,14 @@ export default function BatchesPage() {
       label: 'Tiền Lô Hàng (A)',
       width: '150px',
       align: 'right' as const,
-      render: (value: number | null) => <span className="text-cyan-700 font-medium">{formatCurrency(value)}</span>,
+      render: (value: number | null) => <span className="text-[#14264b] font-medium">{formatCurrency(value)}</span>,
     },
     {
       key: 'TienPhiHaiQuanB',
       label: 'Tiền phí hải quan (B)',
       width: '150px',
       align: 'right' as const,
-      render: (value: number | null) => <span className="text-blue-700 font-medium">{formatCurrency(value)}</span>,
+      render: (value: number | null) => <span className="text-[#14264b] font-medium">{formatCurrency(value)}</span>,
     },
     {
       key: 'TongTienLoHang',
@@ -225,7 +225,7 @@ export default function BatchesPage() {
       render: (_: unknown, row: LoHang) => (
         <Link
           href={`/admin/batches/${row.LoHangID}`}
-          className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 transition-colors"
+          className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium text-white bg-[#14264b] hover:bg-[#1e3a6e] transition-colors"
         >
           Chi tiết
         </Link>
@@ -234,11 +234,11 @@ export default function BatchesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-cyan-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#f0f4f9] via-white to-[#f0f4f9] p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-cyan-900 mb-2">Danh sách lô hàng</h1>
+          <h1 className="text-4xl font-bold text-[#14264b] mb-2">Danh sách lô hàng</h1>
           <p className="text-gray-600">Quản lý và theo dõi các lô hàng nhập khẩu</p>
         </div>
 
@@ -268,7 +268,7 @@ export default function BatchesPage() {
               type="date"
               value={draft.tuNgay}
               onChange={(e) => setDraft((p) => ({ ...p, tuNgay: e.target.value }))}
-              className="w-full px-3 py-2 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2 border border-[#14264b]/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
             />
           </FilterField>
           <FilterField label="Đến ngày">
@@ -276,7 +276,7 @@ export default function BatchesPage() {
               type="date"
               value={draft.denNgay}
               onChange={(e) => setDraft((p) => ({ ...p, denNgay: e.target.value }))}
-              className="w-full px-3 py-2 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2 border border-[#14264b]/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
             />
           </FilterField>
           <FilterField label="Username">
@@ -292,14 +292,14 @@ export default function BatchesPage() {
                 }}
                 placeholder="Nhập username"
                 autoComplete="off"
-                className="w-full px-3 py-2 border border-cyan-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 border border-[#14264b]/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#14264b]/20"
               />
               {showUsernameDropdown && (
-                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-cyan-200 bg-white py-1 text-sm shadow-lg">
+                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-[#14264b]/20 bg-white py-1 text-sm shadow-lg">
                   <button
                     type="button"
                     onClick={() => handleUsernameSelect('')}
-                    className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-cyan-50 hover:text-cyan-700"
+                    className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-[#14264b]/5 hover:text-[#14264b]"
                   >
                     --Tất cả--
                   </button>
@@ -309,9 +309,9 @@ export default function BatchesPage() {
                       type="button"
                       onClick={() => handleUsernameSelect(user.UserName)}
                       onMouseEnter={() => setActiveUsernameIndex(index)}
-                      className={`block w-full px-3 py-2 text-left font-medium hover:bg-cyan-50 hover:text-cyan-700 ${
+                      className={`block w-full px-3 py-2 text-left font-medium hover:bg-[#14264b]/5 hover:text-[#14264b] ${
                         index === activeUsernameIndex
-                          ? 'bg-cyan-50 text-cyan-700'
+                          ? 'bg-[#14264b]/5 text-[#14264b]'
                           : 'text-gray-900'
                       }`}
                     >
@@ -327,7 +327,7 @@ export default function BatchesPage() {
           </FilterField>
           <button
             onClick={handleSearch}
-            className="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium"
+            className="w-full px-4 py-2 bg-[#14264b] hover:bg-[#1e3a6e] text-white rounded-lg transition-colors font-medium"
           >
             Tìm kiếm
           </button>
@@ -367,7 +367,7 @@ export default function BatchesPage() {
                   <button
                     onClick={() => handlePageChange(committed.page - 1)}
                     disabled={committed.page === 1}
-                    className="px-4 py-2 border border-cyan-300 rounded-lg text-cyan-700 hover:bg-cyan-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 border border-[#14264b]/30 rounded-lg text-[#14264b] hover:bg-[#14264b]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     ← Trước
                   </button>
@@ -380,8 +380,8 @@ export default function BatchesPage() {
                           onClick={() => handlePageChange(pageNum)}
                           className={`w-10 h-10 rounded-lg transition-colors ${
                             committed.page === pageNum
-                              ? 'bg-cyan-600 text-white font-bold'
-                              : 'border border-cyan-300 text-cyan-700 hover:bg-cyan-50'
+                              ? 'bg-[#14264b] text-white font-bold'
+                              : 'border border-[#14264b]/30 text-[#14264b] hover:bg-[#14264b]/5'
                           }`}
                         >
                           {pageNum}
@@ -392,7 +392,7 @@ export default function BatchesPage() {
                   <button
                     onClick={() => handlePageChange(committed.page + 1)}
                     disabled={committed.page >= totalPages}
-                    className="px-4 py-2 border border-cyan-300 rounded-lg text-cyan-700 hover:bg-cyan-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 border border-[#14264b]/30 rounded-lg text-[#14264b] hover:bg-[#14264b]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Sau →
                   </button>
@@ -406,7 +406,7 @@ export default function BatchesPage() {
         <div className="mt-8 flex justify-end">
           <Link
             href="/admin/batches/new"
-            className="inline-flex items-center px-6 py-3 rounded-lg text-white bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 transition-colors font-semibold shadow-lg"
+            className="inline-flex items-center px-6 py-3 rounded-lg text-white bg-gradient-to-r from-[#14264b] to-[#1e3a6e] hover:from-[#1e3a6e] hover:to-[#0d1833] transition-colors font-semibold shadow-lg"
           >
             + Thêm lô hàng mới
           </Link>

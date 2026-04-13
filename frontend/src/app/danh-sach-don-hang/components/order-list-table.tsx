@@ -35,8 +35,8 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center mb-4">
-          <FiPackage className="w-8 h-8 text-cyan-400" />
+        <div className="w-16 h-16 rounded-2xl bg-[#14264b]/5 flex items-center justify-center mb-4">
+          <FiPackage className="w-8 h-8 text-[#14264b]/60" />
         </div>
         <p className="text-slate-700 font-semibold text-lg mb-1">Không có đơn hàng</p>
         <p className="text-slate-400 text-sm">Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác.</p>
@@ -101,12 +101,12 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
             return (
               <tr
                 key={order.id}
-                className={`group transition-colors duration-150 hover:bg-cyan-50/60 ${
+                className={`group transition-colors duration-150 hover:bg-[#14264b]/5 ${
                   index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
                 }`}
               >
                 {/* Mã ĐH */}
-                <td className="border-b border-slate-100 px-2 py-2.5 font-semibold text-cyan-700 break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 font-semibold text-[#14264b] break-words">
                   #{order.id}
                 </td>
 
@@ -129,7 +129,7 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                       href={order.linkWeb}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-w-0 max-w-full items-center gap-1 text-cyan-600 hover:text-cyan-800 cursor-pointer text-[10px]"
+                      className="inline-flex min-w-0 max-w-full items-center gap-1 text-[#14264b] hover:text-[#0f1e38] cursor-pointer text-[10px]"
                     >
                       <FiExternalLink className="w-3 h-3 flex-shrink-0" />
                       <span className="truncate">{order.linkWeb.replace(/^https?:\/\//, '').substring(0, 25)}…</span>
@@ -213,7 +213,7 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                 </td>
 
                 {/* Tổng VND */}
-                <td className="border-b border-slate-100 px-2 py-2.5 text-right font-bold text-cyan-700 break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right font-bold text-[#14264b] break-words">
                   {formatNumber(order.tongTienVnd)}
                 </td>
 
@@ -244,7 +244,7 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                     {canEdit && (
                       <Link
                         href={`/sua-don-hang?id=${order.id}`}
-                        className="flex w-full items-center justify-center rounded-md bg-cyan-50 px-1 py-2 text-cyan-700 hover:bg-cyan-100 cursor-pointer transition-colors duration-150"
+                        className="flex w-full items-center justify-center rounded-md bg-[#14264b]/5 px-1 py-2 text-[#14264b] hover:bg-[#14264b]/10 cursor-pointer transition-colors duration-150"
                         title="Sửa đơn hàng"
                       >
                         <FiEdit2 className="w-3 h-3" />

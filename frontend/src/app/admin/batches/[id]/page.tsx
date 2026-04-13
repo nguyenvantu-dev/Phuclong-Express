@@ -115,7 +115,7 @@ export default function BatchDetailPage() {
         <div className="flex gap-2">
           <button
             onClick={() => router.push(`/admin/batches/${id}/edit`)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="bg-[#14264b] text-white px-4 py-2 rounded hover:bg-[#1e3a6e]"
           >
             Sửa
           </button>

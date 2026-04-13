@@ -5,7 +5,7 @@ import { FiSearch, FiDownload } from 'react-icons/fi';
 const ORDER_STATUSES = ['Received', 'Ordered', 'Shipped', 'Completed', 'Cancelled'];
 
 const STATUS_PILL_CONFIG: Record<string, string> = {
-  Received:  'data-[active=true]:bg-cyan-600   data-[active=true]:text-white   data-[active=true]:border-cyan-600',
+  Received:  'data-[active=true]:bg-[#14264b]   data-[active=true]:text-white   data-[active=true]:border-[#14264b]',
   Ordered:   'data-[active=true]:bg-amber-500  data-[active=true]:text-white   data-[active=true]:border-amber-500',
   Shipped:   'data-[active=true]:bg-blue-600   data-[active=true]:text-white   data-[active=true]:border-blue-600',
   Completed: 'data-[active=true]:bg-green-600  data-[active=true]:text-white   data-[active=true]:border-green-600',
@@ -50,12 +50,12 @@ export default function OrderFilterBar({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-colors bg-slate-50 placeholder:text-slate-400"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors bg-slate-50 placeholder:text-slate-400"
           />
         </div>
         <button
           onClick={onSearchSubmit}
-          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors duration-200 shadow-sm"
+          className="px-4 py-2 bg-[#14264b] hover:bg-[#1f3a6d] text-white text-sm font-medium rounded-lg cursor-pointer transition-colors duration-200 shadow-sm"
         >
           Xem
         </button>

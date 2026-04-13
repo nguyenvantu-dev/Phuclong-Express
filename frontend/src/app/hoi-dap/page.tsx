@@ -90,20 +90,20 @@ export default function HoiDapPage() {
   if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#14264b]"></div>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-cyan-700">HỎI ĐÁP</h2>
+      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-[#14264b]">HỎI ĐÁP</h2>
 
       {error && <div className="text-red-500 mb-4 bg-red-50 px-4 py-3 rounded-lg">{error}</div>}
       {success && <div className="text-emerald-500 mb-4 bg-emerald-50 px-4 py-3 rounded-lg">{success}</div>}
 
       {/* Form */}
-      <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-4 md:p-6 mb-6">
+      <div className="bg-white rounded-xl border border-[#14264b]/20 shadow-sm p-4 md:p-6 mb-6">
         <div className="mb-4">
           <label className="block text-sm font-medium mb-1.5 text-slate-700">
             Câu hỏi <span className="text-red-500">*</span>
@@ -111,7 +111,7 @@ export default function HoiDapPage() {
           <textarea
             value={cauHoi}
             onChange={(e) => setCauHoi(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
             rows={5}
             placeholder="Nhập câu hỏi của bạn..."
           />
@@ -120,18 +120,18 @@ export default function HoiDapPage() {
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="px-5 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
+          className="px-5 py-2.5 bg-[#14264b] text-white rounded-lg hover:bg-[#1f3a6d] cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
         >
           Tạo câu hỏi
         </button>
       </div>
 
-      <hr className="my-6 border-cyan-200" />
+      <hr className="my-6 border-[#14264b]/20" />
 
       {/* Q&A List */}
       {isLoading ? (
         <div className="text-center py-12">
-          <svg className="w-8 h-8 animate-spin text-cyan-600 mx-auto" fill="none" viewBox="0 0 24 24">
+          <svg className="w-8 h-8 animate-spin text-[#14264b] mx-auto" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
@@ -139,15 +139,15 @@ export default function HoiDapPage() {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm">
+          <div className="overflow-x-auto rounded-xl border border-[#14264b]/20 shadow-sm">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-cyan-100">
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Người hỏi</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Câu hỏi</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Trả lời</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ngày tạo</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ngày trả lời</th>
+                <tr className="bg-[#14264b]/10">
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Người hỏi</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Câu hỏi</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Trả lời</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Ngày tạo</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Ngày trả lời</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,21 +160,21 @@ export default function HoiDapPage() {
                 ) : (
                   questions.map((item, index) => (
                     <tr key={item.ID ?? `q-${index}`} className="bg-white">
-                      <td className="border-b border-cyan-100 px-3 py-2.5 text-cyan-600 font-medium">{item.username}</td>
-                      <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-700">{item.CauHoi}</td>
-                      <td className="border-b border-cyan-100 px-3 py-2.5">
+                      <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-[#14264b] font-medium">{item.username}</td>
+                      <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-700">{item.CauHoi}</td>
+                      <td className="border-b border-[#14264b]/10 px-3 py-2.5">
                         {item.TraLoi ? (
                           <span className="text-emerald-600">{item.TraLoi}</span>
                         ) : (
                           <span className="text-slate-400 italic">(Chưa trả lời)</span>
                         )}
                       </td>
-                      <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
+                      <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">
                         {item.NgayTao
                           ? new Date(item.NgayTao).toLocaleString('vi-VN')
                           : ''}
                       </td>
-                      <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
+                      <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">
                         {item.NgayTraLoi
                           ? new Date(item.NgayTraLoi).toLocaleString('vi-VN')
                           : ''}
@@ -192,17 +192,17 @@ export default function HoiDapPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-cyan-50 hover:border-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-150"
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-[#14264b]/5 hover:border-[#14264b]/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-150"
               >
                 Previous
               </button>
               <span className="px-4 py-1.5 text-slate-600">
-                Trang <span className="font-medium text-cyan-700">{page}</span> / {totalPages} (Tổng: {total})
+                Trang <span className="font-medium text-[#14264b]">{page}</span> / {totalPages} (Tổng: {total})
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-cyan-50 hover:border-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-150"
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-[#14264b]/5 hover:border-[#14264b]/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-150"
               >
                 Next
               </button>

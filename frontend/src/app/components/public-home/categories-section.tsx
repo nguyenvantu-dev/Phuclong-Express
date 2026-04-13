@@ -13,8 +13,8 @@ export default function CategoriesSection() {
     primary: '#14264b',
     primaryLight: '#e0f7ff',
     primaryDark: '#2a8fb3',
-    text: '#1e293b',
-    textMuted: '#64748b',
+    text: '#111827',
+    textMuted: '#6b7280',
   };
 
   const categories = [
@@ -30,7 +30,7 @@ export default function CategoriesSection() {
   ];
 
   return (
-    <section className="py-16 md:py-20" style={{ backgroundColor: '#f1f5f9' }}>
+    <section className="py-16 md:py-20" style={{ backgroundColor: '#f8fafc' }}>
       <div className="container mx-auto px-4">
         <h2
           className="text-3xl md:text-4xl font-bold text-center mb-4"

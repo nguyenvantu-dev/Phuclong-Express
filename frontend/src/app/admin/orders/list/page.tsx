@@ -60,7 +60,7 @@ function NoteModal({
             value={ghiChu}
             onChange={(e) => { setGhiChu(e.target.value); setError(''); }}
             rows={4}
-            className="w-full rounded-lg border border-gray-400 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-400 bg-white px-3 py-2 text-gray-900 focus:border-[#14264b] focus:outline-none"
             placeholder="Nhập ghi chú..."
             autoFocus
           />
@@ -155,7 +155,7 @@ function ReturnDateModal({
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
           Cập nhật ngày về VN {orderIds.length > 1 && `(${orderIds.length} đơn)`}
         </h3>
-        <div className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
+        <div className="mb-4 rounded-lg bg-[#14264b]/5 p-3 text-sm text-[#14264b]">
           Chú ý: Khi cập nhật ngày về VN hệ thống sẽ tự động tạo đợt hàng cần ship cho các item này
         </div>
         {error && <div className="mb-4 rounded bg-red-50 p-2 text-sm text-red-600">{error}</div>}
@@ -168,7 +168,7 @@ function ReturnDateModal({
               ref={dateInputRef}
               type="text"
               placeholder="dd/mm/yyyy"
-              className="w-full rounded-lg border border-gray-400 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-400 bg-white px-3 py-2 text-gray-900 focus:border-[#14264b] focus:outline-none"
             />
           </div>
           <div>
@@ -177,7 +177,7 @@ function ReturnDateModal({
               value={boSungGhiChu}
               onChange={(e) => setBoSungGhiChu(e.target.value)}
               rows={2}
-              className="w-full rounded-lg border border-gray-400 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-400 bg-white px-3 py-2 text-gray-900 focus:border-[#14264b] focus:outline-none"
               placeholder="Nhập ghi chú bổ sung..."
             />
           </div>
@@ -204,7 +204,7 @@ function ReturnDateModal({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50"
           >
             {isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
           </button>
@@ -256,7 +256,7 @@ function ConfirmModal({
           </button>
           <button
             onClick={onConfirm}
-            className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#14264b] hover:bg-[#1e3a6e]'}`}
           >
             {confirmText}
           </button>
@@ -801,13 +801,13 @@ export default function EditOrderListPage() {
         </Link>
         {/* <Link
           href="/admin/orders"
-          className="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+          className="rounded px-3 py-1 text-sm text-[#14264b] hover:bg-[#14264b]/5"
         >
           Chi tiết Order
         </Link> */}
         {/* <Link
           href="/admin/orders/return-dates"
-          className="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+          className="rounded px-3 py-1 text-sm text-[#14264b] hover:bg-[#14264b]/5"
         >
           Ngày về VN
         </Link> */}
@@ -845,7 +845,7 @@ export default function EditOrderListPage() {
             <input
               type="text"
               placeholder="Filter"
-              className="w-32 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-32 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
             />
@@ -857,7 +857,7 @@ export default function EditOrderListPage() {
             <input
               type="text"
               placeholder="Mã đặt hàng"
-              className="w-32 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-32 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               value={maDatHang}
               onChange={(e) => setMaDatHang(e.target.value)}
             />
@@ -871,7 +871,7 @@ export default function EditOrderListPage() {
                 ref={startDateRef}
                 type="text"
                 placeholder="dd/mm/yyyy"
-                className="w-28 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+                className="w-28 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               />
             </div>
             <div>
@@ -880,7 +880,7 @@ export default function EditOrderListPage() {
                 ref={endDateRef}
                 type="text"
                 placeholder="dd/mm/yyyy"
-                className="w-28 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+                className="w-28 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               />
             </div>
           </div>
@@ -889,7 +889,7 @@ export default function EditOrderListPage() {
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700">Quốc gia</label>
             <select
-              className="w-40 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-40 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               value={filters.quocGiaId || ''}
               onChange={(e) => handleFilterChange('quocGiaId', e.target.value)}
             >
@@ -908,7 +908,7 @@ export default function EditOrderListPage() {
             <input
               id="order-username-filter"
               type="text"
-              className="w-48 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+              className="w-48 rounded-lg border border-gray-400 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#14264b] focus:outline-none"
               value={usernameInput}
               onChange={(e) => handleUsernameInputChange(e.target.value)}
               onKeyDown={handleUsernameKeyDown}
@@ -924,7 +924,7 @@ export default function EditOrderListPage() {
                 <button
                   type="button"
                   onClick={() => handleUsernameSelect('')}
-                  className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                  className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-[#14264b]/5 hover:text-[#14264b]"
                 >
                   --Tất cả User--
                 </button>
@@ -934,9 +934,9 @@ export default function EditOrderListPage() {
                     type="button"
                     onClick={() => handleUsernameSelect(u.username)}
                     onMouseEnter={() => setActiveUsernameIndex(index)}
-                    className={`block w-full px-3 py-2 text-left font-medium hover:bg-blue-50 hover:text-blue-700 ${
+                    className={`block w-full px-3 py-2 text-left font-medium hover:bg-[#14264b]/5 hover:text-[#14264b] ${
                       index === activeUsernameIndex
-                        ? 'bg-blue-50 text-blue-700'
+                        ? 'bg-[#14264b]/5 text-[#14264b]'
                         : 'text-gray-900'
                     }`}
                   >
@@ -973,10 +973,10 @@ export default function EditOrderListPage() {
       </div>
 
       {/* Mass actions toolbar - matching LinkButtons in EditOrder.aspx with role visibility */}
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[#14264b]/20 bg-[#14264b]/5 p-3">
         {selectedIds.length > 0 && (
           <span className="mr-2 text-sm font-medium text-gray-700">
-            Đã chọn: <span className="font-bold text-blue-600">{selectedIds.length}</span> đơn
+            Đã chọn: <span className="font-bold text-[#14264b]">{selectedIds.length}</span> đơn
           </span>
         )}
         <div className="flex flex-wrap gap-2">
@@ -984,7 +984,7 @@ export default function EditOrderListPage() {
             <button
               onClick={() => setReturnDateModalOpen(true)}
               disabled={selectedIds.length === 0}
-              className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded bg-[#14264b] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cập nhật ngày về
             </button>
@@ -1040,7 +1040,7 @@ export default function EditOrderListPage() {
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#14264b] border-t-transparent"></div>
         </div>
       )}
 
@@ -1142,7 +1142,7 @@ export default function EditOrderListPage() {
                       ) : (
                         <Link
                           href={`/admin/orders/edit?id=${order.id}`}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-[#14264b] hover:text-[#14264b]"
                         >
                           Detail
                         </Link>
@@ -1171,7 +1171,7 @@ export default function EditOrderListPage() {
                           href={order.linkTaiKhoanMang}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-[#14264b] hover:text-[#14264b]"
                         >
                           {order.username}
                         </a>
@@ -1194,7 +1194,7 @@ export default function EditOrderListPage() {
                           href={order.linkWeb}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-700 hover:text-blue-900 block truncate font-medium"
+                          className="text-[#14264b] hover:text-[#14264b] block truncate font-medium"
                         >
                           {order.linkWeb}
                         </a>

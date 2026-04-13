@@ -288,7 +288,7 @@ export default function DeletedOrdersPage() {
             <input
               type="text"
               placeholder="Nội dung tìm..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
             />
@@ -300,7 +300,7 @@ export default function DeletedOrdersPage() {
             <input
               type="text"
               placeholder="Mã ĐH..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.orderId || ''}
               onChange={(e) => handleFilterChange('orderId', e.target.value)}
             />
@@ -310,7 +310,7 @@ export default function DeletedOrdersPage() {
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700">Quốc gia</label>
             <select
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.quocGiaId || ''}
               onChange={(e) => handleFilterChange('quocGiaId', e.target.value)}
             >
@@ -324,7 +324,7 @@ export default function DeletedOrdersPage() {
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700">Username</label>
             <select
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.username || ''}
               onChange={(e) => handleFilterChange('username', e.target.value)}
             >
@@ -340,7 +340,7 @@ export default function DeletedOrdersPage() {
             <label className="mb-1 block text-xs font-medium text-gray-700">Từ ngày</label>
             <input
               type="date"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.startDate || ''}
               onChange={(e) => handleFilterChange('startDate', e.target.value)}
             />
@@ -351,7 +351,7 @@ export default function DeletedOrdersPage() {
             <label className="mb-1 block text-xs font-medium text-gray-700">Đến ngày</label>
             <input
               type="date"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.endDate || ''}
               onChange={(e) => handleFilterChange('endDate', e.target.value)}
             />
@@ -388,7 +388,7 @@ export default function DeletedOrdersPage() {
                 }
               }}
               disabled={isPending}
-              className="text-sm font-medium text-blue-600 hover:underline disabled:opacity-50"
+              className="text-sm font-medium text-[#14264b] hover:underline disabled:opacity-50"
             >
               Khôi phục
             </button>
@@ -443,7 +443,7 @@ export default function DeletedOrdersPage() {
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#14264b] border-t-transparent"></div>
         </div>
       )}
 
@@ -514,7 +514,7 @@ export default function DeletedOrdersPage() {
                       <button
                         onClick={() => handleRestore(order.id)}
                         disabled={isPending}
-                        className="mr-2 text-xs font-medium text-blue-600 hover:underline disabled:opacity-50"
+                        className="mr-2 text-xs font-medium text-[#14264b] hover:underline disabled:opacity-50"
                       >
                         Khôi phục
                       </button>
@@ -538,7 +538,7 @@ export default function DeletedOrdersPage() {
                     <td className="whitespace-nowrap px-2 py-2 text-gray-900">
                       {order.username}
                     </td>
-                    <td className="max-w-[150px] truncate px-2 py-2 text-blue-600">
+                    <td className="max-w-[150px] truncate px-2 py-2 text-[#14264b]">
                       {order.linkWeb ? (
                         <a href={order.linkWeb} target="_blank" rel="noopener noreferrer" className="hover:underline">
                           {order.linkWeb}

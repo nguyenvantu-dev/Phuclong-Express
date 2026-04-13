@@ -140,7 +140,7 @@ export default function DanhSachDonHangPage() {
         </div>
         <Link
           href="/dat-hang"
-          className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium rounded-xl cursor-pointer transition-colors duration-200 shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-[#14264b] hover:bg-[#1f3a6d] text-white text-sm font-medium rounded-xl cursor-pointer transition-colors duration-200 shadow-sm"
         >
           <FiPlus className="w-4 h-4" />
           Đặt hàng mới

@@ -421,7 +421,7 @@ export default function QLDatHangThemPage() {
       <div className="flex gap-2 border-b border-gray-200 pb-2">
         <Link
           href="/admin/order-management-list"
-          className="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+          className="rounded px-3 py-1 text-sm text-[#14264b] hover:bg-[#14264b]/5"
         >
           Quản lý Item
         </Link>
@@ -430,7 +430,7 @@ export default function QLDatHangThemPage() {
         </span>
         <Link
           href="/admin/orders/import"
-          className="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+          className="rounded px-3 py-1 text-sm text-[#14264b] hover:bg-[#14264b]/5"
         >
           Thêm mới item bằng excel
         </Link>
@@ -475,7 +475,7 @@ export default function QLDatHangThemPage() {
                 <td className="px-2 py-1">{row.tenQuocGia || '-'}</td>
                 <td className="px-2 py-1 max-w-[120px] truncate">
                   {row.linkWeb ? (
-                    <a href={row.linkWeb} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                    <a href={row.linkWeb} target="_blank" rel="noopener noreferrer" className="text-[#14264b] hover:text-[#14264b]">
                       {row.linkWeb}
                     </a>
                   ) : '-'}
@@ -509,7 +509,7 @@ export default function QLDatHangThemPage() {
                   <button
                     type="button"
                     onClick={handleClone}
-                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    className="text-xs text-[#14264b] hover:text-[#14264b] hover:underline"
                   >
                     clone
                   </button>
@@ -521,7 +521,7 @@ export default function QLDatHangThemPage() {
                 <select
                   value={form.websiteName}
                   onChange={e => handleChange('websiteName', e.target.value)}
-                  className="w-full min-w-[80px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-full min-w-[80px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 >
                   <option value="">--Web khac--</option>
                   {(websites as string[]).map((w, idx) => (
@@ -545,7 +545,7 @@ export default function QLDatHangThemPage() {
                   }}
                   placeholder="Nhập Username"
                   autoComplete="off"
-                  className="w-full min-w-[100px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-full min-w-[100px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
                 {showUsernameDropdown && (
                   <div
@@ -555,7 +555,7 @@ export default function QLDatHangThemPage() {
                     <button
                       type="button"
                       onClick={() => handleUsernameSelect('')}
-                      className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                      className="block w-full px-3 py-2 text-left text-gray-700 hover:bg-[#14264b]/5 hover:text-[#14264b]"
                     >
                       --Temporary user--
                     </button>
@@ -565,9 +565,9 @@ export default function QLDatHangThemPage() {
                         type="button"
                         onClick={() => handleUsernameSelect(u.username)}
                         onMouseEnter={() => setActiveUsernameIndex(index)}
-                        className={`block w-full px-3 py-2 text-left font-medium hover:bg-blue-50 hover:text-blue-700 ${
+                        className={`block w-full px-3 py-2 text-left font-medium hover:bg-[#14264b]/5 hover:text-[#14264b] ${
                           index === activeUsernameIndex
-                            ? 'bg-blue-50 text-blue-700'
+                            ? 'bg-[#14264b]/5 text-[#14264b]'
                             : 'text-gray-900'
                         }`}
                       >
@@ -586,7 +586,7 @@ export default function QLDatHangThemPage() {
                 <select
                   value={form.loaiTien}
                   onChange={e => handleChange('loaiTien', e.target.value)}
-                  className="w-full rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 >
                   {(exchangeRates as { Name: string; TyGiaVND: number }[]).map(r => (
                     <option key={r.Name} value={r.Name}>{r.Name}</option>
@@ -599,7 +599,7 @@ export default function QLDatHangThemPage() {
                 <select
                   value={form.quocGiaId ?? ''}
                   onChange={e => handleChange('quocGiaId', e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 >
                   <option value="">--Chọn--</option>
                   {(countries as { QuocGiaID: number; TenQuocGia: string }[]).map(c => (
@@ -614,7 +614,7 @@ export default function QLDatHangThemPage() {
                   type="text"
                   value={form.linkWeb}
                   onChange={e => handleChange('linkWeb', e.target.value)}
-                  className="w-full min-w-[120px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-full min-w-[120px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -625,7 +625,7 @@ export default function QLDatHangThemPage() {
                   value={form.linkHinh}
                   onChange={e => handleChange('linkHinh', e.target.value)}
                   placeholder="link hình"
-                  className="mb-1 w-full rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="mb-1 w-full rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
                 <span className="text-xs text-gray-500">Hoặc: </span>
                 <input
@@ -642,7 +642,7 @@ export default function QLDatHangThemPage() {
                       type="button"
                       onClick={handleUploadImage}
                       disabled={isUploading}
-                      className="mt-1 rounded bg-blue-600 px-2 py-0.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+                      className="mt-1 rounded bg-[#14264b] px-2 py-0.5 text-xs text-white hover:bg-[#1e3a6e] disabled:opacity-50"
                     >
                       {isUploading ? 'Đang upload...' : 'Upload'}
                     </button>
@@ -656,7 +656,7 @@ export default function QLDatHangThemPage() {
                   type="text"
                   value={form.color}
                   onChange={e => handleChange('color', e.target.value)}
-                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -666,7 +666,7 @@ export default function QLDatHangThemPage() {
                   type="text"
                   value={form.size}
                   onChange={e => handleChange('size', e.target.value)}
-                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -676,7 +676,7 @@ export default function QLDatHangThemPage() {
                   type="number"
                   value={form.soLuong}
                   onChange={e => handleChange('soLuong', e.target.value)}
-                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                   min="1"
                 />
               </td>
@@ -688,7 +688,7 @@ export default function QLDatHangThemPage() {
                   step="0.01"
                   value={form.donGiaWeb}
                   onChange={e => handleChange('donGiaWeb', e.target.value)}
-                  className="w-[60px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[60px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -699,7 +699,7 @@ export default function QLDatHangThemPage() {
                   step="0.01"
                   value={form.cong}
                   onChange={e => handleChange('cong', e.target.value)}
-                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -710,7 +710,7 @@ export default function QLDatHangThemPage() {
                   step="0.01"
                   value={form.saleOff}
                   onChange={e => handleChange('saleOff', e.target.value)}
-                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -721,7 +721,7 @@ export default function QLDatHangThemPage() {
                   step="0.01"
                   value={form.phuThu}
                   onChange={e => handleChange('phuThu', e.target.value)}
-                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -732,7 +732,7 @@ export default function QLDatHangThemPage() {
                   step="0.01"
                   value={form.shipUsa}
                   onChange={e => handleChange('shipUsa', e.target.value)}
-                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -743,7 +743,7 @@ export default function QLDatHangThemPage() {
                   step="0.01"
                   value={form.tax}
                   onChange={e => handleChange('tax', e.target.value)}
-                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-[50px] rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -763,7 +763,7 @@ export default function QLDatHangThemPage() {
                   type="text"
                   value={form.ghiChu}
                   onChange={e => handleChange('ghiChu', e.target.value)}
-                  className="w-full rounded border border-gray-300 px-1 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded border border-gray-300 px-1 py-1 text-xs focus:border-[#14264b] focus:outline-none"
                 />
               </td>
 
@@ -773,7 +773,7 @@ export default function QLDatHangThemPage() {
                   type="button"
                   onClick={handleInsert}
                   disabled={insertMutation.isPending}
-                  className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded bg-[#14264b] px-3 py-1 text-xs font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50"
                 >
                   {insertMutation.isPending ? '...' : 'Thêm'}
                 </button>

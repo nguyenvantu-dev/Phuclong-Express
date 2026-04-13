@@ -17,8 +17,8 @@ export default function StatsSection() {
   const colors = {
     primary: '#14264b',
     accent: '#eb7325',
-    text: '#1e293b',
-    textMuted: '#64748b',
+    text: '#111827',
+    textMuted: '#6b7280',
   };
 
   const stats = [

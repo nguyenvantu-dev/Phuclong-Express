@@ -137,7 +137,7 @@ function MassUpdateModal({
               type="text"
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               placeholder="Nhập order number"
             />
           </div>
@@ -151,7 +151,7 @@ function MassUpdateModal({
               step="0.01"
               value={tyGia}
               onChange={(e) => setTyGia(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               placeholder="Nhập tỷ giá"
             />
           </div>
@@ -164,7 +164,7 @@ function MassUpdateModal({
                 step="0.01"
                 value={cong}
                 onChange={(e) => setCong(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
                 placeholder="0"
               />
             </div>
@@ -175,7 +175,7 @@ function MassUpdateModal({
                 step="0.01"
                 value={saleOff}
                 onChange={(e) => setSaleOff(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
                 placeholder="0"
               />
             </div>
@@ -189,7 +189,7 @@ function MassUpdateModal({
                 step="0.01"
                 value={tax}
                 onChange={(e) => setTax(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
                 placeholder="0"
               />
             </div>
@@ -200,7 +200,7 @@ function MassUpdateModal({
                 step="0.01"
                 value={totalCharged}
                 onChange={(e) => setTotalCharged(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
                 placeholder="0"
               />
             </div>
@@ -214,7 +214,7 @@ function MassUpdateModal({
               type="number"
               value={totalItem}
               onChange={(e) => setTotalItem(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               placeholder="Nhập tổng số item"
             />
           </div>
@@ -230,7 +230,7 @@ function MassUpdateModal({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || updateMutation.isPending}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50"
           >
             {isSubmitting || updateMutation.isPending ? 'Đang xử lý...' : 'Cập nhật'}
           </button>
@@ -609,13 +609,13 @@ export default function QLDatHangLietKePage() {
         </span>
         <Link
           href="/admin/orders/new"
-          className="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+          className="rounded px-3 py-1 text-sm text-[#14264b] hover:bg-[#14264b]/5"
         >
           Tạo mới item
         </Link>
         <Link
           href="/admin/orders/import"
-          className="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+          className="rounded px-3 py-1 text-sm text-[#14264b] hover:bg-[#14264b]/5"
         >
           Thêm mới item bằng excel
         </Link>
@@ -632,7 +632,7 @@ export default function QLDatHangLietKePage() {
             <input
               type="text"
               placeholder="Filter"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
             />
@@ -644,7 +644,7 @@ export default function QLDatHangLietKePage() {
             <input
               type="text"
               placeholder="Mã đặt hàng"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={maDatHang}
               onChange={(e) => setMaDatHang(e.target.value)}
             />
@@ -658,7 +658,7 @@ export default function QLDatHangLietKePage() {
                 <button type="button" onClick={() => { startFpRef.current?.clear(); setFilters(prev => ({ ...prev, startDate: undefined, page: 1 })); }} className="text-xs text-red-500 hover:text-red-700">✕</button>
               )}
             </label>
-            <input ref={startDateRef} type="text" placeholder="dd/mm/yyyy" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+            <input ref={startDateRef} type="text" placeholder="dd/mm/yyyy" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none" />
           </div>
 
           {/* Đến ngày */}
@@ -669,14 +669,14 @@ export default function QLDatHangLietKePage() {
                 <button type="button" onClick={() => { endFpRef.current?.clear(); setFilters(prev => ({ ...prev, endDate: undefined, page: 1 })); }} className="text-xs text-red-500 hover:text-red-700">✕</button>
               )}
             </label>
-            <input ref={endDateRef} type="text" placeholder="dd/mm/yyyy" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+            <input ref={endDateRef} type="text" placeholder="dd/mm/yyyy" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none" />
           </div>
 
           {/* Website */}
           <div className="flex flex-col">
             <label className="mb-1 block text-xs font-medium text-gray-700">Website</label>
             <select
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.website || ''}
               onChange={(e) => handleWebsiteChange(e.target.value)}
             >
@@ -693,7 +693,7 @@ export default function QLDatHangLietKePage() {
           <div className="flex flex-col">
             <label className="mb-1 block text-xs font-medium text-gray-700">Quốc gia</label>
             <select
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.quocGiaId || ''}
               onChange={(e) => handleFilterChange('quocGiaId', e.target.value)}
             >
@@ -710,7 +710,7 @@ export default function QLDatHangLietKePage() {
           <div className="flex flex-col">
             <label className="mb-1 block text-xs font-medium text-gray-700">Username</label>
             <select
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               value={filters.username || ''}
               onChange={(e) => handleFilterChange('username', e.target.value)}
             >
@@ -739,9 +739,9 @@ export default function QLDatHangLietKePage() {
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
           {/* Stat cards */}
-          <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2">
-            <span className="text-xs font-medium text-blue-600">Total item</span>
-            <span className="text-xl font-bold text-blue-700">{selectedSummary.totalItems}</span>
+          <div className="flex items-center gap-2 rounded-lg bg-[#14264b]/5 px-4 py-2">
+            <span className="text-xs font-medium text-[#14264b]">Total item</span>
+            <span className="text-xl font-bold text-[#14264b]">{selectedSummary.totalItems}</span>
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2">
             <span className="text-xs font-medium text-emerald-600">Tổng USD</span>
@@ -763,7 +763,7 @@ export default function QLDatHangLietKePage() {
           <button
             onClick={handleMassUpdate}
             disabled={selectedIds.length === 0}
-            className="inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-lg border border-[#14264b]/30 bg-[#14264b]/5 px-3 py-1.5 text-xs font-medium text-[#14264b] hover:bg-[#14264b]/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Mass update
           </button>
@@ -793,7 +793,7 @@ export default function QLDatHangLietKePage() {
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#14264b] border-t-transparent"></div>
         </div>
       )}
 
@@ -811,7 +811,7 @@ export default function QLDatHangLietKePage() {
             <span className="text-xs text-gray-500">
               Hiển thị <span className="font-semibold text-gray-700">{data.danhSachDonHang.length}</span> / <span className="font-semibold text-gray-700">{data.totalItem}</span> đơn hàng
             </span>
-            {isFetching && <span className="text-xs text-blue-500">Đang tải...</span>}
+            {isFetching && <span className="text-xs text-[#14264b]">Đang tải...</span>}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full divide-y divide-gray-200 text-[11px]">
@@ -857,7 +857,7 @@ export default function QLDatHangLietKePage() {
 
                   const rowBg = usernameRed
                     ? 'bg-red-50 hover:bg-red-100'
-                    : 'odd:bg-white even:bg-slate-50/60 hover:bg-blue-50/40';
+                    : 'odd:bg-white even:bg-slate-50/60 hover:bg-[#14264b]/5';
                   return (
                     <tr key={order.id} className={rowBg}>
                       <td className="px-1 py-1">
@@ -888,7 +888,7 @@ export default function QLDatHangLietKePage() {
                         ) : (
                           <button
                             onClick={() => handleStartEdit(order)}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-[#14264b] hover:text-[#14264b]"
                           >
                             Edit
                           </button>
@@ -973,7 +973,7 @@ export default function QLDatHangLietKePage() {
                             target={linkDisabled ? '_self' : '_blank'}
                             rel="noopener noreferrer"
                             title={order.linkWeb}
-                            className={linkDisabled ? 'pointer-events-none text-gray-400' : 'inline-flex items-center gap-0.5 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 hover:bg-blue-100'}
+                            className={linkDisabled ? 'pointer-events-none text-gray-400' : 'inline-flex items-center gap-0.5 rounded border border-[#14264b]/20 bg-[#14264b]/5 px-1.5 py-0.5 text-[10px] font-medium text-[#14264b] hover:bg-[#14264b]/10'}
                           >
                             Xem →
                           </a>

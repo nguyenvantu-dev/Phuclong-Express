@@ -18,7 +18,7 @@ export function EmptyState({
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <div className="text-center">
         <svg
-          className="mx-auto h-12 w-12 text-cyan-300 mb-4"
+          className="mx-auto h-12 w-12 text-[#14264b]/30 mb-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -35,7 +35,7 @@ export function EmptyState({
         {action && (
           <button
             onClick={action.onClick}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-cyan-600 hover:bg-cyan-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-[#14264b] hover:bg-[#1e3a6e] transition-colors"
           >
             {action.label}
           </button>

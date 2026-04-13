@@ -13,12 +13,12 @@ interface KPICardProps {
 
 export function KPICard({ label, value, unit, icon, trend }: KPICardProps) {
   return (
-    <div className="bg-white rounded-lg border border-cyan-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-lg border border-[#14264b]/20 p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm text-gray-600 font-medium mb-2">{label}</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-cyan-900">{value}</p>
+            <p className="text-3xl font-bold text-[#14264b]">{value}</p>
             {unit && <span className="text-sm text-gray-500">{unit}</span>}
           </div>
           {trend && (
@@ -27,7 +27,7 @@ export function KPICard({ label, value, unit, icon, trend }: KPICardProps) {
             </div>
           )}
         </div>
-        {icon && <div className="text-cyan-500 flex-shrink-0">{icon}</div>}
+        {icon && <div className="text-[#14264b]/60 flex-shrink-0">{icon}</div>}
       </div>
     </div>
   );

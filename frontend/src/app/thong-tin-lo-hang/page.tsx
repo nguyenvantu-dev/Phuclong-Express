@@ -111,15 +111,15 @@ export default function ThongTinLoHangPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-cyan-700">THÔNG TIN LÔ HÀNG</h2>
+      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-[#14264b]">THÔNG TIN LÔ HÀNG</h2>
 
       {/* Batch selector */}
-      <div className="mb-6 p-4 bg-cyan-50 rounded-xl flex flex-wrap items-center gap-3">
+      <div className="mb-6 p-4 bg-[#14264b]/5 rounded-xl flex flex-wrap items-center gap-3">
         <label className="mr-2 text-slate-700 font-medium">Lô hàng:</label>
         <select
           value={selectedBatchTen}
           onChange={handleBatchChange}
-          className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+          className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
         >
           <option value="">Chọn...</option>
           {batches.map((batch) => (
@@ -130,7 +130,7 @@ export default function ThongTinLoHangPage() {
         </select>
         <button
           onClick={() => selectedBatchTen && loadBatchInfo(selectedBatchTen)}
-          className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
+          className="px-4 py-2 bg-[#14264b] text-white rounded-lg hover:bg-[#1f3a6d] cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
         >
           Xem
         </button>
@@ -139,12 +139,12 @@ export default function ThongTinLoHangPage() {
       {selectedBatchTen && (
         <>
           {/* Thông tin chung */}
-          <h4 className="text-xl font-bold mb-3 text-cyan-700">THÔNG TIN CHUNG</h4>
-          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-4 mb-6">
+          <h4 className="text-xl font-bold mb-3 text-[#14264b]">THÔNG TIN CHUNG</h4>
+          <div className="bg-white rounded-xl border border-[#14264b]/20 shadow-sm p-4 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex justify-between md:block">
                 <span className="text-slate-500 text-sm">Tỷ giá:</span>
-                <p className="text-lg font-semibold text-cyan-700">
+                <p className="text-lg font-semibold text-[#14264b]">
                   {formatNumber(tyGia)} ({loaiTien})
                 </p>
               </div>
@@ -170,30 +170,30 @@ export default function ThongTinLoHangPage() {
           {/* Phí ship về VN */}
           {shipFees.length > 0 && (
             <>
-              <h4 className="text-xl font-bold mb-3 text-cyan-700">PHÍ SHIP VỀ VN</h4>
-              <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm mb-6">
+              <h4 className="text-xl font-bold mb-3 text-[#14264b]">PHÍ SHIP VỀ VN</h4>
+              <div className="overflow-x-auto rounded-xl border border-[#14264b]/20 shadow-sm mb-6">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="bg-cyan-100">
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Loại hàng</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Cân nặng</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Đơn giá</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Thành tiền</th>
+                    <tr className="bg-[#14264b]/10">
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Loại hàng</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-right text-[#14264b] font-semibold text-xs uppercase tracking-wide">Cân nặng</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-right text-[#14264b] font-semibold text-xs uppercase tracking-wide">Đơn giá</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-right text-[#14264b] font-semibold text-xs uppercase tracking-wide">Thành tiền</th>
                     </tr>
                   </thead>
                   <tbody>
                     {shipFees.map((item, index) => (
                       <tr key={index} className="bg-white">
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-700">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-700">
                           {item.TenLoaiHangShip}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-right font-medium text-slate-700">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right font-medium text-slate-700">
                           {item.CanNang}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-right text-slate-600">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right text-slate-600">
                           {item.DonGia_NgoaiTe?.toLocaleString('vi-VN')}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-right text-cyan-700 font-semibold">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right text-[#14264b] font-semibold">
                           {formatNumber(item.TongTienShipVeVN_VND)}
                         </td>
                       </tr>
@@ -207,30 +207,30 @@ export default function ThongTinLoHangPage() {
           {/* Thuế hải quan */}
           {taxes.length > 0 && (
             <>
-              <h4 className="text-xl font-bold mb-3 text-cyan-700">THUẾ HẢI QUAN</h4>
-              <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm mb-6">
+              <h4 className="text-xl font-bold mb-3 text-[#14264b]">THUẾ HẢI QUAN</h4>
+              <div className="overflow-x-auto rounded-xl border border-[#14264b]/20 shadow-sm mb-6">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="bg-cyan-100">
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Loại hàng</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Số lượng</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Đơn giá</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Thành tiền</th>
+                    <tr className="bg-[#14264b]/10">
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Loại hàng</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-right text-[#14264b] font-semibold text-xs uppercase tracking-wide">Số lượng</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-right text-[#14264b] font-semibold text-xs uppercase tracking-wide">Đơn giá</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-right text-[#14264b] font-semibold text-xs uppercase tracking-wide">Thành tiền</th>
                     </tr>
                   </thead>
                   <tbody>
                     {taxes.map((item, index) => (
                       <tr key={index} className="bg-white">
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-700">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-700">
                           {item.TenLoaiHangThueHaiQuan}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-right font-medium text-slate-700">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right font-medium text-slate-700">
                           {item.SoLuong}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-right text-slate-600">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right text-slate-600">
                           {item.DonGia_NgoaiTe?.toLocaleString('vi-VN')}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-right text-cyan-700 font-semibold">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right text-[#14264b] font-semibold">
                           {formatNumber(item.TongTienThueHaiQuan_VND)}
                         </td>
                       </tr>
@@ -244,37 +244,37 @@ export default function ThongTinLoHangPage() {
           {/* Tracking */}
           {trackings.length > 0 && (
             <>
-              <h4 className="text-xl font-bold mb-3 text-cyan-700">TRACKING</h4>
-              <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm">
+              <h4 className="text-xl font-bold mb-3 text-[#14264b]">TRACKING</h4>
+              <div className="overflow-x-auto rounded-xl border border-[#14264b]/20 shadow-sm">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="bg-cyan-100">
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Tracking Number</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Order Number</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ngày ĐH</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Nhà vận chuyển</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Tình trạng</th>
-                      <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
+                    <tr className="bg-[#14264b]/10">
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Tracking Number</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Order Number</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Ngày ĐH</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Nhà vận chuyển</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Tình trạng</th>
+                      <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
                     </tr>
                   </thead>
                   <tbody>
                     {trackings.map((item) => (
                       <tr key={item.TrackingID} className="bg-white">
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-cyan-600 font-medium">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-[#14264b] font-medium">
                           {item.TrackingNumber}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">
                           {item.OrderNumber}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">
                           {item.NgayDatHang
                             ? new Date(item.NgayDatHang).toLocaleDateString('vi-VN')
                             : ''}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">
                           {item.TenNhaVanChuyen}
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5">
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             item.TinhTrang === 'Completed'
                               ? 'bg-emerald-100 text-emerald-700'
@@ -285,7 +285,7 @@ export default function ThongTinLoHangPage() {
                             {item.TinhTrang}
                           </span>
                         </td>
-                        <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-500">{item.GhiChu}</td>
+                        <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-500">{item.GhiChu}</td>
                       </tr>
                     ))}
                   </tbody>

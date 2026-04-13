@@ -101,11 +101,11 @@ export default function NewBatchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-cyan-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#f0f4f9] via-white to-[#f0f4f9] p-6">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-cyan-900 mb-2">Thêm lô hàng mới</h1>
+          <h1 className="text-4xl font-bold text-[#14264b] mb-2">Thêm lô hàng mới</h1>
           <p className="text-gray-600">Điền thông tin chi tiết về lô hàng nhập khẩu</p>
         </div>
 
@@ -125,10 +125,10 @@ export default function NewBatchPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-cyan-200 p-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-[#14264b]/20 p-8">
           {/* Section 1: Basic Information */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-cyan-900 mb-6 pb-4 border-b border-cyan-200">
+            <h2 className="text-xl font-bold text-[#14264b] mb-6 pb-4 border-b border-[#14264b]/20">
               Thông tin cơ bản
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -168,7 +168,7 @@ export default function NewBatchPage() {
 
           {/* Section 2: Shipment Details */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-cyan-900 mb-6 pb-4 border-b border-cyan-200">
+            <h2 className="text-xl font-bold text-[#14264b] mb-6 pb-4 border-b border-[#14264b]/20">
               Chi tiết gửi hàng
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -205,7 +205,7 @@ export default function NewBatchPage() {
 
           {/* Section 3: Financial Information */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-cyan-900 mb-6 pb-4 border-b border-cyan-200">
+            <h2 className="text-xl font-bold text-[#14264b] mb-6 pb-4 border-b border-[#14264b]/20">
               Thông tin tài chính
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -248,18 +248,18 @@ export default function NewBatchPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4 pt-6 border-t border-cyan-200">
+          <div className="flex gap-4 pt-6 border-t border-[#14264b]/20">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white rounded-lg transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-[#14264b] to-[#1e3a6e] hover:from-[#1e3a6e] hover:to-[#0d1833] text-white rounded-lg transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? '⏳ Đang lưu...' : '✓ Tạo lô hàng'}
             </button>
             <button
               type="button"
               onClick={() => router.push('/admin/batches')}
-              className="flex-1 px-6 py-3 border border-cyan-300 text-cyan-700 rounded-lg hover:bg-cyan-50 transition-colors font-semibold"
+              className="flex-1 px-6 py-3 border border-[#14264b]/30 text-[#14264b] rounded-lg hover:bg-[#14264b]/5 transition-colors font-semibold"
             >
               ✕ Hủy
             </button>

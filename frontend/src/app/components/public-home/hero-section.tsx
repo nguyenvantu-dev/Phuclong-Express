@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectFade, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
-import { FiSearch, FiTruck, FiPackage, FiShield, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiSearch, FiTruck, FiPackage, FiShield, FiChevronLeft, FiChevronRight, FiLink } from 'react-icons/fi';
 import { searchTracking } from '@/lib/api';
 import type { Swiper as SwiperType } from 'swiper';
 
@@ -25,10 +26,10 @@ interface TrackingResultState {
 // Brand colors: #14264b (navy) + #eb7325 (orange)
 const colors = {
   primary: '#14264b',
-  primaryHover: '#1e3a6e',
+  primaryHover: '#1f3a6d',
   accent: '#eb7325',
-  accentHover: '#c55a14',
-  text: '#1e293b',
+  accentHover: '#d65f15',
+  text: '#111827',
   textLight: '#f8fafc',
 };
 
@@ -136,16 +137,27 @@ export default function HeroSection() {
               className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-4"
               style={{ color: '#ffffff', textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
             >
-              Mua hộ
-              <br />
-              <span style={{ color: colors.accent }}>Vận chuyển</span>
+              Mua hộ &amp; Vận chuyển
               <br />
               <span className="text-3xl md:text-4xl lg:text-5xl font-bold" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                USA &amp; Toàn quốc
+                từ nước ngoài về{' '}
+                <span style={{ color: colors.accent }}>Việt Nam</span>
               </span>
             </h1>
+            <p className="text-sm md:text-base leading-relaxed max-w-lg mt-2 mb-5" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              Phúc Long Express hỗ trợ khách hàng mua hàng quốc tế, gom hàng và vận chuyển về Việt Nam từ nhiều thị trường: Mỹ, Anh, Tây Ban Nha, Ba Lan, Nhật... với quy trình rõ ràng, theo dõi dễ dàng và chi phí tối ưu.
+            </p>
+            {/* CTA Button */}
+            <Link
+              href="/dat-hang"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-200 hover:opacity-90 hover:shadow-lg"
+              style={{ backgroundColor: colors.accent }}
+            >
+              <FiLink className="w-4 h-4" />
+              GỬI LINK SẢN PHẨM
+            </Link>
             {/* Feature pills */}
-            <div className="flex flex-wrap gap-2 mt-6">
+            <div className="flex flex-wrap gap-2 mt-5">
               <div
                 className="px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-md text-sm font-medium"
                 style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: 'white' }}

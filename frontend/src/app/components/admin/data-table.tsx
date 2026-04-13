@@ -29,24 +29,24 @@ export function DataTable({
 }: DataTableProps) {
   if (loading) {
     return (
-      <div className="border border-cyan-200 rounded-lg overflow-hidden">
-        <div className="bg-cyan-50 h-14 animate-pulse border-b border-cyan-200" />
+      <div className="border border-[#14264b]/20 rounded-lg overflow-hidden">
+        <div className="bg-[#14264b]/5 h-14 animate-pulse border-b border-[#14264b]/20" />
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="border-b border-cyan-200 h-16 bg-gray-50 animate-pulse" />
+          <div key={i} className="border-b border-[#14264b]/20 h-16 bg-gray-50 animate-pulse" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="border border-cyan-200 rounded-lg overflow-x-auto bg-white">
+    <div className="border border-[#14264b]/20 rounded-lg overflow-x-auto bg-white">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-cyan-200 bg-cyan-50">
+          <tr className="border-b border-[#14264b]/20 bg-[#14264b]/5">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3 font-semibold text-cyan-900 text-${col.align || 'left'}`}
+                className={`px-4 py-3 font-semibold text-[#14264b] text-${col.align || 'left'}`}
                 style={{ width: col.width }}
               >
                 {col.label}
@@ -59,7 +59,7 @@ export function DataTable({
             data.map((row, idx) => (
               <tr
                 key={row[rowKey] || idx}
-                className="border-b border-cyan-100 hover:bg-cyan-50 transition-colors cursor-pointer"
+                className="border-b border-[#14264b]/10 hover:bg-[#14264b]/5 transition-colors cursor-pointer"
                 onClick={() => onRowClick?.(row)}
               >
                 {columns.map((col) => (

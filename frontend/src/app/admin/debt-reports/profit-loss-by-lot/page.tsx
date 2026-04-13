@@ -153,7 +153,7 @@ export default function ProfitLossByLotPage() {
             <input
               ref={fromDateRef}
               type="text"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               placeholder="dd/MM/yyyy"
             />
           </div>
@@ -166,7 +166,7 @@ export default function ProfitLossByLotPage() {
             <input
               ref={toDateRef}
               type="text"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
               placeholder="dd/MM/yyyy"
             />
           </div>
@@ -182,7 +182,7 @@ export default function ProfitLossByLotPage() {
             <button
               onClick={handleExport}
               disabled={exportMutation.isPending}
-              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+              className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50"
             >
               {exportMutation.isPending ? 'Đang xuất...' : 'Export to excel'}
             </button>
@@ -193,7 +193,7 @@ export default function ProfitLossByLotPage() {
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#14264b] border-t-transparent"></div>
         </div>
       )}
 
@@ -246,7 +246,7 @@ export default function ProfitLossByLotPage() {
                         href={`/lot-expenses?id=${item.TenLoHang}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
+                        className="text-[#14264b] hover:underline"
                       >
                         Chi phí lô hàng
                       </a>

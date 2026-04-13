@@ -21,12 +21,12 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   // Brand colors: #14264b (navy) + #eb7325 (orange)
   const colors = {
     primary: '#14264b',
-    primaryHover: '#1e3a6e',
+    primaryHover: '#1f3a6d',
     primaryLight: 'rgba(235,115,37,0.08)',
     accent: '#eb7325',
-    accentHover: '#c55a14',
-    text: '#1e293b',
-    textMuted: '#64748b',
+    accentHover: '#d65f15',
+    text: '#111827',
+    textMuted: '#6b7280',
     bg: '#f8fafc',
   };
 

@@ -426,25 +426,25 @@ function SuaTrackingContent() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-cyan-700">THÊM/SỬA TRACKING</h2>
+      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-[#14264b]">THÊM/SỬA TRACKING</h2>
 
       {error && <div className="text-red-500 mb-4 bg-red-50 px-4 py-3 rounded-lg">{error}</div>}
       {success && <div className="text-emerald-500 mb-4 bg-emerald-50 px-4 py-3 rounded-lg">{success}</div>}
 
       {/* Search */}
-      <div className="mb-6 p-4 bg-cyan-50 rounded-xl">
+      <div className="mb-6 p-4 bg-[#14264b]/5 rounded-xl">
         <label className="mr-2 text-slate-700 font-medium">Tìm tracking:</label>
         <input
           type="text"
           value={trackingNumber}
           onChange={(e) => setTrackingNumber(e.target.value)}
-          className="border border-slate-300 rounded-lg px-3 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+          className="border border-slate-300 rounded-lg px-3 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
           placeholder="Nhập mã tracking..."
         />
         <button
           onClick={handleSearch}
           disabled={isLoading}
-          className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
+          className="px-4 py-2 bg-[#14264b] text-white rounded-lg hover:bg-[#1f3a6d] cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
         >
           Tìm
         </button>
@@ -452,7 +452,7 @@ function SuaTrackingContent() {
 
       <>
           {/* Form */}
-          <div className="bg-white rounded-xl border border-cyan-200 shadow-sm p-4 md:p-6 mb-6">
+          <div className="bg-white rounded-xl border border-[#14264b]/20 shadow-sm p-4 md:p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5 text-slate-700">Tracking number <span className="text-red-500">*</span></label>
@@ -460,7 +460,7 @@ function SuaTrackingContent() {
                   type="text"
                   value={trackingNumber}
                   onChange={(e) => setTrackingNumber(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 />
               </div>
               <div>
@@ -469,7 +469,7 @@ function SuaTrackingContent() {
                   type="text"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 />
               </div>
               <div>
@@ -478,7 +478,7 @@ function SuaTrackingContent() {
                   type="date"
                   value={ngayDatHang}
                   onChange={(e) => setNgayDatHang(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 />
               </div>
               <div>
@@ -486,7 +486,7 @@ function SuaTrackingContent() {
                 <select
                   value={nhaVanChuyenId}
                   onChange={(e) => setNhaVanChuyenId(Number(e.target.value))}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 >
                   <option value={0}>Chọn...</option>
                   {nhaVanChuyen.map((item) => (
@@ -501,7 +501,7 @@ function SuaTrackingContent() {
                 <select
                   value={quocGiaId}
                   onChange={(e) => setQuocGiaId(Number(e.target.value))}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 >
                   <option value={0}>Chọn...</option>
                   {countries.map((c) => (
@@ -517,7 +517,7 @@ function SuaTrackingContent() {
                   type="text"
                   value={kien}
                   onChange={(e) => setKien(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 />
               </div>
               <div>
@@ -526,7 +526,7 @@ function SuaTrackingContent() {
                   type="text"
                   value={mawb}
                   onChange={(e) => setMawb(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 />
               </div>
               <div>
@@ -535,7 +535,7 @@ function SuaTrackingContent() {
                   type="text"
                   value={hawb}
                   onChange={(e) => setHawb(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 />
               </div>
               <div>
@@ -543,7 +543,7 @@ function SuaTrackingContent() {
                 <select
                   value={tinhTrang}
                   onChange={(e) => setTinhTrang(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 >
                   {TRACKING_STATUSES.map((s) => (
                     <option key={s} value={s}>
@@ -558,7 +558,7 @@ function SuaTrackingContent() {
               <textarea
                 value={ghiChu}
                 onChange={(e) => setGhiChu(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 rows={3}
               />
             </div>
@@ -566,7 +566,7 @@ function SuaTrackingContent() {
               <button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="px-6 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
+                className="px-6 py-2.5 bg-[#14264b] text-white rounded-lg hover:bg-[#1f3a6d] cursor-pointer transition-colors duration-150 shadow-sm hover:shadow disabled:opacity-50"
               >
                 {tracking ? 'Cập nhật' : 'Thêm mới'}
               </button>
@@ -576,22 +576,22 @@ function SuaTrackingContent() {
           {tracking && (
             <>
           {/* Chi tiết tracking */}
-          <h3 className="text-xl font-bold mb-3 text-cyan-700">Chi tiết</h3>
-          <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm mb-6">
+          <h3 className="text-xl font-bold mb-3 text-[#14264b]">Chi tiết</h3>
+          <div className="overflow-x-auto rounded-xl border border-[#14264b]/20 shadow-sm mb-6">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-cyan-100">
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Hình đại diện</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Số lượng</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-right text-cyan-700 font-semibold text-xs uppercase tracking-wide">Giá</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-center text-cyan-700 font-semibold text-xs uppercase tracking-wide">Thao tác</th>
+                <tr className="bg-[#14264b]/10">
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Hình đại diện</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-right text-[#14264b] font-semibold text-xs uppercase tracking-wide">Số lượng</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-right text-[#14264b] font-semibold text-xs uppercase tracking-wide">Giá</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-center text-[#14264b] font-semibold text-xs uppercase tracking-wide">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {(tracking.chiTietTracking || []).map((item) => (
                   <tr key={item.ID} className="bg-white">
-                    <td className="border-b border-cyan-100 px-3 py-2.5">
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5">
                       {editingDetailId === item.ID ? (
                         <input
                           type="text"
@@ -603,7 +603,7 @@ function SuaTrackingContent() {
                         <img src={item.linkHinhDaiDien} alt="" height="30" className="rounded-lg" />
                       )}
                     </td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-right font-medium text-slate-700">
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right font-medium text-slate-700">
                       {editingDetailId === item.ID ? (
                         <input
                           type="number"
@@ -613,7 +613,7 @@ function SuaTrackingContent() {
                         />
                       ) : item.soLuong}
                     </td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-right text-slate-700">
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right text-slate-700">
                       {editingDetailId === item.ID ? (
                         <input
                           type="number"
@@ -623,7 +623,7 @@ function SuaTrackingContent() {
                         />
                       ) : item.gia?.toLocaleString('vi-VN')}
                     </td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">
                       {editingDetailId === item.ID ? (
                         <input
                           type="text"
@@ -633,10 +633,10 @@ function SuaTrackingContent() {
                         />
                       ) : item.ghiChu}
                     </td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-center">
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-center">
                       {editingDetailId === item.ID ? (
                         <div className="flex justify-center gap-2">
-                          <button onClick={handleUpdateDetail} disabled={isLoading} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white">
+                          <button onClick={handleUpdateDetail} disabled={isLoading} className="px-3 py-1.5 rounded-lg bg-[#14264b] text-white">
                             Lưu
                           </button>
                           <button onClick={() => setEditingDetailId(null)} className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">
@@ -645,7 +645,7 @@ function SuaTrackingContent() {
                         </div>
                       ) : (
                         <div className="flex justify-center gap-2">
-                          <button onClick={() => startEditDetail(item)} className="px-3 py-1.5 rounded-lg bg-cyan-50 text-cyan-700">
+                          <button onClick={() => startEditDetail(item)} className="px-3 py-1.5 rounded-lg bg-[#14264b]/5 text-[#14264b]">
                             Sửa
                           </button>
                           <button onClick={() => handleDeleteDetail(item.ID)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600">
@@ -656,8 +656,8 @@ function SuaTrackingContent() {
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-cyan-50">
-                  <td className="border-b border-cyan-100 px-3 py-2.5">
+                <tr className="bg-[#14264b]/5">
+                  <td className="border-b border-[#14264b]/10 px-3 py-2.5">
                     <input
                       type="text"
                       value={newDetail.linkHinh}
@@ -666,7 +666,7 @@ function SuaTrackingContent() {
                       className="w-full border border-slate-300 rounded-lg px-2 py-1.5"
                     />
                   </td>
-                  <td className="border-b border-cyan-100 px-3 py-2.5 text-right">
+                  <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right">
                     <input
                       type="number"
                       value={newDetail.soLuong}
@@ -675,7 +675,7 @@ function SuaTrackingContent() {
                       className="w-24 border border-slate-300 rounded-lg px-2 py-1.5 text-right"
                     />
                   </td>
-                  <td className="border-b border-cyan-100 px-3 py-2.5 text-right">
+                  <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-right">
                     <input
                       type="number"
                       value={newDetail.gia}
@@ -684,7 +684,7 @@ function SuaTrackingContent() {
                       className="w-28 border border-slate-300 rounded-lg px-2 py-1.5 text-right"
                     />
                   </td>
-                  <td className="border-b border-cyan-100 px-3 py-2.5">
+                  <td className="border-b border-[#14264b]/10 px-3 py-2.5">
                     <input
                       type="text"
                       value={newDetail.ghiChu}
@@ -693,8 +693,8 @@ function SuaTrackingContent() {
                       className="w-full border border-slate-300 rounded-lg px-2 py-1.5"
                     />
                   </td>
-                  <td className="border-b border-cyan-100 px-3 py-2.5 text-center">
-                    <button onClick={handleAddDetail} disabled={isLoading} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white">
+                  <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-center">
+                    <button onClick={handleAddDetail} disabled={isLoading} className="px-3 py-1.5 rounded-lg bg-[#14264b] text-white">
                       Thêm
                     </button>
                   </td>
@@ -704,34 +704,34 @@ function SuaTrackingContent() {
           </div>
 
           {/* Lịch sử tình trạng */}
-          <h3 className="text-xl font-bold mb-3 text-cyan-700">LỊCH SỬ TÌNH TRẠNG</h3>
-          <div className="overflow-x-auto rounded-xl border border-cyan-200 shadow-sm">
+          <h3 className="text-xl font-bold mb-3 text-[#14264b]">LỊCH SỬ TÌNH TRẠNG</h3>
+          <div className="overflow-x-auto rounded-xl border border-[#14264b]/20 shadow-sm">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-cyan-100">
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Người thao tác</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Thời gian</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Tình trạng</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Mô tả</th>
-                  <th className="border-b border-cyan-200 px-3 py-2.5 text-left text-cyan-700 font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
+                <tr className="bg-[#14264b]/10">
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Người thao tác</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Thời gian</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Tình trạng</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Mô tả</th>
+                  <th className="border-b border-[#14264b]/20 px-3 py-2.5 text-left text-[#14264b] font-semibold text-xs uppercase tracking-wide">Ghi chú</th>
                 </tr>
               </thead>
               <tbody>
                 {(tracking.lichSuTracking || []).map((item) => (
                   <tr key={item.TinhTrangTrackingID} className="bg-white">
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">{item.nguoiTao}</td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">{item.nguoiTao}</td>
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">
                       {item.ngayChuyenTinhTrang
                         ? new Date(item.ngayChuyenTinhTrang).toLocaleString('vi-VN')
                         : ''}
                     </td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5">
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700">
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-[#14264b]/10 text-[#14264b]">
                         {item.tinhTrang}
                       </span>
                     </td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-600">{item.moTaTinhTrang}</td>
-                    <td className="border-b border-cyan-100 px-3 py-2.5 text-slate-500">{item.ghiChu}</td>
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-600">{item.moTaTinhTrang}</td>
+                    <td className="border-b border-[#14264b]/10 px-3 py-2.5 text-slate-500">{item.ghiChu}</td>
                   </tr>
                 ))}
               </tbody>

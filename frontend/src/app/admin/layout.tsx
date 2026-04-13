@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -17,7 +17,20 @@ import {
   FiTruck,
   FiUsers,
   FiSettings,
+  FiChevronRight,
 } from 'react-icons/fi';
+
+type NavSubItem = {
+  href: string;
+  label: string;
+  type?: 'divider';
+};
+
+type NavItem = {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  submenu: NavSubItem[];
+};
 
 /**
  * Admin Layout Component
@@ -30,19 +43,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.localStorage.getItem('admin-sidebar-collapsed') === 'true'
+  );
 
-  useEffect(() => {
-    setSidebarCollapsed(window.localStorage.getItem('admin-sidebar-collapsed') === 'true');
-  }, []);
   const { user, logout } = useAuth();
 
   // Navigation items with submenus
-  const navItems: {
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    submenu: { href: string; label: string; type?: string }[];
-  }[] = [
+  const navItems: NavItem[] = [
     {
       label: 'MUA HÀNG GIÚP',
       icon: FiShoppingCart,
@@ -68,7 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       submenu: [
         { href: '/admin/debt-management', label: 'QL công nợ' },
         { href: '/admin/customer-limits', label: 'Hạn mức khách hàng' },
-        { href: '', label: '────────Báo cáo────────', type: 'divider' },
+        { href: '', label: 'Báo cáo', type: 'divider' },
         { href: '/admin/debt-reports', label: 'Báo cáo chi tiết công nợ' },
         { href: '/admin/debt-reports/by-period', label: 'Báo cáo chi tiết công nợ theo kỳ' },
         { href: '/admin/debt-reports/total-revenue', label: 'Báo cáo tổng doanh thu' },
@@ -115,13 +123,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Track which submenu is open
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
+  const activeLabel = (() => {
+    let longestMatch = '';
+    let matchedLabel = '';
+
+    for (const item of navItems) {
+      for (const sub of item.submenu) {
+        if (
+          sub.href &&
+          sub.href !== '/' &&
+          (pathname === sub.href || pathname.startsWith(`${sub.href}/`)) &&
+          sub.href.length > longestMatch.length
+        ) {
+          longestMatch = sub.href;
+          matchedLabel = item.label;
+        }
+      }
+    }
+
+    return matchedLabel;
+  })();
+
+  const visibleOpenSubmenu = openSubmenu ?? activeLabel;
+
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
 
   const toggleSubmenu = (label: string) => {
-    setOpenSubmenu(openSubmenu === label ? null : label);
+    setOpenSubmenu((currentLabel) => ((currentLabel ?? activeLabel) === label ? '' : label));
   };
 
   const toggleSidebarCollapsed = () => {
@@ -144,7 +175,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-50 h-full transform bg-gradient-to-b from-[#14264b] via-[#1a3060] to-[#14264b] shadow-2xl transition-all duration-300 ease-out lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 h-full transform border-r border-white/10 bg-[radial-gradient(circle_at_top_left,#24477f_0%,#14264b_36%,#081224_100%)] shadow-2xl shadow-slate-950/30 transition-all duration-300 ease-out lg:translate-x-0 ${
           sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
         } ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -159,107 +190,114 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
 
         {/* Logo */}
-        <div className="relative flex h-16 items-center justify-center border-b border-white/10 bg-black/20 px-3">
-          <Link href="/admin" className="inline-flex items-center justify-center" onClick={() => setSidebarOpen(false)}>
+        <div className="relative flex h-20 items-center border-b border-white/10 bg-black/20 px-3">
+          <Link
+            href="/admin"
+            className={`flex w-full items-center rounded-lg transition-colors hover:bg-white/5 ${
+              sidebarCollapsed ? 'justify-center p-2' : 'gap-3 px-2 py-2'
+            }`}
+            onClick={() => setSidebarOpen(false)}
+          >
             <Image
               src={sidebarCollapsed ? '/image1/LOGO_ONLY_PHUC_LONG_EXPRESS_WHITE.png' : '/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png'}
               alt="Phuc Long Express"
               width={160}
               height={48}
-              className="h-12 object-contain transition-all duration-300"
+              className={`${sidebarCollapsed ? 'h-10 w-10' : 'h-11 w-auto'} object-contain transition-all duration-300`}
             />
+            {!sidebarCollapsed && (
+              <div className="min-w-0 border-l border-white/15 pl-3">
+                <p className="truncate text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
+                  Admin
+                </p>
+                <p className="truncate text-sm font-bold text-white">Control Center</p>
+              </div>
+            )}
           </Link>
         </div>
 
         {/* Navigation */}
         <nav
-          className={`mt-4 px-3 pb-4 space-y-1 max-h-[calc(100vh-8rem)] ${
-            sidebarCollapsed ? 'overflow-visible' : 'overflow-y-auto'
+          className={`mt-4 max-h-[calc(100vh-9rem)] space-y-1.5 px-3 pb-4 ${
+            sidebarCollapsed ? 'overflow-visible' : 'overflow-y-auto [scrollbar-width:thin]'
           }`}
         >
-          {(() => {
-            // Find the longest matching href across all sections to resolve prefix conflicts
-            // e.g. /admin/debt-reports/by-shipment-lot should only activate VẬN CHUYỂN, not FINANCE
-            let longestMatch = '';
-            let activeLabel = '';
-            for (const item of navItems) {
-              for (const sub of item.submenu ?? []) {
-                if (sub.href && sub.href !== '/' && (pathname === sub.href || pathname.startsWith(sub.href + '/')) && sub.href.length > longestMatch.length) {
-                  longestMatch = sub.href;
-                  activeLabel = item.label;
-                }
-              }
-            }
-            return navItems.map((item) => {
+          {navItems.map((item) => {
             const isActive = item.label === activeLabel;
-            const isOpen = openSubmenu === item.label;
+            const isOpen = visibleOpenSubmenu === item.label;
             const IconComponent = item.icon;
             return (
               <div key={item.label} className="relative group/item">
                 <button
                   onClick={() => toggleSubmenu(item.label)}
-                  className={`group flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  className={`group flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#eb7325]/20 to-transparent text-[#eb7325] border-l-2 border-[#eb7325]'
-                      : 'text-white/70 hover:bg-white/10 hover:text-white border-l-2 border-transparent'
+                      ? 'border border-[#eb7325]/35 bg-[#eb7325]/15 text-white shadow-lg shadow-[#eb7325]/10 ring-1 ring-white/10'
+                      : 'border border-transparent text-white/70 hover:border-white/10 hover:bg-white/10 hover:text-white'
                   } ${sidebarCollapsed ? 'justify-center lg:px-2' : ''}`}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <IconComponent className={`h-5 w-5 flex-shrink-0 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+                  <span
+                    className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors ${
+                      isActive ? 'bg-[#eb7325] text-white' : 'bg-white/10 text-white/75 group-hover:bg-white/15 group-hover:text-white'
+                    } ${sidebarCollapsed ? '' : 'mr-3'}`}
+                  >
+                    <IconComponent className="h-4 w-4" />
+                  </span>
                   {!sidebarCollapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
                   {item.submenu && !sidebarCollapsed && (
-                    <span className={`transform transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                    <span className={`transform text-white/45 transition-transform duration-200 ${isOpen ? 'rotate-90 text-white' : ''}`}>
+                      <FiChevronRight className="h-4 w-4" />
                     </span>
                   )}
                 </button>
                 {/* Submenu */}
                 {item.submenu && isOpen && !sidebarCollapsed && (
-                  <div className="mt-1 ml-3 space-y-0.5 border-l border-white/15 pl-3">
+                  <div className="ml-4 mt-2 space-y-1 border-l border-white/10 pl-3">
                     {item.submenu.map((subItem, idx) =>
                       subItem.type === 'divider' || !subItem.href ? (
-                        <div key={idx} className="py-2 text-[10px] font-bold text-white/30 tracking-wider uppercase">
+                        <div key={idx} className="flex items-center gap-2 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-white/35">
+                          <span className="h-px flex-1 bg-white/10" />
                           {subItem.label}
+                          <span className="h-px flex-1 bg-white/10" />
                         </div>
                       ) : (
                         <Link
                           key={subItem.href}
                           href={subItem.href}
-                          className={`flex items-center rounded-lg px-3 py-2 text-sm transition-all duration-150 ${
+                          className={`group/link flex items-center rounded-lg px-3 py-2 text-sm transition-all duration-150 ${
                             pathname === subItem.href
-                              ? 'bg-[#eb7325]/15 text-[#eb7325] font-medium'
-                              : 'text-white/55 hover:bg-white/10 hover:text-white'
+                              ? 'bg-white text-[#14264b] font-semibold shadow-md shadow-black/10'
+                              : 'text-white/58 hover:bg-white/10 hover:text-white'
                           }`}
                           onClick={() => setSidebarOpen(false)}
                         >
-                          <span className="h-1.5 w-1.5 rounded-full mr-2 bg-current opacity-50" />
-                          {subItem.label}
+                          <span className={`mr-2 h-1.5 w-1.5 rounded-full bg-current ${pathname === subItem.href ? 'opacity-100' : 'opacity-45 group-hover/link:opacity-100'}`} />
+                          <span className="truncate">{subItem.label}</span>
                         </Link>
                       )
                     )}
                   </div>
                 )}
                 {item.submenu && sidebarCollapsed && (
-                  <div className="pointer-events-none absolute left-full top-0 z-20 hidden w-[19rem] pr-3 opacity-0 transition-all duration-200 group-hover/item:pointer-events-auto group-hover/item:opacity-100 lg:block">
-                    <div className="ml-3 rounded-2xl border border-white/10 bg-[#14264b]/98 p-3 shadow-2xl">
-                      <div className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.24em] text-[#eb7325]">
+                  <div className="pointer-events-none absolute left-full top-0 z-20 hidden w-[20rem] -translate-x-1 pr-3 opacity-0 transition-all duration-200 group-hover/item:pointer-events-auto group-hover/item:translate-x-0 group-hover/item:opacity-100 lg:block">
+                    <div className="ml-3 rounded-lg border border-white/10 bg-[#0b1630]/95 p-3 shadow-2xl shadow-slate-950/40 backdrop-blur-xl">
+                      <div className="mb-2 rounded-md bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.24em] text-[#eb7325]">
                         {item.label}
                       </div>
                       <div className="space-y-1">
                         {item.submenu.map((subItem, idx) =>
                           subItem.type === 'divider' || !subItem.href ? (
-                            <div key={idx} className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-white/30">
+                            <div key={idx} className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-white/35">
                               {subItem.label}
                             </div>
                           ) : (
                             <Link
                               key={subItem.href}
                               href={subItem.href}
-                              className={`flex items-center rounded-xl px-3 py-2 text-sm transition-all duration-150 ${
+                              className={`flex items-center rounded-lg px-3 py-2 text-sm transition-all duration-150 ${
                                 pathname === subItem.href
-                                  ? 'bg-[#eb7325]/15 text-[#eb7325] font-medium'
+                                  ? 'bg-white text-[#14264b] font-semibold'
                                   : 'text-white/65 hover:bg-white/10 hover:text-white'
                               }`}
                               onClick={() => setSidebarOpen(false)}
@@ -275,8 +313,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 )}
               </div>
             );
-          });
-          })()}
+          })}
         </nav>
 
         {/* Sidebar footer */}

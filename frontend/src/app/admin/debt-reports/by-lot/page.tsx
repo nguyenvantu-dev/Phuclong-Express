@@ -193,7 +193,7 @@ export default function DebtReportsByLotPage() {
               <input
                 ref={fromDateRef}
                 type="text"
-                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 hover:border-gray-300"
+                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 transition-all duration-200 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/10 hover:border-gray-300"
                 placeholder="dd/mm/yyyy"
                 value={filters.fromDate}
                 readOnly
@@ -225,7 +225,7 @@ export default function DebtReportsByLotPage() {
               <input
                 ref={toDateRef}
                 type="text"
-                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 transition-all duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 hover:border-gray-300"
+                className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 transition-all duration-200 focus:border-[#14264b] focus:outline-none focus:ring-2 focus:ring-[#14264b]/10 hover:border-gray-300"
                 placeholder="dd/mm/yyyy"
                 value={filters.toDate}
                 readOnly
@@ -259,7 +259,7 @@ export default function DebtReportsByLotPage() {
             <button
               onClick={handleExport}
               disabled={!data?.length || exportMutation.isPending}
-              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+              className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50"
             >
               {exportMutation.isPending ? 'Đang xuất...' : 'Export to excel'}
             </button>
@@ -270,7 +270,7 @@ export default function DebtReportsByLotPage() {
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#14264b] border-t-transparent"></div>
         </div>
       )}
 

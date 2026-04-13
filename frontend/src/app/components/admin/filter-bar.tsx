@@ -9,7 +9,7 @@ interface FilterBarProps {
 
 export function FilterBar({ children, onReset }: FilterBarProps) {
   return (
-    <div className="bg-white rounded-lg border border-cyan-200 p-6 mb-6 shadow-sm">
+    <div className="bg-white rounded-lg border border-[#14264b]/20 p-6 mb-6 shadow-sm">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
         {children}
         {onReset && (
@@ -34,7 +34,7 @@ interface FilterFieldProps {
 export function FilterField({ label, children, required }: FilterFieldProps) {
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-cyan-900">
+      <label className="text-sm font-medium text-[#14264b]">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { FaQuoteLeft, FaStar } from 'react-icons/fa';
 
 /**
@@ -10,14 +9,12 @@ import { FaQuoteLeft, FaStar } from 'react-icons/fa';
  * Uses #14264b as primary color.
  */
 export default function TestimonialsSection() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
   const colors = {
     primary: '#14264b',
     primaryLight: '#e0f7ff',
     primaryDark: '#2a8fb3',
-    text: '#1e293b',
-    textMuted: '#64748b',
+    text: '#111827',
+    textMuted: '#6b7280',
   };
 
   const testimonials = [

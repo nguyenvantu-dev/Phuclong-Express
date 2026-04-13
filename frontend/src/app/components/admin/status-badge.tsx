@@ -6,9 +6,9 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-  'Mới tạo': { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Mới tạo' },
+  'Mới tạo': { bg: 'bg-[#14264b]/10', text: 'text-[#14264b]', label: 'Mới tạo' },
   'Đang vận chuyển': { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Đang vận chuyển' },
-  'Đã về kho': { bg: 'bg-cyan-50', text: 'text-cyan-700', label: 'Đã về kho' },
+  'Đã về kho': { bg: 'bg-[#14264b]/10', text: 'text-[#14264b]', label: 'Đã về kho' },
   'Đã giao hàng': { bg: 'bg-green-50', text: 'text-green-700', label: 'Đã giao hàng' },
   'Hủy': { bg: 'bg-red-50', text: 'text-red-700', label: 'Hủy' },
 };

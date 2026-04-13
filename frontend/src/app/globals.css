@@ -16,10 +16,10 @@
   --coffee-950: #2C2416;
 
   --accent: #eb7325;
-  --accent-hover: #c55a14;
+  --accent-hover: #d65f15;
 
-  --background: #FDFBF7;
-  --foreground: #2C2416;
+  --background: #f8fafc;
+  --foreground: #111827;
 
   /* Admin Dashboard Design System - Data-Dense Dashboard Style */
   --admin-primary: #14264b;
@@ -27,7 +27,7 @@
   --admin-primary-dark: #0d1833;
   --admin-secondary: #eb7325;
   --admin-cta: #eb7325;
-  --admin-cta-hover: #c55a14;
+  --admin-cta-hover: #d65f15;
   --admin-bg: #f0f4f9;
   --admin-text: #14264b;
   --admin-text-muted: #4a6d9c;
@@ -62,7 +62,6 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Be Vietnam Pro', Arial, Helvetica, sans-serif;
-  background-color: var(--coffee-50);
 }
 
 /* Public Home Page Styles */

@@ -12,8 +12,8 @@ export default function BenefitsSection() {
     primary: '#14264b',
     primaryLight: '#e0f7ff',
     primaryDark: '#2a8fb3',
-    text: '#1e293b',
-    textMuted: '#64748b',
+    text: '#111827',
+    textMuted: '#6b7280',
   };
 
   const benefits = [

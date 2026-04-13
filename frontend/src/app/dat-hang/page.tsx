@@ -226,7 +226,7 @@ export default function DatHangMPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6 text-cyan-700">Đặt hàng</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 text-[#14264b]">Đặt hàng</h1>
 
       {submitMessage && (
         <div
@@ -242,7 +242,7 @@ export default function DatHangMPage() {
 
       <div className="space-y-4">
         {orders.map((order) => (
-          <div key={order.id} className="bg-white rounded-xl shadow-sm border border-cyan-200 p-4 md:p-5 hover:shadow-md transition-shadow duration-200">
+          <div key={order.id} className="bg-white rounded-xl shadow-sm border border-[#14264b]/20 p-4 md:p-5 hover:shadow-md transition-shadow duration-200">
             <div className="flex justify-end mb-3">
               {orders.length > 1 && (
                 <button
@@ -270,7 +270,7 @@ export default function DatHangMPage() {
                   type="text"
                   value={order.linkWeb}
                   onChange={(e) => updateOrder(order.id, 'linkWeb', e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                   placeholder="https://..."
                 />
               </div>
@@ -283,7 +283,7 @@ export default function DatHangMPage() {
                   type="text"
                   value={order.linkHinh}
                   onChange={(e) => updateOrder(order.id, 'linkHinh', e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                   placeholder="https://..."
                 />
               </div>
@@ -294,7 +294,7 @@ export default function DatHangMPage() {
                   type="text"
                   value={order.color}
                   onChange={(e) => updateOrder(order.id, 'color', e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                   placeholder="Đen, Trắng,..."
                 />
               </div>
@@ -305,7 +305,7 @@ export default function DatHangMPage() {
                   type="text"
                   value={order.size}
                   onChange={(e) => updateOrder(order.id, 'size', e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                   placeholder="S, M, L,..."
                 />
               </div>
@@ -318,7 +318,7 @@ export default function DatHangMPage() {
                   type="number"
                   value={order.soLuong}
                   onChange={(e) => updateOrder(order.id, 'soLuong', parseInt(e.target.value) || 0)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                   min="1"
                 />
               </div>
@@ -331,7 +331,7 @@ export default function DatHangMPage() {
                   type="number"
                   value={order.donGiaWeb}
                   onChange={(e) => updateOrder(order.id, 'donGiaWeb', parseFloat(e.target.value) || 0)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                   placeholder="0.00"
                 />
               </div>
@@ -342,7 +342,7 @@ export default function DatHangMPage() {
                   type="number"
                   value={order.saleOff}
                   onChange={(e) => updateOrder(order.id, 'saleOff', parseFloat(e.target.value) || 0)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 />
               </div>
 
@@ -352,7 +352,7 @@ export default function DatHangMPage() {
                   type="text"
                   value={order.ghiChu}
                   onChange={(e) => updateOrder(order.id, 'ghiChu', e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                   placeholder="Ghi chú thêm..."
                 />
               </div>
@@ -362,7 +362,7 @@ export default function DatHangMPage() {
                 <select
                   value={order.quocGiaId}
                   onChange={(e) => updateOrder(order.id, 'quocGiaId', parseInt(e.target.value))}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                 >
                   {countries.map((c) => (
                     <option key={c.QuocGiaID} value={c.QuocGiaID}>
@@ -378,7 +378,7 @@ export default function DatHangMPage() {
                   <select
                     value={order.loaiTien}
                     onChange={(e) => updateOrder(order.id, 'loaiTien', e.target.value)}
-                    className="flex-1 border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                    className="flex-1 border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                   >
                     {exchangeRates.map((r) => (
                       <option key={r.Name} value={r.Name}>
@@ -390,7 +390,7 @@ export default function DatHangMPage() {
                     type="number"
                     value={order.tyGia}
                     onChange={(e) => updateOrder(order.id, 'tyGia', parseFloat(e.target.value) || 0)}
-                    className="w-36 border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-150"
+                    className="w-36 border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#14264b] focus:border-[#14264b] transition-colors duration-150"
                     placeholder="Tỷ giá"
                   />
                 </div>
@@ -403,7 +403,7 @@ export default function DatHangMPage() {
       <div className="mt-6 flex flex-wrap gap-3">
         <button
           onClick={() => addOrderForm(false)}
-          className="px-5 py-2.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 flex items-center gap-2 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
+          className="px-5 py-2.5 bg-[#eb7325] text-white rounded-lg hover:bg-[#d65f15] flex items-center gap-2 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -413,7 +413,7 @@ export default function DatHangMPage() {
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="px-5 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
+          className="px-5 py-2.5 bg-[#14264b] text-white rounded-lg hover:bg-[#1f3a6d] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer transition-colors duration-150 shadow-sm hover:shadow"
         >
           {isLoading ? (
             <>
@@ -437,11 +437,11 @@ export default function DatHangMPage() {
       {isLoading && (
         <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg px-6 py-4 flex items-center gap-3">
-            <svg className="w-6 h-6 animate-spin text-cyan-600" fill="none" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 animate-spin text-[#14264b]" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            <span className="text-cyan-700 font-medium">Đang xử lý...</span>
+            <span className="text-[#14264b] font-medium">Đang xử lý...</span>
           </div>
         </div>
       )}

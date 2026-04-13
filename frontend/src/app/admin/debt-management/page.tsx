@@ -456,7 +456,7 @@ export default function DebtManagementPage() {
                       <td className="px-4 py-3.5 text-sm text-right font-mono text-orange-600">
                         {item.DR ? item.DR.toLocaleString('vi-VN') : '0'}
                       </td>
-                      <td className="px-4 py-3.5 text-sm text-right font-mono text-blue-600">
+                      <td className="px-4 py-3.5 text-sm text-right font-mono text-[#14264b]">
                         {item.CR ? item.CR.toLocaleString('vi-VN') : '0'}
                       </td>
                       <td className="px-4 py-3.5 text-sm text-slate-500 max-w-[250px] truncate" title={item.GhiChu}>
@@ -503,7 +503,7 @@ export default function DebtManagementPage() {
                               });
                               setShowAddModal(true);
                             }}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-[#14264b] hover:bg-[#14264b]/5 rounded-lg transition-colors cursor-pointer"
                             title="Sửa"
                           >
                             <FiEdit2 className="w-4 h-4" />

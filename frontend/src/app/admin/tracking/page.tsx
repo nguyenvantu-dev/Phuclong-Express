@@ -63,10 +63,10 @@ const formatDate = (date: string | null) => {
 
 // Status config: label, badge classes, card classes
 const statusConfig: Record<string, { badge: string; card: string; dot: string }> = {
-  Received:  { badge: 'bg-blue-50 text-blue-700 border border-blue-200',   card: 'border-l-4 border-blue-400 bg-blue-50',   dot: 'bg-blue-400' },
+  Received:  { badge: 'bg-[#14264b]/10 text-[#14264b] border border-[#14264b]/20',   card: 'border-l-4 border-[#14264b]/40 bg-[#14264b]/5',   dot: 'bg-[#14264b]/40' },
   InTransit: { badge: 'bg-amber-50 text-amber-700 border border-amber-200', card: 'border-l-4 border-amber-400 bg-amber-50', dot: 'bg-amber-400' },
   InVN:      { badge: 'bg-orange-50 text-orange-700 border border-orange-200', card: 'border-l-4 border-orange-400 bg-orange-50', dot: 'bg-orange-400' },
-  VNTransit: { badge: 'bg-violet-50 text-violet-700 border border-violet-200', card: 'border-l-4 border-violet-400 bg-violet-50', dot: 'bg-violet-400' },
+  VNTransit: { badge: 'bg-purple-50 text-purple-700 border border-purple-200', card: 'border-l-4 border-violet-400 bg-violet-50', dot: 'bg-violet-400' },
   Completed: { badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200', card: 'border-l-4 border-emerald-400 bg-emerald-50', dot: 'bg-emerald-400' },
   Cancelled: { badge: 'bg-rose-50 text-rose-700 border border-rose-200',   card: 'border-l-4 border-rose-400 bg-rose-50',   dot: 'bg-rose-400' },
 };
@@ -333,7 +333,7 @@ export default function TrackingPage() {
                             Chi tiết
                           </Link>
                           <Link href={`/admin/tracking/${tracking.TrackingID}/edit`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors cursor-pointer border border-blue-100">
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#14264b]/5 text-[#14264b] hover:bg-[#14264b]/10 text-xs font-medium transition-colors cursor-pointer border border-[#14264b]/10">
                             <FiEdit2 className="h-3.5 w-3.5" />
                             Sửa
                           </Link>

@@ -93,7 +93,7 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-3xl border border-cyan-100 bg-gradient-to-br from-cyan-500 via-sky-500 to-slate-900 text-white shadow-xl">
+      <section className="overflow-hidden rounded-3xl border border-[#14264b]/20 bg-gradient-to-br from-[#eb7325] via-[#c95d1a] to-[#14264b] text-white shadow-xl">
         <div className="grid gap-6 px-6 py-8 lg:grid-cols-[1.6fr_0.9fr] lg:px-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
@@ -104,7 +104,7 @@ export default function AdminPage() {
               <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
                 Xin chào {user?.username || 'Admin'}
               </h1>
-              <p className="max-w-2xl text-sm text-cyan-50/90 lg:text-base">
+              <p className="max-w-2xl text-sm text-white/85 lg:text-base">
                 Đây là trang chủ quản trị để vào nhanh các màn vận hành chính của Phuc Long Express.
                 Ưu tiên thao tác theo đúng luồng: nhận đơn, mua hàng, tracking, công nợ.
               </p>
@@ -112,7 +112,7 @@ export default function AdminPage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/admin/order-management-list"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-cyan-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#14264b] transition hover:bg-white/90"
               >
                 Vào nhận đơn
                 <FiArrowRight className="h-4 w-4" />
@@ -126,13 +126,13 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-950/20 p-4 backdrop-blur-sm sm:grid-cols-2 lg:grid-cols-1">
+          <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm sm:grid-cols-2 lg:grid-cols-1">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/70">Tài khoản hiện tại</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-white/60">Tài khoản hiện tại</p>
               <p className="mt-2 text-lg font-semibold">{user?.email || 'Chưa có email'}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/70">Vai trò chính</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-white/60">Vai trò chính</p>
               <p className="mt-2 text-lg font-semibold">{firstRole}</p>
             </div>
           </div>
@@ -176,16 +176,16 @@ export default function AdminPage() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-cyan-300 hover:bg-cyan-50"
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-[#eb7325]/40 hover:bg-[#eb7325]/5"
               >
                 <div className="flex items-start gap-4">
-                  <div className="rounded-2xl bg-white p-3 text-cyan-600 shadow-sm ring-1 ring-slate-200 transition group-hover:bg-cyan-500 group-hover:text-white">
+                  <div className="rounded-2xl bg-white p-3 text-[#14264b] shadow-sm ring-1 ring-slate-200 transition group-hover:bg-[#eb7325] group-hover:text-white">
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
-                      <FiArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-cyan-600" />
+                      <FiArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-[#eb7325]" />
                     </div>
                     <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
                   </div>
@@ -202,7 +202,7 @@ export default function AdminPage() {
           return (
             <div key={section.title} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
-                <div className="rounded-2xl bg-cyan-50 p-3 text-cyan-700">
+                <div className="rounded-2xl bg-[#14264b]/10 p-3 text-[#14264b]">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h2 className="text-lg font-semibold text-slate-900">{section.title}</h2>
@@ -212,7 +212,7 @@ export default function AdminPage() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
+                    className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#eb7325]/40 hover:bg-[#eb7325]/5 hover:text-[#14264b]"
                   >
                     <span>{link.label}</span>
                     <FiArrowRight className="h-4 w-4" />

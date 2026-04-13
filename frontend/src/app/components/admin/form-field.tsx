@@ -13,7 +13,7 @@ interface FormFieldProps {
 export function FormField({ label, required, error, hint, children }: FormFieldProps) {
   return (
     <div className="flex flex-col gap-2">
-      <label className="block text-sm font-medium text-cyan-900">
+      <label className="block text-sm font-medium text-[#14264b]">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
@@ -35,8 +35,8 @@ export function FormInput({ label, error, hint, ...props }: FormInputProps) {
     <FormField label={label} error={error} hint={hint} required={props.required}>
       <input
         {...props}
-        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-          error ? 'border-red-300 bg-red-50' : 'border-cyan-200 bg-white hover:border-cyan-300'
+        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 ${
+          error ? 'border-red-300 bg-red-50' : 'border-[#14264b]/20 bg-white hover:border-[#14264b]/40'
         }`}
       />
     </FormField>
@@ -55,8 +55,8 @@ export function FormSelect({ label, options, error, hint, ...props }: FormSelect
     <FormField label={label} error={error} hint={hint} required={props.required}>
       <select
         {...props}
-        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-          error ? 'border-red-300 bg-red-50' : 'border-cyan-200 bg-white hover:border-cyan-300'
+        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 ${
+          error ? 'border-red-300 bg-red-50' : 'border-[#14264b]/20 bg-white hover:border-[#14264b]/40'
         }`}
       >
         {options.map((opt) => (
@@ -80,8 +80,8 @@ export function FormTextarea({ label, error, hint, ...props }: FormTextareaProps
     <FormField label={label} error={error} hint={hint} required={props.required}>
       <textarea
         {...props}
-        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none ${
-          error ? 'border-red-300 bg-red-50' : 'border-cyan-200 bg-white hover:border-cyan-300'
+        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#14264b]/20 resize-none ${
+          error ? 'border-red-300 bg-red-50' : 'border-[#14264b]/20 bg-white hover:border-[#14264b]/40'
         }`}
       />
     </FormField>

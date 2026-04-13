@@ -1,7 +1,7 @@
 import { OrderStatus } from '@/types/order-status';
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  Received: { label: 'Received', className: 'bg-cyan-100 text-cyan-700 border border-cyan-200' },
+  Received: { label: 'Received', className: 'bg-[#14264b]/10 text-[#14264b] border border-[#14264b]/20' },
   Ordered:  { label: 'Ordered',  className: 'bg-amber-100 text-amber-700 border border-amber-200' },
   Shipped:  { label: 'Shipped',  className: 'bg-blue-100 text-blue-700 border border-blue-200' },
   Completed:{ label: 'Completed',className: 'bg-green-100 text-green-700 border border-green-200' },
