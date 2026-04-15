@@ -78,6 +78,10 @@ export class CreateDebtDto {
   loHangId?: number;
 
   @IsOptional()
+  @IsString()
+  loHangText?: string;
+
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   loaiPhatSinh?: number;

@@ -15,10 +15,11 @@ export class DebtReportsService {
    * Get detailed debt report
    * Matches: DBConnect.BaoCaoChiTietCongNo() -> SP_BaoCao_ChiTietCongNo1
    *
-   * SP returns multiple result sets:
-   * - Result[0]: Data rows
-   * - Result[1]: Summary (DauKy, TongPhatSinh, TongThanhToan, CuoiKy)
-   * - Result[2]: Total count
+   * SP returns flat mixed result set:
+   * - Rows with Loai (A/B/C/F) + SoTien — cân đối summary (Tables[2] in C#)
+   * - Row with DauKy/TongPhatSinh/TongThanhToan/CuoiKy — period summary (Tables[1] in C#)
+   * - Row with TOTALROW — total count (Tables[0] in C#)
+   * - Remaining rows — detail data (CongNo_ID, NoiDung, NgayGhiNo, DR, CR, LuyKe, GhiChu)
    */
   async getDebtReports(
     username?: string,
@@ -32,9 +33,11 @@ export class DebtReportsService {
     page: number;
     limit: number;
     summary: { dauKy: number; tongPhatSinh: number; tongThanhToan: number; cuoiKy: number };
+    canDoiSummary: { loaiA: number; loaiB: number; loaiC: number; loaiF: number };
   }> {
     try {
       // Use raw query to get all result sets
+      // Default -1 matches C# behavior: BaoCaoChiTietCongNo(username, -1, -1, pageSize, pageNum)
       const [results] = await this.sequelize.query(
         `EXEC SP_BaoCao_ChiTietCongNo1
           @username = :username,
@@ -45,8 +48,8 @@ export class DebtReportsService {
         {
           replacements: {
             username: username ?? null,
-            fromKyId: fromKyId ?? null,
-            toKyId: toKyId ?? null,
+            fromKyId: fromKyId ?? -1,
+            toKyId: toKyId ?? -1,
             limit,
             page,
           },
@@ -58,10 +61,11 @@ export class DebtReportsService {
       const resultArray = results as unknown as Array<Record<string, unknown>>;
       let data: any[] = [];
       let summary = { dauKy: 0, tongPhatSinh: 0, tongThanhToan: 0, cuoiKy: 0 };
+      let canDoiSummary = { loaiA: 0, loaiB: 0, loaiC: 0, loaiF: 0 };
       let total = 0;
 
       if (Array.isArray(resultArray) && resultArray.length > 0) {
-        // Find summary (last item with DauKy)
+        // Find period summary row (DauKy/TongPhatSinh/TongThanhToan/CuoiKy)
         const summaryItem = resultArray.find((item) => item && 'DauKy' in item);
         if (summaryItem) {
           summary = {
@@ -72,13 +76,27 @@ export class DebtReportsService {
           };
         }
 
+        // Extract Loai rows (A/B/C/F) — matches C# Tables[2] logic
+        // C#: dataTable.Select("Loai = 'A'")[0]["SoTien"]
+        const loaiItems = resultArray.filter((item) => item && 'Loai' in item);
+        const getLoaiSoTien = (loai: string): number => {
+          const item = loaiItems.find((i) => (i.Loai as string) === loai);
+          return item ? ((item.SoTien as number) ?? 0) : 0;
+        };
+        canDoiSummary = {
+          loaiA: getLoaiSoTien('A'),
+          loaiB: getLoaiSoTien('B'),
+          loaiC: getLoaiSoTien('C'),
+          loaiF: getLoaiSoTien('F'),
+        };
+
         // Find total count (item with TOTALROW)
         const totalItem = resultArray.find((item) => item && 'TOTALROW' in item);
         if (totalItem) {
           total = (totalItem.TOTALROW as number) ?? 0;
         }
 
-        // Filter out summary, total, and Loai rows, remaining are data
+        // Detail rows only — exclude TOTALROW, DauKy, and Loai rows
         data = resultArray.filter((item) => {
           if (!item) return false;
           return !('TOTALROW' in item) && !('DauKy' in item) && !('Loai' in item);
@@ -91,6 +109,7 @@ export class DebtReportsService {
         page,
         limit,
         summary,
+        canDoiSummary,
       };
     } catch (error) {
       console.error('Error in getDebtReports:', error.message);
@@ -100,6 +119,7 @@ export class DebtReportsService {
         page,
         limit,
         summary: { dauKy: 0, tongPhatSinh: 0, tongThanhToan: 0, cuoiKy: 0 },
+        canDoiSummary: { loaiA: 0, loaiB: 0, loaiC: 0, loaiF: 0 },
       };
     }
   }
@@ -1254,6 +1274,7 @@ export class DebtReportsService {
       cr?: number;
       ghiChu?: string;
       loHangId?: number;
+      loHangText?: string;
       loaiPhatSinh?: number;
       bankAccount?: string;
       status?: number;
@@ -1282,10 +1303,15 @@ export class DebtReportsService {
 
       const ngayGhiNo = this.parseDateToSql(dto.ngay);
 
-      let ghiChu = dto.ghiChu || '';
-      // Add bank transfer info if CR > 0 and bank is selected
-      if (dto.bankAccount && dto.cr && dto.cr > 0) {
+      let ghiChu = dto.ghiChu?.trim() || '';
+      // Matches C# ManageCongNo.cs btDongY_Click logic:
+      // 1. Append bank transfer info if bank selected AND CR != 0
+      if (dto.bankAccount && dto.cr !== undefined && dto.cr !== 0) {
         ghiChu = ghiChu + (ghiChu ? ' - ' : '') + 'Báo chuyển khoản - ' + dto.bankAccount;
+      }
+      // 2. Append lô hàng name if loHangId is set
+      if (dto.loHangId && dto.loHangText) {
+        ghiChu = ghiChu + ' - Lô hàng: ' + dto.loHangText;
       }
       console.log("ghiChu");
 

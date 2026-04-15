@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getDebtReports, getPeriods, getDebtReportUsers } from '@/lib/api';
+import { getDebtReports } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth-context';
 
 interface DebtItem {
@@ -14,23 +14,6 @@ interface DebtItem {
   GhiChu: string;
 }
 
-interface PeriodItem {
-  KyID: number;
-  TenKy: string;
-}
-
-interface UserItem {
-  Id: string;
-  UserName: string;
-}
-
-interface Summary {
-  dauKy: number;
-  tongPhatSinh: number;
-  tongThanhToan: number;
-  cuoiKy: number;
-}
-
 /**
  * BaoCaoCongNo Page - Debt Balance Report
  * Converted from: UF/BaoCao_CanDoiCongNo_User.aspx
@@ -39,13 +22,7 @@ interface Summary {
 export default function BaoCaoCongNoPage() {
   const { user } = useAuth();
   const [debtItems, setDebtItems] = useState<DebtItem[]>([]);
-  const [periods, setPeriods] = useState<PeriodItem[]>([]);
-  const [users, setUsers] = useState<UserItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Filter states
-  const [selectedFromKyId, setSelectedFromKyId] = useState<number>(-1);
-  const [selectedToKyId, setSelectedToKyId] = useState<number>(-1);
 
   // Summary
   const [tienMuaHangA, setTienMuaHangA] = useState<number>(0);
@@ -58,46 +35,25 @@ export default function BaoCaoCongNoPage() {
   const [total, setTotal] = useState(0);
   const limit = 50;
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  const loadInitialData = async () => {
-    try {
-      const [periodList, userList] = await Promise.all([
-        getPeriods(),
-        getDebtReportUsers(),
-      ]);
-      setPeriods(periodList || []);
-      setUsers(userList || []);
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-    }
-  };
-
   const loadDebtData = async () => {
+    // Matches C# Page_Load: requires logged-in username
     if (!user?.username) return;
 
     setIsLoading(true);
     try {
-      const response = await getDebtReports({
-        username: user.username,
-        fromKyId: selectedFromKyId > 0 ? selectedFromKyId : undefined,
-        toKyId: selectedToKyId > 0 ? selectedToKyId : undefined,
-        page,
-        limit,
-      });
+      // Matches C#: BaoCaoChiTietCongNo(username, -1, -1, pageSize, pageNum) — no period filter
+      const response = await getDebtReports({ username: user.username, page, limit });
       setDebtItems(response.data || []);
       setTotal(response.total || 0);
 
-      // Use summary from backend
-      if (response.summary) {
-        setTienMuaHangA(response.summary.tongPhatSinh || 0);
-        setTienDaTraB(response.summary.tongThanhToan || 0);
-        setTienCompletedC(0); // Need separate query
-        setTienNoE(response.summary.cuoiKy || 0);
-        setTienHangChuaVeF(0); // Need separate query
-      }
+      // Map Loai A/B/C/F — matches C# Tables[2] logic
+      const { loaiA = 0, loaiB = 0, loaiC = 0, loaiF = 0 } = response.canDoiSummary || {};
+      // D = A - B, nếu âm = 0 — matches C# code: num6 = num - num2
+      setTienMuaHangA(loaiA);
+      setTienDaTraB(loaiB);
+      setTienCompletedC(loaiC);
+      setTienNoE(Math.max(0, loaiA - loaiB));
+      setTienHangChuaVeF(loaiF);
     } catch (error) {
       console.error('Error loading debt data:', error);
     } finally {
@@ -105,9 +61,10 @@ export default function BaoCaoCongNoPage() {
     }
   };
 
+  // Re-run when user is loaded (matches C# Page_Load behavior — fires as soon as session is ready)
   useEffect(() => {
     loadDebtData();
-  }, [page, selectedFromKyId, selectedToKyId]);
+  }, [page, user?.username]);
 
   const formatNumber = (num: number) => {
     if (!num && num !== 0) return '0';
@@ -119,42 +76,6 @@ export default function BaoCaoCongNoPage() {
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
       <h1 className="text-2xl md:text-3xl font-bold mb-6 text-[#14264b]">BẢNG CÂN ĐỐI CÔNG NỢ</h1>
-
-      {/* Period Filter */}
-      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-[#14264b]/5 rounded-xl">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-slate-700">Từ kỳ:</label>
-          <select
-            value={selectedFromKyId}
-            onChange={(e) => setSelectedFromKyId(Number(e.target.value))}
-            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#14264b]"
-          >
-            <option value={-1}>Tất cả</option>
-            {periods.map((p) => (
-              <option key={p.KyID} value={p.KyID}>{p.TenKy}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-slate-700">Đến kỳ:</label>
-          <select
-            value={selectedToKyId}
-            onChange={(e) => setSelectedToKyId(Number(e.target.value))}
-            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#14264b]"
-          >
-            <option value={-1}>Tất cả</option>
-            {periods.map((p) => (
-              <option key={p.KyID} value={p.KyID}>{p.TenKy}</option>
-            ))}
-          </select>
-        </div>
-        <button
-          onClick={() => { setPage(1); loadDebtData(); }}
-          className="px-4 py-2 bg-[#14264b] text-white rounded-lg hover:bg-[#1f3a6d] cursor-pointer"
-        >
-          Lọc
-        </button>
-      </div>
 
       {isLoading ? (
         <div className="text-center py-12">

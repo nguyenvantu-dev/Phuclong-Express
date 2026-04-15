@@ -76,6 +76,7 @@ export default function DebtManagementPage() {
     cr: 0,
     ghiChu: '',
     loHangId: undefined as number | undefined,
+    loHangText: '' as string,
     loaiPhatSinh: 2,
     bankAccount: '' as string,
   });
@@ -182,6 +183,7 @@ export default function DebtManagementPage() {
           cr: 0,
           ghiChu: '',
           loHangId: undefined,
+          loHangText: '',
           loaiPhatSinh: 2,
           bankAccount: '',
         });
@@ -278,6 +280,7 @@ export default function DebtManagementPage() {
                 cr: 0,
                 ghiChu: '',
                 loHangId: undefined,
+                loHangText: '',
                 loaiPhatSinh: 2,
                 bankAccount: '',
               });
@@ -498,6 +501,7 @@ export default function DebtManagementPage() {
                                 cr: item.CR || 0,
                                 ghiChu: item.GhiChu || '',
                                 loHangId: item.LoHangID,
+                                loHangText: '',
                                 loaiPhatSinh: 2,
                                 bankAccount: '',
                               });
@@ -692,7 +696,7 @@ export default function DebtManagementPage() {
                   >
                     <option value="">--Chọn tài khoản--</option>
                     {bankAccounts?.map((bank) => (
-                      <option key={bank.ID} value={bank.GhiChu || ''}>
+                      <option key={bank.ID} value={bank.TenTaiKhoanNganHang || ''}>
                         {bank.TenTaiKhoanNganHang}
                       </option>
                     ))}
@@ -732,9 +736,10 @@ export default function DebtManagementPage() {
                   <div className="relative">
                     <select
                       value={newDebt.loHangId || ''}
-                      onChange={(e) =>
-                        setNewDebt({ ...newDebt, loHangId: e.target.value ? Number(e.target.value) : undefined })
-                      }
+                      onChange={(e) => {
+                        const selected = batches?.find((b: BatchItem) => b.LoHang_ID === Number(e.target.value));
+                        setNewDebt({ ...newDebt, loHangId: e.target.value ? Number(e.target.value) : undefined, loHangText: selected?.TenLoHang || '' });
+                      }}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
                     >
                       <option value="">--Chọn lô hàng--</option>

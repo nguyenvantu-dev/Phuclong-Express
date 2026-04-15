@@ -590,13 +590,27 @@ export interface DebtReportQueryParams {
 }
 
 /**
- * Debt report summary
+ * Debt report summary (period summary: DauKy/TongPhatSinh/TongThanhToan/CuoiKy)
  */
 export interface DebtReportSummary {
   dauKy: number;
   tongPhatSinh: number;
   tongThanhToan: number;
   cuoiKy: number;
+}
+
+/**
+ * Cân đối công nợ summary — matches C# Tables[2] Loai rows
+ * A: tiền mua hàng (Ordered/Completed/Shipped + phí)
+ * B: tiền đã trả / chuyển khoản
+ * C: tiền đơn Completed
+ * F: tiền hàng chưa về VN
+ */
+export interface CanDoiSummary {
+  loaiA: number;
+  loaiB: number;
+  loaiC: number;
+  loaiF: number;
 }
 
 /**
@@ -635,6 +649,7 @@ export const getDebtReports = async (
   page: number;
   limit: number;
   summary: DebtReportSummary;
+  canDoiSummary: CanDoiSummary;
 }> => {
   const response = await apiClient.get('/debt-reports', { params });
   return response.data;
