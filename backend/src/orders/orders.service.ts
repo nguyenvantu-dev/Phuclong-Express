@@ -12,6 +12,7 @@ import { UpdateReturnDateDto } from './dto/update-return-date.dto';
 import { ImportOrdersDto } from './dto/import-orders.dto';
 import { QueryQLDatHangDto, QLDatHangResponseDto } from './dto/query-qldathang.dto';
 import { SystemLogsService } from '../system-logs/system-logs.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import * as path from 'path';
 import * as fs from 'fs';
 import sharp from 'sharp';
@@ -67,11 +68,58 @@ export class OrdersService {
   constructor(
     @Inject('SEQUELIZE') private sequelize: Sequelize,
     private readonly systemLogsService: SystemLogsService,
+    private readonly notificationsService: NotificationsService,
   ) {
     if (!sequelize.models.Order) {
       OrderModel(sequelize);
     }
     this.orderModel = sequelize.models.Order as typeof Order;
+  }
+
+  /**
+   * Get basic order info (username, orderNumber) for a list of IDs.
+   * Used to send notifications to the right users after admin actions.
+   */
+  private async getOrdersInfo(ids: (number | string)[]): Promise<{ id: number; username: string; orderNumber: string }[]> {
+    if (!ids.length) return [];
+    const idList = ids.map(Number).join(',');
+    const [rows]: any[] = await this.sequelize.query(
+      `SELECT ID as id, username, ordernumber as orderNumber FROM dbo.DON_HANG WHERE ID IN (${idList})`,
+    );
+    console.log("99999999", rows);
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  /**
+   * Send order notifications to affected users after an admin action.
+   * Fires-and-forgets (non-blocking) — errors are logged but do not fail the request.
+   */
+  private notifyOrderUsers(
+    orders: { username: string; orderNumber: string }[],
+    title: string,
+    message: (o: { username: string; orderNumber: string }) => string,
+    refIds: (number | string)[],
+    adminUsername: string,
+  ): void {
+    for (let i = 0; i < orders.length; i++) {
+      const o = orders[i];
+      const refId = refIds[i] !== undefined ? String(refIds[i]) : undefined;
+      try {
+        this.notificationsService
+          .create({
+            username: o.username,
+            title,
+            message: message(o),
+            type: 'order',
+            createdBy: adminUsername,
+            refType: 'order',
+            refId,
+          })
+          .catch((err) => console.error('[notify] Failed to send notification:', err));
+      } catch (err) {
+        console.error('[notify] Unexpected error creating notification:', err);
+      }
+    }
   }
 
   /**
@@ -889,6 +937,9 @@ export class OrdersService {
       throw new BadRequestException('Failed to mass delete orders');
     }
 
+    // Get order info before returning (for notifications)
+    const cancelledOrders = await this.getOrdersInfo(ids);
+
     // Log the mass delete action
     await this.systemLogsService.create({
       nguoiTao,
@@ -897,6 +948,15 @@ export class OrdersService {
       doiTuong: '',
       noiDung: `ID: ${ids.join(',')}`,
     });
+
+    // Notify each order's user that their order was cancelled
+    this.notifyOrderUsers(
+      cancelledOrders,
+      'Đơn hàng đã bị hủy',
+      (o) => `Đơn hàng #${o.orderNumber} của bạn đã bị hủy bởi admin.`,
+      cancelledOrders.map((o) => o.id),
+      nguoiTao,
+    );
 
     return { deleted: ids.length };
   }
@@ -916,6 +976,9 @@ export class OrdersService {
       throw new BadRequestException('Failed to mass complete orders');
     }
 
+    const idList = ids.split(',').map(Number);
+    const completedOrders = await this.getOrdersInfo(idList);
+
     // System log (giống EditOrder)
     await this.systemLogsService.create({
       nguoiTao: nguoiTao || 'system',
@@ -925,7 +988,16 @@ export class OrdersService {
       noiDung: `ID: ${ids}`,
     });
 
-    return { completed: ids.split(',').length };
+    // Notify each order's user that their order is completed
+    this.notifyOrderUsers(
+      completedOrders,
+      'Đơn hàng hoàn thành',
+      (o) => `Đơn hàng #${o.orderNumber} của bạn đã hoàn thành.`,
+      completedOrders.map((o) => o.id),
+      nguoiTao || 'system',
+    );
+
+    return { completed: idList.length };
   }
 
   /**
@@ -961,6 +1033,9 @@ export class OrdersService {
       throw new BadRequestException('Failed to mass received orders');
     }
 
+    const receivedIds = ids.split(',').map(Number);
+    const receivedOrders = await this.getOrdersInfo(receivedIds);
+
     // System log (giống EditOrder)
     await this.systemLogsService.create({
       nguoiTao,
@@ -970,7 +1045,16 @@ export class OrdersService {
       noiDung: `ID: ${ids}`,
     });
 
-    return { received: ids.split(',').length };
+    // Notify each order's user that their order has been received in Vietnam
+    this.notifyOrderUsers(
+      receivedOrders,
+      'Đơn hàng đã về VN',
+      (o) => `Đơn hàng #${o.orderNumber} của bạn đã nhận hàng về Việt Nam.`,
+      receivedOrders.map((o) => o.id),
+      nguoiTao,
+    );
+
+    return { received: receivedIds.length };
   }
 
   /**
@@ -991,6 +1075,9 @@ export class OrdersService {
       throw new BadRequestException('Failed to mass shipped orders');
     }
 
+    const shippedIds = ids.split(',').map(Number);
+    const shippedOrders = await this.getOrdersInfo(shippedIds);
+
     // System log (giống EditOrder)
     await this.systemLogsService.create({
       nguoiTao,
@@ -1000,7 +1087,16 @@ export class OrdersService {
       noiDung: `ID: ${ids}`,
     });
 
-    return { shipped: ids.split(',').length };
+    // Notify each order's user that their order has been shipped
+    this.notifyOrderUsers(
+      shippedOrders,
+      'Đơn hàng đã ship',
+      (o) => `Đơn hàng #${o.orderNumber} của bạn đã được ship.`,
+      shippedOrders.map((o) => o.id),
+      nguoiTao,
+    );
+
+    return { shipped: shippedIds.length };
   }
 
   /**
@@ -1318,6 +1414,17 @@ export class OrdersService {
         doiTuong: idsParam,
         noiDung: `ID: ${idsParam}; BoSungGhiChu: ${updateNoteDto.boSungGhiChu || ''}`,
       });
+
+      // Notify each order's user that admin added a note
+      const noteOrders = await this.getOrdersInfo(ids);
+      this.notifyOrderUsers(
+        noteOrders,
+        'Đơn hàng có ghi chú mới',
+        (o) => `Đơn hàng #${o.orderNumber} của bạn có ghi chú mới từ admin.`,
+        noteOrders.map((o) => o.id),
+        nguoiTao,
+      );
+
       // Return first updated order for response
       return this.findOne(ids[0]);
     } catch (error) {
@@ -1374,6 +1481,27 @@ export class OrdersService {
         doiTuong: String(id),
         noiDung: `ID: ${id}; NgayVeVN: ${ngayVeVn}; BoSungGhiChu: ${boSungGhiChu || ''}`,
       });
+    }
+
+    // Notify order owner about return date update
+    if (updatedOrder) {
+      const orderNum = (updatedOrder as any).orderNumber || (updatedOrder as any).ordernumber || String(id);
+      const ownerUsername = (updatedOrder as any).username;
+      if (ownerUsername) {
+        this.notificationsService
+          .create({
+            username: ownerUsername,
+            title: chuyenVeCompleted ? 'Đơn hàng hoàn thành' : 'Đơn hàng đã về VN',
+            message: chuyenVeCompleted
+              ? `Đơn hàng #${orderNum} của bạn đã hoàn thành. Ngày về VN: ${ngayVeVn}.`
+              : `Đơn hàng #${orderNum} của bạn đã cập nhật ngày về VN: ${ngayVeVn}.`,
+            type: 'order',
+            createdBy: username,
+            refType: 'order',
+            refId: String(id),
+          })
+          .catch((err) => console.error('[notify] Failed to send notification:', err));
+      }
     }
 
     return updatedOrder;
@@ -1549,6 +1677,22 @@ export class OrdersService {
       doiTuong: String(id),
       noiDung: `ID: ${id}; LoaiHang: ${body.loaiHangId}; CanHang_SoKg: ${body.canHangSoKg ?? 0}; CanHang_TienShipVeVN: ${body.canHangTienShipVeVn ?? 0}; CanHang_GhiChuShipVeVN: ${canHangGhiChuShipVeVn}`,
     });
+
+    // Notify order owner that their order has been weighed
+    const [canHangOrder] = await this.getOrdersInfo([id]);
+    if (canHangOrder) {
+      try {
+        this.notifyOrderUsers(
+          [canHangOrder],
+          'Đơn hàng đã được cân hàng',
+          (o) => `Đơn hàng #${o.orderNumber} của bạn đã được cân hàng (${body.canHangSoKg ?? 0} kg).`,
+          [id],
+          nguoiTao,
+        );
+      } catch (e: any) {
+        console.error('notifyOrderUsers failed:', e.message);
+      }
+    }
 
     return { success: true };
   }
@@ -1861,6 +2005,21 @@ export class OrdersService {
         console.error('updateOrderDetail ngayVeVN error:', error);
         // Continue even if ngayVeVN update fails
       }
+    }
+
+    // Notify order owner that admin has updated their order
+    if (username) {
+      this.notificationsService
+        .create({
+          username,
+          title: 'Đơn hàng đã được cập nhật',
+          message: `Đơn hàng #${orderNumber || id} của bạn đã được admin cập nhật.`,
+          type: 'order',
+          createdBy: logUsername,
+          refType: 'order',
+          refId: String(id),
+        })
+        .catch((err) => console.error('[notify] Failed to send notification:', err));
     }
 
     return { success: true };

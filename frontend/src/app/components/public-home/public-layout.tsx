@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { FiChevronDown, FiMenu, FiX, FiUser, FiLogOut, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
 import { FaFacebook } from 'react-icons/fa';
 import { useAuth } from '@/hooks/use-auth-context';
+import { useNotifications } from '@/hooks/use-notifications';
 
 /**
  * Public Layout Component
@@ -12,11 +13,24 @@ import { useAuth } from '@/hooks/use-auth-context';
  * Provides header and footer for public pages (home page).
  * Modern glass navbar design with #14264b primary color.
  */
+/** Animated pulsing red dot for unread notifications */
+function NotifBadge({ count: _ }: { count: number }) {
+  return (
+    <span className="relative inline-flex h-2.5 w-2.5">
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+    </span>
+  );
+}
+
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const { unreadCount } = useNotifications('debt');
+  const { unreadCount: infoUnreadCount } = useNotifications('info');
+  const { unreadCount: orderUnreadCount } = useNotifications('order');
 
   // Brand colors: #14264b (navy) + #eb7325 (orange)
   const colors = {
@@ -90,6 +104,12 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                           onClick={() => setDropdownOpen(dropdownOpen === item.label ? null : item.label)}
                         >
                           {item.label}
+                          {item.label === 'CÔNG NỢ' && isAuthenticated && unreadCount > 0 && (
+                            <NotifBadge count={unreadCount} />
+                          )}
+                          {item.label === 'ĐẶT HÀNG' && isAuthenticated && orderUnreadCount > 0 && (
+                            <NotifBadge count={orderUnreadCount} />
+                          )}
                           <FiChevronDown className={`w-3 h-3 transition-transform ${dropdownOpen === item.label ? 'rotate-180' : ''}`} />
                         </button>
                         {dropdownOpen === item.label && (
@@ -97,35 +117,44 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                             className="absolute left-0 top-full shadow-xl rounded-xl min-w-[200px] py-2 z-[9999]"
                             style={{ backgroundColor: 'white', border: `1px solid ${colors.primaryLight}` }}
                           >
-                            {item.dropdown.map((sub) => (
-                              <li key={sub.label}>
-                                <Link
-                                  href={sub.href}
-                                  className="block px-4 py-2.5 text-sm transition-colors"
-                                  style={{ color: colors.textMuted }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = colors.primaryLight;
-                                    e.currentTarget.style.color = colors.accent;
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                    e.currentTarget.style.color = colors.textMuted;
-                                  }}
-                                >
-                                  {sub.label}
-                                </Link>
-                              </li>
-                            ))}
+                            {item.dropdown.map((sub) => {
+                              const showDebtBadge = sub.href === '/bao-cao-cong-no' && isAuthenticated && unreadCount > 0;
+                              const showOrderBadge = sub.href === '/danh-sach-don-hang' && isAuthenticated && orderUnreadCount > 0;
+                              return (
+                                <li key={sub.label}>
+                                  <Link
+                                    href={sub.href}
+                                    className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors"
+                                    style={{ color: colors.textMuted }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = colors.primaryLight;
+                                      e.currentTarget.style.color = colors.accent;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = 'transparent';
+                                      e.currentTarget.style.color = colors.textMuted;
+                                    }}
+                                  >
+                                    {sub.label}
+                                    {showDebtBadge && <NotifBadge count={unreadCount} />}
+                                    {showOrderBadge && <NotifBadge count={orderUnreadCount} />}
+                                  </Link>
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
                     ) : (
                       <Link
                         href={item.href}
-                        className="block px-4 py-2 text-sm font-bold transition-colors cursor-pointer rounded-lg hover:bg-gray-50"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold transition-colors cursor-pointer rounded-lg hover:bg-gray-50"
                         style={{ color: colors.text }}
                       >
                         {item.label}
+                        {item.label === 'HỎI ĐÁP' && isAuthenticated && infoUnreadCount > 0 && (
+                          <NotifBadge count={infoUnreadCount} />
+                        )}
                       </Link>
                     )}
                   </li>
@@ -207,32 +236,47 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                   <li key={item.label}>
                     {item.dropdown ? (
                       <>
-                        <div className="px-4 py-2 text-sm font-bold" style={{ color: colors.text }}>
+                        <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold" style={{ color: colors.text }}>
                           {item.label}
+                          {item.label === 'CÔNG NỢ' && isAuthenticated && unreadCount > 0 && (
+                            <NotifBadge count={unreadCount} />
+                          )}
+                          {item.label === 'ĐẶT HÀNG' && isAuthenticated && orderUnreadCount > 0 && (
+                            <NotifBadge count={orderUnreadCount} />
+                          )}
                         </div>
                         <ul className="pl-4 space-y-1">
-                          {item.dropdown.map((sub) => (
-                            <li key={sub.label}>
-                              <Link
-                                href={sub.href}
-                                className="block px-4 py-2 text-sm rounded-lg transition-colors"
-                                style={{ color: colors.textMuted }}
-                                onClick={() => setMobileMenuOpen(false)}
-                              >
-                                {sub.label}
-                              </Link>
-                            </li>
-                          ))}
+                          {item.dropdown.map((sub) => {
+                            const showDebtBadge = sub.href === '/bao-cao-cong-no' && isAuthenticated && unreadCount > 0;
+                            const showOrderBadge = sub.href === '/danh-sach-don-hang' && isAuthenticated && orderUnreadCount > 0;
+                            return (
+                              <li key={sub.label}>
+                                <Link
+                                  href={sub.href}
+                                  className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors"
+                                  style={{ color: colors.textMuted }}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                >
+                                  {sub.label}
+                                  {showDebtBadge && <NotifBadge count={unreadCount} />}
+                                  {showOrderBadge && <NotifBadge count={orderUnreadCount} />}
+                                </Link>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </>
                     ) : (
                       <Link
                         href={item.href}
-                        className="block px-4 py-2 text-sm font-bold rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors"
                         style={{ color: colors.text }}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         {item.label}
+                        {item.label === 'HỎI ĐÁP' && isAuthenticated && infoUnreadCount > 0 && (
+                          <NotifBadge count={infoUnreadCount} />
+                        )}
                       </Link>
                     )}
                   </li>

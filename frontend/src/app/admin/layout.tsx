@@ -9,7 +9,6 @@ import {
   FiShoppingCart,
   FiDollarSign,
   FiLogOut,
-  FiBell,
   FiSearch,
   FiMenu,
   FiX,
@@ -19,6 +18,7 @@ import {
   FiSettings,
   FiChevronRight,
 } from 'react-icons/fi';
+import { NotificationBell } from '@/app/components/notifications/notification-bell';
 
 type NavSubItem = {
   href: string;
@@ -361,10 +361,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Right side actions */}
           <div className="flex items-center gap-2">
             {/* Notifications */}
-            <button className="relative rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 hover:text-[#14264b] transition-colors cursor-pointer">
-              <FiBell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
-            </button>
+            <NotificationBell />
 
             {/* Divider */}
             <div className="h-6 w-px bg-slate-200 mx-1" />

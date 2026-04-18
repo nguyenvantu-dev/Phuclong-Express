@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { formatSqlDate, formatSqlEndOfDay, parseVietnameseDate } from '../helpers/sql-date.helper';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Debt Reports Service
@@ -9,7 +10,10 @@ import { formatSqlDate, formatSqlEndOfDay, parseVietnameseDate } from '../helper
  */
 @Injectable()
 export class DebtReportsService {
-  constructor(@Inject('SEQUELIZE') private readonly sequelize: Sequelize) {}
+  constructor(
+    @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Get detailed debt report
@@ -1364,6 +1368,25 @@ export class DebtReportsService {
             type: 'SELECT' as const,
           },
         );
+      }
+
+      // Notify the recipient user about the new debt record
+      try {
+        const drText = dr > 0 ? `Nợ: ${dr.toLocaleString('vi-VN')} VNĐ` : '';
+        const crText = cr > 0 ? `Có: ${cr.toLocaleString('vi-VN')} VNĐ` : '';
+        const amountText = [drText, crText].filter(Boolean).join(' | ');
+
+        await this.notificationsService.create({
+          username:  dto.username,
+          title:     'Thông tin công nợ mới',
+          message:   `${noiDung}${amountText ? '. ' + amountText : ''}. Ngày: ${dto.ngay}.`,
+          type:      'debt',
+          createdBy: username || 'system',
+          refType:   'DEBT',
+        });
+      } catch (notifyError) {
+        // Notification failure must never block the main debt creation flow
+        console.error('Failed to send debt notification:', (notifyError as Error).message);
       }
 
       return { success: true };

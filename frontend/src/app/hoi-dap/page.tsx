@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth-context';
 import { getQnaList, createQna } from '@/lib/api';
+import { notificationsApiClient } from '@/lib/notifications-api-client';
 
 interface QnaItem {
   ID: number;
@@ -45,6 +46,13 @@ export default function HoiDapPage() {
       loadQuestions();
     }
   }, [page, isAuthenticated]);
+
+  // Mark all info notifications as read when visiting this page
+  useEffect(() => {
+    if (isAuthenticated) {
+      notificationsApiClient.markAllRead('info').catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   const loadQuestions = async () => {
     setIsLoading(true);

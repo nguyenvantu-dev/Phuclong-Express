@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getDebtReports } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth-context';
+import { notificationsApiClient } from '@/lib/notifications-api-client';
 
 interface DebtItem {
   CongNo_ID: number;
@@ -65,6 +66,13 @@ export default function BaoCaoCongNoPage() {
   useEffect(() => {
     loadDebtData();
   }, [page, user?.username]);
+
+  // Mark all debt notifications as read when visiting this page
+  useEffect(() => {
+    if (user?.username) {
+      notificationsApiClient.markAllRead('debt').catch(() => {});
+    }
+  }, [user?.username]);
 
   const formatNumber = (num: number) => {
     if (!num && num !== 0) return '0';

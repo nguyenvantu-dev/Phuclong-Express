@@ -24,6 +24,7 @@ import { InStockItemsModule } from './in-stock-items/in-stock-items.module';
 import { PurchasedItemsModule } from './purchased-items/purchased-items.module';
 import { ShippersModule } from './shippers/shippers.module';
 import { QnaModule } from './qna/qna.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { QnaModule } from './qna/qna.module';
     PurchasedItemsModule,
     ShippersModule,
     QnaModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

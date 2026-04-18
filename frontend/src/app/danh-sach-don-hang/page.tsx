@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FiPlus } from 'react-icons/fi';
 import { deleteOrderForUser, getOrdersQLDatHang, getUserStatusCounts } from '@/lib/api';
+import { notificationsApiClient } from '@/lib/notifications-api-client';
 import { Order } from '@/types/order';
 import { useAuthStore } from '@/hooks/use-auth';
 import OrderFilterBar from './components/order-filter-bar';
@@ -32,6 +33,13 @@ export default function DanhSachDonHangPage() {
     loadOrders();
     loadStatusCounts();
   }, [page, selectedStatuses, user?.username]);
+
+  // Mark all order notifications as read when visiting this page
+  useEffect(() => {
+    if (user?.username) {
+      notificationsApiClient.markAllRead('order').catch(() => {});
+    }
+  }, [user?.username]);
 
   const loadStatusCounts = async () => {
     if (!user?.username) return;

@@ -18,9 +18,10 @@ export class QnaController {
    * Matches: LoadDanhSachThacMac() in HoiDapAdmin.cs
    */
   @Get()
-  async getQnaList(@Query() query: QueryQnaDto) {
+  async getQnaList(@Query() query: QueryQnaDto, @Request() req: any) {
+    // Use authenticated user's username from JWT — prevents viewing other users' questions
     return this.qnaService.getQnaList(
-      query.username,
+      req.user?.username,
       query.daTraLoi,
       query.page,
       query.limit,

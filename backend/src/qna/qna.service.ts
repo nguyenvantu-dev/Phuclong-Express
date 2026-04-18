@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Q&A Service
@@ -8,7 +9,10 @@ import { Sequelize } from 'sequelize-typescript';
  */
 @Injectable()
 export class QnaService {
-  constructor(@Inject('SEQUELIZE') private readonly sequelize: Sequelize) {}
+  constructor(
+    @Inject('SEQUELIZE') private readonly sequelize: Sequelize,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Get Q&A list with filters and pagination
@@ -43,13 +47,28 @@ export class QnaService {
 
       return { data: data.slice(1), total: Number(total), page, limit };
     } catch (error) {
-      console.error('Error in getQnaList:', error.message);
+      const err = error as Error;
+      console.error('Error in getQnaList:', err.message);
       return { data: [], total: 0, page, limit };
     }
   }
 
+  /** Get question owner's username by ID — table name may need adjusting per DB schema */
+  private async getQnaOwner(id: number): Promise<string | null> {
+    try {
+      const results = await this.sequelize.query(
+        `SELECT TOP 1 username FROM ThacMac WHERE ID = :id`,
+        { replacements: { id }, type: 'SELECT' as const },
+      );
+      const row = Array.isArray(results) && results.length > 0 ? (results[0] as any) : null;
+      return row?.username ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   /**
-   * Answer Q&A question
+   * Answer Q&A question — notifies the question owner
    * Matches: gvThacMac_RowUpdating() -> CapNhatTraLoiThacMac() in HoiDapAdmin.cs
    */
   async answerQna(
@@ -61,13 +80,24 @@ export class QnaService {
       await this.sequelize.query(
         `EXEC SP_CapNhat_TraLoiThacMac @ID = :id, @TraLoi = :traLoi`,
         {
-          replacements: {
-            id,
-            traLoi: traLoi.trim(),
-          },
+          replacements: { id, traLoi: traLoi.trim() },
           type: 'SELECT' as const,
         },
       );
+
+      // Notify the question owner
+      const owner = await this.getQnaOwner(id);
+      if (owner) {
+        await this.notificationsService.create({
+          username: owner,
+          title: 'Câu hỏi của bạn đã được trả lời',
+          message: traLoi.trim(),
+          type: 'info',
+          createdBy: username ?? 'system',
+          refType: 'qna',
+          refId: id.toString(),
+        });
+      }
 
       // Log the action
       if (username) {
@@ -93,8 +123,9 @@ export class QnaService {
 
       return { success: true };
     } catch (error) {
-      console.error('Error in answerQna:', error.message);
-      return { success: false, message: error.message };
+      const err = error as Error;
+      console.error('Error in answerQna:', err.message);
+      return { success: false, message: err.message };
     }
   }
 
@@ -136,8 +167,9 @@ export class QnaService {
 
       return { success: true };
     } catch (error) {
-      console.error('Error in deleteQna:', error.message);
-      return { success: false, message: error.message };
+      const err = error as Error;
+      console.error('Error in deleteQna:', err.message);
+      return { success: false, message: err.message };
     }
   }
 
@@ -182,8 +214,9 @@ export class QnaService {
 
       return { success: true };
     } catch (error) {
-      console.error('Error in createQna:', error.message);
-      return { success: false, message: error.message };
+      const err = error as Error;
+      console.error('Error in createQna:', err.message);
+      return { success: false, message: err.message };
     }
   }
 }
