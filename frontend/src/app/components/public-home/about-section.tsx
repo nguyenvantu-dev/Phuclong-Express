@@ -1,135 +1,122 @@
 import { FiPhone, FiMail } from 'react-icons/fi';
-import { FaCalendar, FaFacebook } from 'react-icons/fa';
+import { FaFacebook } from 'react-icons/fa';
+
+const features = [
+  {
+    title: 'Tư vấn đúng nhu cầu',
+    desc: 'Đội ngũ tư vấn am hiểu thị trường quốc tế, giúp bạn chọn đúng sản phẩm và nguồn hàng phù hợp nhất.',
+    icon: '🎯',
+  },
+  {
+    title: 'Xử lý đơn nhanh chóng',
+    desc: 'Đặt hàng nhanh, cập nhật trạng thái liên tục — từ lúc đặt đến khi hàng về tay bạn.',
+    icon: '⚡',
+  },
+  {
+    title: 'Chi phí minh bạch',
+    desc: 'Không phát sinh chi phí ẩn. Báo giá rõ ràng ngay từ đầu, thanh toán đúng như cam kết.',
+    icon: '💎',
+  },
+  {
+    title: 'Hỗ trợ xuyên suốt',
+    desc: 'Đội ngũ CSKH online liên tục, sẵn sàng giải đáp mọi thắc mắc trong suốt hành trình đơn hàng.',
+    icon: '🛡️',
+  },
+];
 
 /**
- * About Section Component
- *
- * Displays company story and CSKH contact card.
- * Uses #14264b as primary color.
+ * About Section — company story (left) + 4 key features grid (right) + contact card
  */
 export default function AboutSection() {
-  const colors = {
-    primary: '#14264b',
-    primaryLight: '#e0f7ff',
-    primaryDark: '#2a8fb3',
-    text: '#111827',
-    textMuted: '#6b7280',
-  };
-
-  const story = `Chúng tôi bắt đầu với giấc mơ định hình một doanh nghiệp Việt Nam chuyên cung cấp và quảng bá các dịch vụ logistics đáng tin cậy dựa trên chất lượng dịch vụ, chuyên môn nhân sự và công nghệ tiên tiến.
-
-Vậy nên chúng tôi đã khởi xướng ước mơ giản dị của riêng mình bằng cách xây dựng một nhà cung cấp dịch vụ logistics- mang tới dịch vụ hoàn hảo, chú trọng tính chuyên nghiệp, uy tín, tận tâm và trách nhiệm với khách hàng - điều khiến chúng tôi tạo nên tính khác biệt, cạnh tranh so với các đối thủ.
-
-Từ đó, Phuc Long Express (PLE Logistics) đã được thành lập vào năm 2018 tại Thủ đô Hà Nội. Trải qua hơn 5 năm trên chặng đường trưởng thành, từ khát vọng giản dị đó mà PLE Logistics ngày nay đã có những bước phát triển vượt bậc. Mỗi thành viên trong PLE Logistics đều trân quý bất kỳ chuyến hàng nào mà khách hàng tin tưởng giao cho chúng tôi, và chúng tôi luôn coi vấn đề của khách hàng là của chính mình để nỗ lực và đưa ra các giải pháp phù hợp, tư vấn cho khách hàng để tối ưu hóa chuỗi giá trị.
-
-Trong tương lai gần, PLE Logistics định hướng sẽ tiếp tục phát triển mở rộng mạng lưới toàn quốc tế và cung cấp dịch vụ chuyển phát hàng hóa toàn cầu với chất lượng chuyên nghiệp, tận tâm nhất đến khách hàng.`;
-
   return (
-    <section className="py-16 md:py-20" style={{ backgroundColor: '#f8fafc' }} id="about">
-      <div className="container mx-auto px-4">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-12"
-          style={{ color: colors.text }}
-        >
-          Về chúng tôi
-        </h2>
+    <section className="py-20 md:py-28" style={{ backgroundColor: '#f8fafc' }} id="about">
+      <div className="container mx-auto px-4 max-w-6xl">
 
-        <div className="grid lg:grid-cols-2 gap-12 items-start mb-16">
-          {/* Image */}
-          <div className="relative">
-            <img
-              className="w-full rounded-2xl shadow-xl"
-              src="/image1/Sale.jpg"
-              alt="About us"
-            />
-            <div
-              className="absolute -bottom-6 -right-6 p-6 rounded-2xl shadow-xl"
-              style={{ backgroundColor: colors.primary }}
-            >
-              <FaCalendar className="w-8 h-8 text-white mb-2" />
-              <p className="text-white font-bold text-xl">2018</p>
-              <p className="text-white/80 text-sm">Năm thành lập</p>
+        {/* Top: story + features */}
+        <div className="grid lg:grid-cols-2 gap-16 items-start mb-16">
+
+          {/* Left: company story */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-0.5 rounded-full" style={{ backgroundColor: '#eb7325' }} />
+              <span className="text-sm font-bold tracking-widest uppercase" style={{ color: '#eb7325' }}>
+                Về chúng tôi
+              </span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black mb-6 leading-tight" style={{ color: '#14264b' }}>
+              Phuc Long Express —<br />
+              <span style={{ color: '#eb7325' }}>8 năm đồng hành</span> cùng khách hàng
+            </h2>
+            <div className="space-y-4" style={{ color: '#475569' }}>
+              <p className="leading-relaxed">
+                Phuc Long Express được thành lập vào năm 2018 tại Hà Nội với giấc mơ xây dựng một đơn vị logistics Việt Nam chuyên nghiệp, tận tâm, dựa trên chất lượng dịch vụ và công nghệ tiên tiến.
+              </p>
+              <p className="leading-relaxed">
+                Trải qua hơn 8 năm phát triển, PLE Logistics đã có những bước tăng trưởng vượt bậc. Mỗi thành viên trong đội ngũ đều coi vấn đề của khách hàng là của chính mình — nỗ lực đưa ra giải pháp tối ưu và tư vấn để chuỗi giá trị dịch vụ luôn tốt nhất.
+              </p>
+              <p className="leading-relaxed">
+                Trong tương lai gần, PLE Logistics định hướng tiếp tục mở rộng mạng lưới quốc tế và cung cấp dịch vụ chuyển phát hàng hóa toàn cầu với chất lượng chuyên nghiệp, tận tâm nhất đến khách hàng.
+              </p>
             </div>
           </div>
 
-          {/* Story */}
-          <div>
-            {story.split('\n\n').map((paragraph, index) => (
-              <p key={index} className="mb-4 leading-relaxed" style={{ color: colors.textMuted }}>
-                {paragraph.trim()}
-              </p>
+          {/* Right: 4 features grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {features.map((feature, i) => (
+              <div
+                key={i}
+                className="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-default"
+                style={{ backgroundColor: 'white', border: '1px solid #e2e8f0' }}
+              >
+                <span className="text-3xl mb-4 block">{feature.icon}</span>
+                <h3 className="font-bold text-base mb-2" style={{ color: '#14264b' }}>
+                  {feature.title}
+                </h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#64748b' }}>
+                  {feature.desc}
+                </p>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* CSKH Card */}
-        <div className="max-w-3xl mx-auto">
-          <div
-            className="rounded-3xl overflow-hidden shadow-2xl border border-white/10"
-            style={{ background: `linear-gradient(135deg, ${colors.primaryDark} 0%, ${colors.primary} 60%, #7dd8f5 100%)` }}
-          >
-            {/* Header */}
-            <div className="px-8 pt-10 pb-8 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 bg-white/20 backdrop-blur-sm shadow-lg">
-                <FiPhone className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-wide">
-                HOTLINE CSKH
-              </h3>
-              <p className="text-white/75 text-sm">
-                Chăm sóc khách hàng tận tình — 24/7
-              </p>
-              <div className="mt-6 h-px bg-white/20 mx-4" />
-            </div>
+        {/* Contact card */}
+        <div
+          className="rounded-3xl overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #14264b 0%, #1f3a6d 100%)' }}
+        >
+          <div className="px-8 pt-10 pb-6 text-center">
+            <FiPhone className="w-8 h-8 text-white mx-auto mb-3" />
+            <h3 className="text-2xl font-black text-white mb-1">HOTLINE CSKH</h3>
+            <p className="text-white/60 text-sm">Chăm sóc khách hàng tận tình — 24/7</p>
+            <div className="mt-6 h-px mx-4" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
+          </div>
 
-            {/* Contact items — 3 equal columns on sm+ */}
-            <div className="px-6 pb-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Phone */}
+          <div className="px-6 pb-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { icon: <FiPhone className="w-5 h-5 text-white" />, label: 'Hotline', value: '(+84) 344.415.213', href: 'tel:+840344415213' },
+              { icon: <FiMail className="w-5 h-5 text-white" />, label: 'Email', value: 'phuclongexpress@gmail.com', href: 'mailto:phuclongexpress@gmail.com' },
+              { icon: <FaFacebook className="w-5 h-5 text-white" />, label: 'Facebook', value: 'Phuc Long Express', href: 'https://www.facebook.com/phuclongexpress', external: true },
+            ].map((item, i) => (
               <a
-                href="tel:+840344415213"
-                className="flex flex-col items-center gap-3 px-4 py-5 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 hover:bg-white/25 hover:border-white/35 hover:scale-[1.02] transition-all duration-200 cursor-pointer group text-center"
+                key={i}
+                href={item.href}
+                {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                className="flex flex-col items-center gap-3 px-4 py-5 rounded-2xl text-center transition-all duration-200 hover:scale-[1.02]"
+                style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
               >
-                <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors duration-200 shadow">
-                  <FiPhone className="w-5 h-5 text-white" />
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                  {item.icon}
                 </div>
                 <div>
-                  <p className="text-white/65 text-xs mb-1 uppercase tracking-wider">Hotline</p>
-                  <p className="text-white font-bold text-sm">(+84) 344.415.213</p>
+                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{item.label}</p>
+                  <p className="text-white font-semibold text-sm">{item.value}</p>
                 </div>
               </a>
-
-              {/* Email */}
-              <a
-                href="mailto:phuclongexpress@gmail.com"
-                className="flex flex-col items-center gap-3 px-4 py-5 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 hover:bg-white/25 hover:border-white/35 hover:scale-[1.02] transition-all duration-200 cursor-pointer group text-center"
-              >
-                <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors duration-200 shadow">
-                  <FiMail className="w-5 h-5 text-white" />
-                </div>
-                <div className="min-w-0 w-full">
-                  <p className="text-white/65 text-xs mb-1 uppercase tracking-wider">Email</p>
-                  <p className="text-white font-semibold text-xs truncate">phuclongexpress@gmail.com</p>
-                </div>
-              </a>
-
-              {/* Facebook */}
-              <a
-                href="https://www.facebook.com/phuclongexpress"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col items-center gap-3 px-4 py-5 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 hover:bg-white/25 hover:border-white/35 hover:scale-[1.02] transition-all duration-200 cursor-pointer group text-center"
-              >
-                <div className="w-11 h-11 rounded-xl bg-[#1877F2]/70 flex items-center justify-center group-hover:bg-[#1877F2] transition-colors duration-200 shadow">
-                  <FaFacebook className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-white/65 text-xs mb-1 uppercase tracking-wider">Facebook</p>
-                  <p className="text-white font-semibold text-sm">Phuc Long Express</p>
-                </div>
-              </a>
-            </div>
+            ))}
           </div>
         </div>
+
       </div>
     </section>
   );

@@ -10,25 +10,21 @@ import CategoriesSection from './components/public-home/categories-section';
 import ClientsSection from './components/public-home/clients-section';
 import StatsSection from './components/public-home/stats-section';
 import TestimonialsSection from './components/public-home/testimonials-section';
-import BenefitsSection from './components/public-home/benefits-section';
+import HowItWorksSection from './components/public-home/how-it-works-section';
 import AboutSection from './components/public-home/about-section';
-import MissionSection from './components/public-home/mission-section';
+import CtaSection from './components/public-home/cta-section';
 
 /**
- * Public Home Page
+ * Public Home Page — Phuc Long Express
  *
- * This is the default page for Phuc Long Express website.
- * Converted from Default.aspx (ASP.NET WebForms) to Next.js App Router.
- *
- * Structure follows the original ASPX page sections:
- * 1. Hero/Intro with slider + tracking lookup
- * 2. Services (Sứ mệnh, Tầm nhìn)
- * 3. Categories (9 product categories)
- * 4. Clients & Stats
- * 5. Testimonials
- * 6. Benefits
- * 7. About/Team
- * 8. Mission
+ * Section order:
+ * 1. Hero — slider + tracking lookup
+ * 2. Why PLE — 3 key benefits + company description
+ * 3. Countries — markets we ship from
+ * 4. Stats — animated counters
+ * 5. Brands — marquee of popular brands
+ * 6. Testimonials — customer reviews
+ * 7. About — company story + 4 features + contact
  */
 export default function HomePage() {
   const router = useRouter();
@@ -53,10 +49,13 @@ export default function HomePage() {
       {/* Hero Section with Intro Slider + Tracking Lookup */}
       <HeroSection />
 
-      {/* Services Section */}
+      {/* Why PLE Section */}
       <ServicesSection />
 
-      {/* Categories Section */}
+      {/* How It Works Section */}
+      <HowItWorksSection />
+
+      {/* Countries Section */}
       <CategoriesSection />
 
       {/* Clients Section */}
@@ -68,14 +67,11 @@ export default function HomePage() {
       {/* Testimonials Section */}
       <TestimonialsSection />
 
-      {/* Benefits Section */}
-      <BenefitsSection />
-
       {/* About Section */}
       <AboutSection />
 
-      {/* Mission Section */}
-      <MissionSection />
+      {/* Final CTA Section */}
+      <CtaSection />
 
       {/* Tawk.to Chat Widget */}
       <script

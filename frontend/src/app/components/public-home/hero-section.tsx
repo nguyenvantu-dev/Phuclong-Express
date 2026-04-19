@@ -145,7 +145,7 @@ export default function HeroSection() {
               </span>
             </h1>
             <p className="text-sm md:text-base leading-relaxed max-w-lg mt-2 mb-5" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Phúc Long Express hỗ trợ khách hàng mua hàng quốc tế, gom hàng và vận chuyển về Việt Nam từ nhiều thị trường: Mỹ, Anh, Tây Ban Nha, Ba Lan, Nhật... với quy trình rõ ràng, theo dõi dễ dàng và chi phí tối ưu.
+              Phuc Long Express hỗ trợ khách hàng mua hàng quốc tế, gom hàng và vận chuyển về Việt Nam từ nhiều thị trường: Mỹ, Anh, Tây Ban Nha, Ba Lan, Nhật... với quy trình rõ ràng, theo dõi dễ dàng và chi phí tối ưu.
             </p>
             {/* CTA Button */}
             <Link
