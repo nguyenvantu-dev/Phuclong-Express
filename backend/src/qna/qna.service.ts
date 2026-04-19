@@ -190,6 +190,19 @@ export class QnaService {
         },
       );
 
+      // Notify all users whose username contains 'cskh'
+      try {
+        await this.notificationsService.notifyByUsernameKeyword('cskh', {
+          title: 'Câu hỏi mới từ khách hàng',
+          message: cauHoi.trim(),
+          type: 'info',
+          createdBy: username ?? 'system',
+          refType: 'qna',
+        });
+      } catch (notifyErr) {
+        console.error('Error notifying CSKH users:', (notifyErr as Error).message);
+      }
+
       // Log the action
       if (username) {
         await this.sequelize.query(

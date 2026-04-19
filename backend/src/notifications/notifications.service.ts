@@ -87,4 +87,19 @@ export class NotificationsService {
       { replacements: { username, ...(type ? { type } : {}) }, type: 'SELECT' as const },
     );
   }
+
+  /** Get all usernames whose username contains the given keyword (case-insensitive) */
+  async getUsernamesByKeyword(keyword: string): Promise<string[]> {
+    const results = await this.sequelize.query(
+      `SELECT UserName FROM AspNetUsers WHERE LOWER(UserName) LIKE LOWER(:pattern)`,
+      { replacements: { pattern: `%${keyword}%` }, type: 'SELECT' as const },
+    );
+    return (Array.isArray(results) ? results : []).map((r: any) => r.UserName).filter(Boolean);
+  }
+
+  /** Send a notification to all users whose username contains the given keyword */
+  async notifyByUsernameKeyword(keyword: string, dto: Omit<CreateNotificationDto, 'username'>): Promise<void> {
+    const usernames = await this.getUsernamesByKeyword(keyword);
+    await Promise.all(usernames.map((username) => this.create({ ...dto, username })));
+  }
 }
