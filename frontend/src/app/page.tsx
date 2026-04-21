@@ -1,8 +1,3 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth-context';
 import PublicLayout from './components/public-home/public-layout';
 import HeroSection from './components/public-home/hero-section';
 import ServicesSection from './components/public-home/services-section';
@@ -27,23 +22,6 @@ import CtaSection from './components/public-home/cta-section';
  * 7. About — company story + 4 features + contact
  */
 export default function HomePage() {
-  const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
   return (
     <PublicLayout>
       {/* Hero Section with Intro Slider + Tracking Lookup */}

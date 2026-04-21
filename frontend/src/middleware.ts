@@ -9,7 +9,6 @@ import type { NextRequest } from 'next/server';
  */
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const isLoginPage = pathname === '/login';
   const isAuthApi = pathname.startsWith('/api/auth/');
 
   // Allow auth API endpoints
@@ -32,7 +31,23 @@ export function middleware(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/', '/hoi-dap'];
+  const protectedRoutes = [
+    '/dat-hang',
+    '/danh-sach-don-hang',
+    '/danh-sach-tracking',
+    '/sua-tracking',
+    '/thong-tin-lo-hang',
+    '/ty-gia',
+    '/chuyen-khoan',
+    '/bao-cao-cong-no',
+    '/hoi-dap',
+    '/dot-hang-user',
+    '/shipper-detail',
+    '/thong-tin-dot-hang',
+    '/thong-tin-ship-hang',
+    '/sua-don-hang',
+    '/yeu-cau-ship-hang-liet-ke',
+  ];
 
   const isProtectedRoute = protectedRoutes.some(route =>
     pathname === route || pathname.startsWith(route + '/')

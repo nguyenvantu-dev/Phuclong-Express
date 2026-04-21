@@ -9,7 +9,7 @@ const POLL_INTERVAL_MS = 30_000;
  * Hook managing notification state with 30s polling for unread count.
  * Full list is fetched on-demand when the dropdown opens.
  */
-export function useNotifications(type?: string) {
+export function useNotifications(type?: string, enabled = true) {
   const [unreadCount, setUnreadCount]     = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen]               = useState(false);
@@ -37,14 +37,15 @@ export function useNotifications(type?: string) {
     }
   }, []);
 
-  // Start polling on mount
+  // Start polling on mount — skip if not enabled (e.g. unauthenticated)
   useEffect(() => {
+    if (!enabled) return;
     fetchUnreadCount();
     intervalRef.current = setInterval(fetchUnreadCount, POLL_INTERVAL_MS);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [fetchUnreadCount]);
+  }, [fetchUnreadCount, enabled]);
 
   // Fetch full list whenever dropdown opens
   useEffect(() => {

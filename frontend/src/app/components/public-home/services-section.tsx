@@ -14,7 +14,7 @@ const benefits = [
  */
 export default function ServicesSection() {
   return (
-    <section className="py-20 md:py-28" style={{ backgroundColor: '#f8fafc' }}>
+    <section className="py-20 md:py-28" style={{ backgroundColor: '#f8fafc' }} id="services">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
 

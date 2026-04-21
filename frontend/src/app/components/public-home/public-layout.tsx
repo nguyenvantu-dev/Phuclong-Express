@@ -2,10 +2,14 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+
+type SubItem = { label: string; href: string };
+type NavItem = { label: string; href: string; dropdown?: never } | { label: string; href?: never; dropdown: SubItem[] };
 import { FiChevronDown, FiMenu, FiX, FiUser, FiLogOut, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
 import { FaFacebook } from 'react-icons/fa';
 import { useAuth } from '@/hooks/use-auth-context';
 import { useNotifications } from '@/hooks/use-notifications';
+import LoginModal from './login-modal';
 
 /**
  * Public Layout Component
@@ -27,10 +31,11 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
-  const { unreadCount } = useNotifications('debt');
-  const { unreadCount: infoUnreadCount } = useNotifications('info');
-  const { unreadCount: orderUnreadCount } = useNotifications('order');
+  const { unreadCount } = useNotifications('debt', isAuthenticated);
+  const { unreadCount: infoUnreadCount } = useNotifications('info', isAuthenticated);
+  const { unreadCount: orderUnreadCount } = useNotifications('order', isAuthenticated);
 
   // Brand colors: #14264b (navy) + #eb7325 (orange)
   const colors = {
@@ -44,7 +49,15 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     bg: '#f8fafc',
   };
 
-  const navItems = [
+  const publicNavItems: NavItem[] = [
+    { label: 'TRANG CHỦ', href: '/' },
+    { label: 'DỊCH VỤ', href: '/#services' },
+    { label: 'CÁCH HOẠT ĐỘNG', href: '/#how-it-works' },
+    { label: 'VỀ CHÚNG TÔI', href: '/#about' },
+    { label: 'TỶ GIÁ', href: '/ty-gia' },
+  ];
+
+  const authNavItems: NavItem[] = [
     { label: 'TRANG CHỦ', href: '/' },
     {
       label: 'ĐẶT HÀNG',
@@ -72,6 +85,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     { label: 'HỎI ĐÁP', href: '/hoi-dap' },
   ];
 
+  const navItems = isAuthenticated ? authNavItems : publicNavItems;
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bg }}>
       {/* Header - Glass Navbar */}
@@ -83,7 +98,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 cursor-pointer group">
-              <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL.png" alt="Phuc Long Express" className="h-23 object-contain transition-transform group-hover:scale-105" />
+              <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL.png" alt="Phuc Long Express" className="h-32 object-contain transition-transform group-hover:scale-105" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -117,7 +132,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                             className="absolute left-0 top-full shadow-xl rounded-xl min-w-[200px] py-2 z-[9999]"
                             style={{ backgroundColor: 'white', border: `1px solid ${colors.primaryLight}` }}
                           >
-                            {item.dropdown.map((sub) => {
+                            {item.dropdown.map((sub: SubItem) => {
                               const showDebtBadge = sub.href === '/bao-cao-cong-no' && isAuthenticated && unreadCount > 0;
                               const showOrderBadge = sub.href === '/danh-sach-don-hang' && isAuthenticated && orderUnreadCount > 0;
                               return (
@@ -204,13 +219,14 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 )}
               </div>
             ) : (
-              <Link
-                href="/admin"
+              <button
+                type="button"
+                onClick={() => setLoginModalOpen(true)}
                 className="hidden lg:flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-xl transition-all cursor-pointer hover:shadow-lg hover:shadow-[#eb7325]/30 hover:-translate-y-0.5"
                 style={{ backgroundColor: colors.primary }}
               >
-                Quản trị
-              </Link>
+                Đăng nhập
+              </button>
             )}
 
             {/* Mobile menu button */}
@@ -246,7 +262,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                           )}
                         </div>
                         <ul className="pl-4 space-y-1">
-                          {item.dropdown.map((sub) => {
+                          {item.dropdown.map((sub: SubItem) => {
                             const showDebtBadge = sub.href === '/bao-cao-cong-no' && isAuthenticated && unreadCount > 0;
                             const showOrderBadge = sub.href === '/danh-sach-don-hang' && isAuthenticated && orderUnreadCount > 0;
                             return (
@@ -282,16 +298,18 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                   </li>
                 ))}
               </ul>
-              <div className="mt-4 px-4">
-                <Link
-                  href="/admin"
-                  className="flex items-center justify-center px-4 py-2.5 text-white text-sm font-bold rounded-xl"
-                  style={{ backgroundColor: colors.primary }}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Quản trị
-                </Link>
-              </div>
+              {!isAuthenticated && (
+                <div className="mt-4 px-4">
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-center px-4 py-2.5 text-white text-sm font-bold rounded-xl cursor-pointer"
+                    style={{ backgroundColor: colors.primary }}
+                    onClick={() => { setMobileMenuOpen(false); setLoginModalOpen(true); }}
+                  >
+                    Đăng nhập
+                  </button>
+                </div>
+              )}
               {/* Mobile User Section */}
               {isAuthenticated && user && (
                 <div className="mt-4 px-4 py-3 rounded-xl" style={{ backgroundColor: colors.primaryLight }}>
@@ -323,6 +341,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           )}
         </div>
       </header>
+
+      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
 
       {/* Main Content */}
       <main className="flex-1 pt-20">{children}</main>

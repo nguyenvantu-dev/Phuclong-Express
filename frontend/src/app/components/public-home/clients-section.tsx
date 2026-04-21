@@ -5,16 +5,7 @@
  * Images in /public/image1/brand-*.png and brand-2-*.jpg
  */
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-const allBrands = [
+const rowOne = [
   { name: 'Amazon',       src: '/image2/amazon-logo-squid-ink-smile-orange.png' },
   { name: 'Apple',        src: '/image2/apple-com-logo.png' },
   { name: 'Casio',        src: '/image2/casio-co-jp-logo.png' },
@@ -27,11 +18,24 @@ const allBrands = [
   { name: 'Nike',         src: '/image2/nike-com-logo.png' },
   { name: 'Overstock',    src: '/image2/overstock-com-logo.png' },
   { name: 'Target',       src: '/image2/target-com-logo.png' },
-  { name: 'Uniqlo',      src: '/image2/uniqlo-com-logo.png' },
+  { name: 'Uniqlo',       src: '/image2/uniqlo-com-logo.png' },
 ];
 
-const rowOne = shuffle(allBrands);
-const rowTwo = shuffle(allBrands);
+const rowTwo = [
+  { name: 'Nike',         src: '/image2/nike-com-logo.png' },
+  { name: 'Uniqlo',       src: '/image2/uniqlo-com-logo.png' },
+  { name: 'Target',       src: '/image2/target-com-logo.png' },
+  { name: 'H&M',          src: '/image2/hm-com-logo.png' },
+  { name: 'Overstock',    src: '/image2/overstock-com-logo.png' },
+  { name: 'eBay',         src: '/image2/ebay-com-logo.png' },
+  { name: "Levi's",       src: '/image2/levi-com-logo.png' },
+  { name: 'Disney Store', src: '/image2/disney-store-logo.png' },
+  { name: 'Jomashop',     src: '/image2/jomashop.webp' },
+  { name: 'Amazon',       src: '/image2/amazon-logo-squid-ink-smile-orange.png' },
+  { name: 'CompUSA',      src: '/image2/compusa-com-logo.png' },
+  { name: 'Apple',        src: '/image2/apple-com-logo.png' },
+  { name: 'Casio',        src: '/image2/casio-co-jp-logo.png' },
+];
 
 type Brand = { name: string; src: string };
 

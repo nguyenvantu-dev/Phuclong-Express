@@ -40,7 +40,7 @@ const steps = [
  */
 export default function HowItWorksSection() {
   return (
-    <section className="py-20 md:py-28" style={{ backgroundColor: '#f8fafc' }}>
+    <section className="py-20 md:py-28" style={{ backgroundColor: '#f8fafc' }} id="how-it-works">
       <div className="container mx-auto px-4 max-w-6xl">
 
         {/* Header */}
