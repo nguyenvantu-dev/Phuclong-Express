@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Link from 'next/link';
+import { useProtectedLink } from '@/hooks/use-protected-link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectFade, Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -40,6 +40,7 @@ const colors = {
  * Uses #14264b as primary color.
  */
 export default function HeroSection() {
+  const navigate = useProtectedLink();
   const [trackingCode, setTrackingCode] = useState('');
   const [trackingResult, setTrackingResult] = useState<TrackingResultState | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -148,14 +149,14 @@ export default function HeroSection() {
               Phuc Long Express hỗ trợ khách hàng mua hàng quốc tế, gom hàng và vận chuyển về Việt Nam từ nhiều thị trường: Mỹ, Anh, Tây Ban Nha, Ba Lan, Nhật... với quy trình rõ ràng, theo dõi dễ dàng và chi phí tối ưu.
             </p>
             {/* CTA Button */}
-            <Link
-              href="/dat-hang"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-200 hover:opacity-90 hover:shadow-lg"
+            <button
+              onClick={() => navigate('/dat-hang')}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-200 hover:opacity-90 hover:shadow-lg cursor-pointer"
               style={{ backgroundColor: colors.accent }}
             >
               <FiLink className="w-4 h-4" />
               GỬI LINK SẢN PHẨM
-            </Link>
+            </button>
             {/* Feature pills */}
             <div className="flex flex-wrap gap-2 mt-5">
               <div

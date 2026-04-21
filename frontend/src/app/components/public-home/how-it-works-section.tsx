@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useProtectedLink } from '@/hooks/use-protected-link';
 
 const steps = [
   {
@@ -39,6 +39,7 @@ const steps = [
  * How It Works Section — 5-step ordering process
  */
 export default function HowItWorksSection() {
+  const navigate = useProtectedLink();
   return (
     <section className="py-20 md:py-28" style={{ backgroundColor: '#f8fafc' }} id="how-it-works">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -98,13 +99,13 @@ export default function HowItWorksSection() {
 
         {/* CTA */}
         <div className="text-center mt-14">
-          <Link
-            href="/dat-hang"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white transition-all hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5"
+          <button
+            onClick={() => navigate('/dat-hang')}
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white transition-all hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
             style={{ backgroundColor: '#eb7325' }}
           >
             Bắt đầu đặt hàng ngay →
-          </Link>
+          </button>
         </div>
 
       </div>

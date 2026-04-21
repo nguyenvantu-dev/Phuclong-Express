@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useProtectedLink } from '@/hooks/use-protected-link';
 import React from 'react';
 import US from 'country-flag-icons/react/3x2/US';
 import GB from 'country-flag-icons/react/3x2/GB';
@@ -22,6 +22,7 @@ const countries: { Flag: FlagComponent; name: string; desc: string }[] = [
  * Countries Section — markets PLE ships from
  */
 export default function CategoriesSection() {
+  const navigate = useProtectedLink();
   return (
     <section className="py-20 md:py-28" style={{ backgroundColor: '#14264b' }}>
       <div className="container mx-auto px-4 max-w-6xl">
@@ -74,13 +75,13 @@ export default function CategoriesSection() {
 
         {/* CTA */}
         <div className="text-center">
-          <Link
-            href="/dat-hang"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white border-2 transition-all duration-200 hover:bg-white hover:text-[#14264b]"
+          <button
+            onClick={() => navigate('/dat-hang')}
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white border-2 transition-all duration-200 hover:bg-white hover:text-[#14264b] cursor-pointer"
             style={{ borderColor: 'rgba(255,255,255,0.3)' }}
           >
             Đặt hàng ngay
-          </Link>
+          </button>
         </div>
 
       </div>

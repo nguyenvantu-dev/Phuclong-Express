@@ -7,6 +7,7 @@
 
 import axios from 'axios';
 import { useAuthStore } from '@/hooks/use-auth';
+import { useLoginModalStore } from '@/lib/login-modal-store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -42,13 +43,10 @@ axios.interceptors.response.use(
       message?.includes('Forbidden')
     ) {
       if (typeof window !== 'undefined') {
-        console.log('[Auth] Redirecting to login due to auth error');
-        // Clear auth store
         useAuthStore.getState().logout();
         localStorage.removeItem('auth-storage');
-        // Redirect to login page
-        const currentOrigin = window.location.origin;
-        window.location.href = `${currentOrigin}/login`;
+        document.cookie = 'accessToken=; path=/; max-age=0';
+        useLoginModalStore.getState().openModal();
       }
     }
     return Promise.reject(error);

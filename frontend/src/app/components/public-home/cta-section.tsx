@@ -1,11 +1,15 @@
+'use client';
+
 import Link from 'next/link';
 import { FiLink, FiSearch } from 'react-icons/fi';
 import { FaFacebook } from 'react-icons/fa';
+import { useProtectedLink } from '@/hooks/use-protected-link';
 
 /**
  * CTA Section — final call to action before footer
  */
 export default function CtaSection() {
+  const navigate = useProtectedLink();
   return (
     <section
       className="py-20 md:py-28"
@@ -32,14 +36,14 @@ export default function CtaSection() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/dat-hang"
-            className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-white transition-all hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto justify-center"
+          <button
+            onClick={() => navigate('/dat-hang')}
+            className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-white transition-all hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto justify-center cursor-pointer"
             style={{ backgroundColor: '#eb7325' }}
           >
             <FiLink className="w-4 h-4" />
             Gửi link đặt hàng
-          </Link>
+          </button>
 
           <Link
             href="/danh-sach-tracking"

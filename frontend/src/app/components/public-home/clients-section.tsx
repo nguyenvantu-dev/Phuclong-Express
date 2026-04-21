@@ -106,7 +106,15 @@ export default function ClientsSection() {
         </p>
       </div>
 
-      <div className="mx-auto" style={{ maxWidth: '1152px', overflow: 'hidden' }}>
+      <div
+        className="mx-auto"
+        style={{
+          maxWidth: '1152px',
+          overflow: 'hidden',
+          maskImage: 'linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)',
+        }}
+      >
         <MarqueeRow items={rowOne} />
         <div className="h-4" />
         <MarqueeRow items={rowTwo} reverse />
