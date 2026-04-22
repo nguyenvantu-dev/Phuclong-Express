@@ -1289,75 +1289,121 @@ export class OrdersService {
    * Converted from OrderDaXoa.aspx.cs - LoadDanhSachDonHangDaXoa()
    */
   async findDeleted(query: QueryOrderDto): Promise<{ data: any[]; total: number; page: number; limit: number }> {
-    const { website, username, status, statuses, search, orderId, startDate, endDate, quocGiaId, page = 1, limit = 20 } = query;
+    const { website, username, status, statuses, search, startDate, endDate, quocGiaId, page = 1, limit = 20 } = query;
 
-    // Cap limit to 500 max to match @Max(500) validation
     const safeLimit = Math.min(limit, 500);
     try {
-      const offset = (page - 1) * safeLimit;
-      let whereClause = 'WHERE DaXoa = 1';
-
-      if (website) {
-        whereClause += ` AND WebsiteName LIKE '%${website}%'`;
-      }
-      if (username) {
-        whereClause += ` AND username LIKE '%${username}%'`;
-      }
-      if (status) {
-        whereClause += ` AND trangThaiOrder = '${status}'`;
-      }
-      // Handle statuses array for CheckBoxList filter
+      let trangthaiOrder = '';
       if (statuses && statuses.length > 0) {
-        const statusList = statuses.map((s) => `'${s}'`).join(',');
-        whereClause += ` AND trangThaiOrder IN (${statusList})`;
-      }
-      if (search) {
-        whereClause += ` AND (ordernumber LIKE '%${search}%' OR username LIKE '%${search}%' OR MaSoHang LIKE '%${search}%')`;
-      }
-      if (orderId) {
-        whereClause += ` AND ID = '${orderId}'`;
-      }
-      if (quocGiaId && quocGiaId > 0) {
-        whereClause += ` AND QuocGiaID = ${quocGiaId}`;
-      }
-      if (startDate) {
-        whereClause += ` AND ngaySaveLink >= '${startDate}'`;
-      }
-      if (endDate) {
-        whereClause += ` AND ngaySaveLink <= '${endDate}'`;
+        trangthaiOrder = statuses.map((s) => `'${s}'`).join(',');
+      } else if (status) {
+        trangthaiOrder = `'${status}'`;
       }
 
-      // Get total count
-      const [countResult]: any[] = await this.sequelize.query(
-        `SELECT COUNT(*) as total FROM dbo.DON_HANG ${whereClause}`
+      // Use same SP as findAll with DaXoa = 1 for accurate username resolution
+      const results = await this.sequelize.query(
+        `EXEC SP_Lay_DonHang
+          @WebsiteName = :website,
+          @username = :username,
+          @trangthaiOrder = :trangthaiOrder,
+          @NoiDungTim = :search,
+          @TimTheo = -1,
+          @MaDatHang = '',
+          @TenDotHang = '',
+          @HangKhoan = 0,
+          @QuocGiaID = :quocGiaId,
+          @PageSize = :limit,
+          @PageNum = :page,
+          @DaXoa = 1,
+          @TuNgay = :startDate,
+          @DenNgay = :endDate`,
+        {
+          replacements: {
+            website: website || '',
+            username: username || '',
+            trangthaiOrder,
+            search: search || '',
+            quocGiaId: quocGiaId || -1,
+            limit: safeLimit,
+            page,
+            startDate: startDate || '',
+            endDate: endDate || '',
+          },
+          type: 'SELECT' as const,
+        },
       );
-      const total = Number(countResult[0]?.total) || 0;
 
-      // Get paginated data with lowercase aliases for frontend compatibility
-      const [data] = await this.sequelize.query(`
-        SELECT * FROM (
-          SELECT ROW_NUMBER() OVER (ORDER BY ID DESC) as RowNum,
-            ID as id, username, WebsiteName as websiteName, ordernumber as orderNumber,
-            linkweb as linkWeb, linkhinh as linkHinh, corlor as color, size, soluong as soLuong,
-            dongiaweb as donGiaWeb, saleoff as saleOff, phuthu as phuThu, shipUSA as shipUsa,
-            tax, cong, tiencongUSD as tienCongUsd, tongtienUSD as tongTienUsd,
-            tyGia, tongtienVND as tongTienVnd, trangThaiOrder as trangThaiOrder,
-            ngayveVN as ngayVeVn, ngaySaveLink as ngaySaveLink, ngaymuahang as ngayMuaHang,
-            TenDotHang as tenDotHang, ghichu as ghiChu, MaSoHang as maSoHang,
-            QuocGiaID as quocGiaId, HangKhoan as hangKhoan
-          FROM dbo.DON_HANG ${whereClause}
-        ) AS Paginated
-        WHERE RowNum BETWEEN ${offset + 1} AND ${offset + safeLimit}
-      `);
+      const data = Array.isArray(results) ? results : [];
+      const firstItem = data.length > 0 ? (data[0] as any) : null;
+      const total = firstItem?.TotalCount
+        ? Number(firstItem.TotalCount)
+        : firstItem?.Total
+          ? Number(firstItem.Total)
+          : data.length;
+
+      const mappedData = (data.slice(1) || []).map((row: any) => ({
+        id: row.ID,
+        orderNumber: row.ordernumber,
+        username: row.username,
+        usernameSave: row.usernamesave,
+        linkWeb: row.linkweb,
+        linkHinh: row.linkhinh,
+        color: row.corlor,
+        size: row.size,
+        soLuong: row.soluong,
+        donGiaWeb: row.dongiaweb,
+        saleOff: row.saleoff,
+        phuThu: row.phuthu,
+        shipUsa: row.shipusa,
+        tax: row.tax,
+        cong: row.cong,
+        loaiTien: row.loaitien,
+        ghiChu: row.ghichu,
+        tyGia: row.tygia,
+        giaSauOffUsd: row.giasauoffusd,
+        giaSauOffVnd: row.giasauoffvnd,
+        tienCongUsd: row.tiencongusd,
+        tienCongVnd: row.tiencongvnd,
+        tongTienUsd: row.tongtienusd,
+        tongTienVnd: row.tongtienvnd,
+        trangThaiOrder: row.trangthaiOrder,
+        adminNote: row.adminnote,
+        ngayVeVn: row.ngayveVN,
+        ngaySaveLink: row.ngaySaveLink || row.ngaySave || row.ngaySaveLinkDate || null,
+        ngayMuaHang: row.ngaymuahang || row.ngayMuaHang || row.NgayMuaHang || null,
+        namTaiChinh: row.namTaiChinh,
+        websiteName: row.WebsiteName,
+        tenDotHang: row.tenDotHang,
+        yeuCauGuiHang: row.yeuCauGuiHang,
+        daQuaHanMuc: row.DaQuaHanMuc,
+        laKhachVip: row.LaKhachVip,
+        ngayYeuCauGuiHang: row.ngayYeuCauGuiHang,
+        yeuCauGuiGhiChu: row.yeuCauGuiGhiChu,
+        guiHangSoKg: row.guiHangSoKg,
+        guiHangTien: row.guiHangTien,
+        loaiHangId: row.LoaiHangID,
+        tenLoaiHang: row.TenLoaiHang,
+        canHangSoKg: row.CanHang_SoKg,
+        canHangTienShipVeVn: row.CanHang_TienShipVeVN,
+        canHangTienShipTrongNuoc: row.CanHang_TienShipTrongNuoc,
+        hangKhoan: row.hangKhoan,
+        maSoHang: row.MaSoHang,
+        quocGiaId: row.QuocGiaID,
+        tenQuocGia: row.TenQuocGia,
+        linkTaiKhoanMang: row.linkTaiKhoanMang,
+        vungMien: row.vungMien,
+        nguoiTao: row.nguoiTao,
+        isDeleted: row.DaXoa,
+      }));
 
       return {
-        data: data || [],
+        data: mappedData,
         total,
         page,
         limit: safeLimit,
       };
-    } catch (error) {
-      console.error('Error in findDeleted:', error.message);
+    } catch (error: any) {
+      console.error('Error in findDeleted (SP_Lay_DonHang):', error?.message || error);
       return {
         data: [],
         total: 0,

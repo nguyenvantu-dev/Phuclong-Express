@@ -228,7 +228,7 @@ export default function SystemLogsPage() {
             <div className="flex items-end">
               <button
                 onClick={handleSearch}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="w-full rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-cyan-400"
               >
                 Tìm kiếm
               </button>
@@ -310,7 +310,7 @@ export default function SystemLogsPage() {
                   onClick={() => setPage(pageNum)}
                   className={`rounded border px-3 py-1 text-sm ${
                     page === pageNum
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-[#14264b] text-white'
                       : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                   }`}
                 >

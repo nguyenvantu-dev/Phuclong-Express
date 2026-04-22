@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import Flatpickr from 'react-flatpickr';
+import { Vietnamese } from 'flatpickr/dist/l10n/vn';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDeletedOrders,
@@ -13,6 +15,7 @@ import {
   batchCompleteOrders,
   batchReceivedOrders,
   batchShippedOrders,
+  getUsernames,
 } from '@/lib/api';
 import { QueryParams } from '@/types/order';
 
@@ -44,6 +47,10 @@ export default function DeletedOrdersPage() {
   // Selected statuses (CheckBoxList)
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Ordered']);
 
+  // Date picker values (separate from filter strings)
+  const [startDateValue, setStartDateValue] = useState<Date | null>(null);
+  const [endDateValue, setEndDateValue] = useState<Date | null>(null);
+
   // Selection state
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
@@ -58,8 +65,11 @@ export default function DeletedOrdersPage() {
     { id: 6, name: 'Korea' },
   ];
 
-  // Usernames for dropdown
-  const usernames = ['user1', 'user2', 'user3', 'user4', 'user5'];
+  // Fetch usernames for dropdown
+  const { data: usernames = [] } = useQuery({
+    queryKey: ['usernames'],
+    queryFn: getUsernames,
+  });
 
   // Fetch status counts
   const { data: statusCounts } = useQuery({
@@ -227,6 +237,55 @@ export default function DeletedOrdersPage() {
     return d.toLocaleDateString('vi-VN');
   };
 
+  // Export current page data to CSV
+  const handleExport = () => {
+    if (!data?.data) return;
+
+    const headers = [
+      'Mã ĐH', 'Ngày ĐH', 'Order Number', 'Username', 'Link', 'Màu', 'Size',
+      'SL', 'Phụ thu', 'Sale off', 'ShipUS', 'Tax', 'Giá web', '%Công',
+      'Công ngoại tệ', 'Tổng ngoại tệ', 'Tỷ giá', 'Tổng VNĐ',
+      'ĐH Status', 'VN Status', 'Đợt hàng', 'Ghi chú', 'Trọn gói',
+    ];
+
+    const lines = [headers.join(',')];
+    for (const order of data.data) {
+      const values = [
+        order.id,
+        formatDate(order.ngayMuaHang),
+        order.orderNumber || '',
+        order.username || '',
+        (order.linkWeb || '').replace(/,/g, ';'),
+        order.color || '',
+        order.size || '',
+        order.soLuong || 0,
+        order.phuThu || 0,
+        order.saleOff || 0,
+        order.shipUsa || 0,
+        order.tax || 0,
+        order.donGiaWeb || 0,
+        order.cong || 0,
+        order.tienCongUsd || 0,
+        order.tongTienUsd || 0,
+        order.tyGia || 0,
+        order.tongTienVnd || 0,
+        order.trangThaiOrder || '',
+        order.ngayVeVn ? `Đợt hàng ${formatDate(order.ngayVeVn)}` : '',
+        order.tenDotHang || '',
+        (order.ghiChu || '').replace(/,/g, ';'),
+        order.hangKhoan ? 'Trọn gói' : '',
+      ];
+      lines.push(values.join(','));
+    }
+
+    const csv = '﻿' + lines.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `DonHangDaXoa_${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}.csv`;
+    link.click();
+  };
+
   const totalPages = data ? Math.ceil(data.total / data.limit) : 0;
 
   // Check if mutation is pending
@@ -330,7 +389,7 @@ export default function DeletedOrdersPage() {
             >
               <option value="">--All--</option>
               {usernames.map((u) => (
-                <option key={u} value={u}>{u}</option>
+                <option key={u.username} value={u.username}>{u.username}</option>
               ))}
             </select>
           </div>
@@ -338,22 +397,32 @@ export default function DeletedOrdersPage() {
           {/* Từ ngày */}
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700">Từ ngày</label>
-            <input
-              type="date"
+            <Flatpickr
+              value={startDateValue ?? undefined}
+              options={{ dateFormat: 'd/m/Y', locale: Vietnamese }}
+              placeholder="dd/MM/yyyy"
+              onChange={([date]) => {
+                const d = date ?? null;
+                setStartDateValue(d);
+                handleFilterChange('startDate', d ? d.toISOString().slice(0, 10) : '');
+              }}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
-              value={filters.startDate || ''}
-              onChange={(e) => handleFilterChange('startDate', e.target.value)}
             />
           </div>
 
           {/* Đến ngày */}
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700">Đến ngày</label>
-            <input
-              type="date"
+            <Flatpickr
+              value={endDateValue ?? undefined}
+              options={{ dateFormat: 'd/m/Y', locale: Vietnamese, minDate: startDateValue ?? undefined }}
+              placeholder="dd/MM/yyyy"
+              onChange={([date]) => {
+                const d = date ?? null;
+                setEndDateValue(d);
+                handleFilterChange('endDate', d ? d.toISOString().slice(0, 10) : '');
+              }}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
-              value={filters.endDate || ''}
-              onChange={(e) => handleFilterChange('endDate', e.target.value)}
             />
           </div>
         </div>
@@ -367,7 +436,8 @@ export default function DeletedOrdersPage() {
             Xem
           </button>
           <button
-            className="rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600"
+            onClick={handleExport}
+            className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e]"
           >
             Export to Excel
           </button>

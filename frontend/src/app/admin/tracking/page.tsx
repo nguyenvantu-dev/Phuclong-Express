@@ -62,13 +62,13 @@ const formatDate = (date: string | null) => {
 };
 
 // Status config: label, badge classes, card classes
-const statusConfig: Record<string, { badge: string; card: string; dot: string }> = {
-  Received:  { badge: 'bg-[#14264b]/10 text-[#14264b] border border-[#14264b]/20',   card: 'border-l-4 border-[#14264b]/40 bg-[#14264b]/5',   dot: 'bg-[#14264b]/40' },
-  InTransit: { badge: 'bg-amber-50 text-amber-700 border border-amber-200', card: 'border-l-4 border-amber-400 bg-amber-50', dot: 'bg-amber-400' },
-  InVN:      { badge: 'bg-orange-50 text-orange-700 border border-orange-200', card: 'border-l-4 border-orange-400 bg-orange-50', dot: 'bg-orange-400' },
-  VNTransit: { badge: 'bg-purple-50 text-purple-700 border border-purple-200', card: 'border-l-4 border-violet-400 bg-violet-50', dot: 'bg-violet-400' },
-  Completed: { badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200', card: 'border-l-4 border-emerald-400 bg-emerald-50', dot: 'bg-emerald-400' },
-  Cancelled: { badge: 'bg-rose-50 text-rose-700 border border-rose-200',   card: 'border-l-4 border-rose-400 bg-rose-50',   dot: 'bg-rose-400' },
+const statusConfig: Record<string, { badge: string; card: string; dot: string; ring: string }> = {
+  Received:  { badge: 'bg-[#14264b]/10 text-[#14264b] border border-[#14264b]/20',   card: 'border-l-4 border-[#14264b]/40 bg-[#14264b]/5',   dot: 'bg-[#14264b]/40', ring: 'ring-[#14264b]' },
+  InTransit: { badge: 'bg-amber-50 text-amber-700 border border-amber-200', card: 'border-l-4 border-amber-400 bg-amber-50', dot: 'bg-amber-400', ring: 'ring-amber-400' },
+  InVN:      { badge: 'bg-orange-50 text-orange-700 border border-orange-200', card: 'border-l-4 border-orange-400 bg-orange-50', dot: 'bg-orange-400', ring: 'ring-orange-400' },
+  VNTransit: { badge: 'bg-purple-50 text-purple-700 border border-purple-200', card: 'border-l-4 border-violet-400 bg-violet-50', dot: 'bg-violet-400', ring: 'ring-violet-400' },
+  Completed: { badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200', card: 'border-l-4 border-emerald-400 bg-emerald-50', dot: 'bg-emerald-400', ring: 'ring-emerald-400' },
+  Cancelled: { badge: 'bg-rose-50 text-rose-700 border border-rose-200',   card: 'border-l-4 border-rose-400 bg-rose-50',   dot: 'bg-rose-400', ring: 'ring-rose-400' },
 };
 
 const inputCls = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 focus:outline-none transition-all placeholder:text-slate-400 bg-white';
@@ -213,7 +213,7 @@ export default function TrackingPage() {
             <button
               key={status}
               onClick={toggleStatus}
-              className={`rounded-xl px-3 py-3 text-left transition-all cursor-pointer ${cfg?.card || 'bg-slate-50 border-l-4 border-slate-300'} ${isActive ? 'ring-2 ring-offset-1 ring-[#14264b]' : 'hover:brightness-95'}`}
+              className={`rounded-xl px-3 py-3 text-left transition-all cursor-pointer ${cfg?.card || 'bg-slate-50 border-l-4 border-slate-300'} ${isActive ? `ring-2 ring-offset-2 shadow-md ${cfg?.ring || 'ring-slate-400'}` : 'opacity-70 hover:opacity-100 hover:shadow-sm'}`}
             >
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`h-2 w-2 rounded-full ${cfg?.dot || 'bg-slate-400'}`} />
@@ -273,7 +273,7 @@ export default function TrackingPage() {
         <button
           onClick={() => { if (confirm('Xác nhận Complete tất cả tracking theo bộ lọc hiện tại?')) completeAllMutation.mutate(); }}
           disabled={completeAllMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#14264b] hover:bg-cyan-400 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 shadow-sm shadow-cyan-300/40"
         >
           <FiCheck className="h-4 w-4" />
           {completeAllMutation.isPending ? 'Đang xử lý...' : 'Complete All (theo filter)'}

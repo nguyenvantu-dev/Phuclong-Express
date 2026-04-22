@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import flatpickr from 'flatpickr';
@@ -283,6 +283,21 @@ export default function QLDatHangLietKePage() {
   const [massUpdateModalOpen, setMassUpdateModalOpen] = useState(false);
   const [selectedWebsite, setSelectedWebsite] = useState<string>('');
 
+  // Website searchable select state
+  const [websiteInput, setWebsiteInput] = useState('');
+  const [showWebsiteDropdown, setShowWebsiteDropdown] = useState(false);
+  const [activeWebsiteIndex, setActiveWebsiteIndex] = useState(0);
+
+  // Quốc gia searchable select state
+  const [quocGiaInput, setQuocGiaInput] = useState('');
+  const [showQuocGiaDropdown, setShowQuocGiaDropdown] = useState(false);
+  const [activeQuocGiaIndex, setActiveQuocGiaIndex] = useState(0);
+
+  // Username searchable select state
+  const [usernameInput, setUsernameInput] = useState('');
+  const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
+  const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
+
   // Inline editing state
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{
@@ -416,6 +431,7 @@ export default function QLDatHangLietKePage() {
     return () => { fpStart.destroy(); fpEnd.destroy(); };
   }, []);
 
+
   // Fetch orders with TanStack Query using QLDatHang API
   const { data, isLoading, error, isFetching } = useQuery({
     queryKey: ['orders', filters],
@@ -434,11 +450,11 @@ export default function QLDatHangLietKePage() {
     queryFn: getCountries,
   });
 
-  // Fetch websites for dropdown - from Website table
+  // Fetch websites for dropdown - only websites with Received orders (SP_LayWebsiteByReceived)
   const { data: websiteList } = useQuery({
-    queryKey: ['websites'],
+    queryKey: ['websites-received'],
     queryFn: async () => {
-      const response = await apiClient.get<{ data: { WebsiteName: string }[] }>('/websites');
+      const response = await apiClient.get<{ data: { WebsiteName: string }[] }>('/websites/received');
       return response.data?.data?.map((w: { WebsiteName: string }) => w.WebsiteName) || [];
     },
   });
@@ -481,10 +497,157 @@ export default function QLDatHangLietKePage() {
     );
   }, [data?.danhSachDonHang, selectedIds]);
 
+  // Filtered websites based on input (deduplicated)
+  const filteredWebsites = useMemo(() => {
+    if (!websiteList) return [];
+    const unique = [...new Set(websiteList as string[])];
+    if (!websiteInput) return unique;
+    return unique.filter((w) => w.toLowerCase().includes(websiteInput.toLowerCase()));
+  }, [websiteList, websiteInput]);
+
+  // Filtered quoc gias based on input (supports searching without diacritics)
+  const filteredQuocGias = useMemo(() => {
+    if (!quocGias) return [];
+    if (!quocGiaInput) return quocGias;
+    const normalize = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const q = normalize(quocGiaInput);
+    return quocGias.filter((qg: any) => normalize(qg.TenQuocGia).includes(q));
+  }, [quocGias, quocGiaInput]);
+
+  // Filtered usernames based on input
+  const filteredUsernames = useMemo(() => {
+    if (!usernames) return [];
+    if (!usernameInput) return usernames;
+    return usernames.filter((u: any) =>
+      u.username.toLowerCase().includes(usernameInput.toLowerCase()),
+    );
+  }, [usernames, usernameInput]);
+
   // Handle filter changes
   const handleFilterChange = (key: keyof QueryParams, value: string) => {
     const processedValue = key === 'quocGiaId' && value ? parseInt(value, 10) : (value || undefined);
     setFilters((prev) => ({ ...prev, [key]: processedValue, page: 1 }));
+  };
+
+  const handleUsernameInputChange = (value: string) => {
+    setUsernameInput(value);
+    setShowUsernameDropdown(true);
+    setActiveUsernameIndex(0);
+    if (!value) handleFilterChange('username', '');
+  };
+
+  const handleUsernameSelect = (value: string) => {
+    setUsernameInput(value);
+    handleFilterChange('username', value);
+    setShowUsernameDropdown(false);
+    setActiveUsernameIndex(0);
+  };
+
+  const handleUsernameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowUsernameDropdown(true);
+      if (filteredUsernames.length > 0) {
+        setActiveUsernameIndex((prev) => (prev + 1) % filteredUsernames.length);
+      }
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      setShowUsernameDropdown(true);
+      if (filteredUsernames.length > 0) {
+        setActiveUsernameIndex((prev) => (prev - 1 + filteredUsernames.length) % filteredUsernames.length);
+      }
+      return;
+    }
+    const activeUsername = filteredUsernames[activeUsernameIndex]?.username;
+    if (activeUsername) {
+      handleUsernameSelect(activeUsername);
+    } else if (!usernameInput.trim()) {
+      handleUsernameSelect('');
+    }
+  };
+
+  const handleWebsiteInputChange = (value: string) => {
+    setWebsiteInput(value);
+    setShowWebsiteDropdown(true);
+    setActiveWebsiteIndex(0);
+    if (!value) {
+      setSelectedWebsite('');
+      setFilters((prev) => ({ ...prev, website: undefined, page: 1 }));
+    }
+  };
+
+  const handleWebsiteSelect = (value: string) => {
+    setWebsiteInput(value);
+    setSelectedWebsite(value);
+    setFilters((prev) => ({ ...prev, website: value || undefined, page: 1 }));
+    setShowWebsiteDropdown(false);
+    setActiveWebsiteIndex(0);
+  };
+
+  const handleWebsiteKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowWebsiteDropdown(true);
+      if (filteredWebsites.length > 0) {
+        setActiveWebsiteIndex((prev) => (prev + 1) % filteredWebsites.length);
+      }
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      setShowWebsiteDropdown(true);
+      if (filteredWebsites.length > 0) {
+        setActiveWebsiteIndex((prev) => (prev - 1 + filteredWebsites.length) % filteredWebsites.length);
+      }
+      return;
+    }
+    const activeWebsite = filteredWebsites[activeWebsiteIndex];
+    if (activeWebsite) {
+      handleWebsiteSelect(activeWebsite);
+    } else if (!websiteInput.trim()) {
+      handleWebsiteSelect('');
+    }
+  };
+
+  const handleQuocGiaInputChange = (value: string) => {
+    setQuocGiaInput(value);
+    setShowQuocGiaDropdown(true);
+    setActiveQuocGiaIndex(0);
+    if (!value) handleFilterChange('quocGiaId', '');
+  };
+
+  const handleQuocGiaSelect = (qg: { QuocGiaID: number; TenQuocGia: string } | null) => {
+    setQuocGiaInput(qg?.TenQuocGia || '');
+    handleFilterChange('quocGiaId', qg ? String(qg.QuocGiaID) : '');
+    setShowQuocGiaDropdown(false);
+    setActiveQuocGiaIndex(0);
+  };
+
+  const handleQuocGiaKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowQuocGiaDropdown(true);
+      if (filteredQuocGias.length > 0) {
+        setActiveQuocGiaIndex((prev) => (prev + 1) % filteredQuocGias.length);
+      }
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      setShowQuocGiaDropdown(true);
+      if (filteredQuocGias.length > 0) {
+        setActiveQuocGiaIndex((prev) => (prev - 1 + filteredQuocGias.length) % filteredQuocGias.length);
+      }
+      return;
+    }
+    const activeQg = filteredQuocGias[activeQuocGiaIndex];
+    if (activeQg) {
+      handleQuocGiaSelect(activeQg);
+    } else if (!quocGiaInput.trim()) {
+      handleQuocGiaSelect(null);
+    }
   };
 
   // Handle website filter change - store for mass update
@@ -673,54 +836,135 @@ export default function QLDatHangLietKePage() {
           </div>
 
           {/* Website */}
-          <div className="flex flex-col">
-            <label className="mb-1 block text-xs font-medium text-gray-700">Website</label>
-            <select
+          <div className="relative flex flex-col">
+            <label htmlFor="order-management-website-filter" className="mb-1 block text-xs font-medium text-gray-700">Website</label>
+            <input
+              id="order-management-website-filter"
+              type="text"
+              value={websiteInput}
+              onChange={(e) => handleWebsiteInputChange(e.target.value)}
+              onKeyDown={handleWebsiteKeyDown}
+              onFocus={() => setShowWebsiteDropdown(true)}
+              onBlur={() => setTimeout(() => setShowWebsiteDropdown(false), 100)}
+              placeholder="Nhập Website"
+              autoComplete="off"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
-              value={filters.website || ''}
-              onChange={(e) => handleWebsiteChange(e.target.value)}
-            >
-              <option value="">--Tất cả website--</option>
-              {(websiteList || []).map((w: string, i: number) => (
-                <option key={`${w}-${i}`} value={w}>
-                  {w}
-                </option>
-              ))}
-            </select>
+            />
+            {showWebsiteDropdown && (
+              <div
+                onMouseDown={(e) => e.preventDefault()}
+                className="absolute left-0 top-full z-50 mt-1 max-h-64 w-56 overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-sm shadow-lg"
+              >
+                <button
+                  type="button"
+                  className="w-full px-3 py-1.5 text-left text-gray-500 hover:bg-gray-50"
+                  onClick={() => handleWebsiteSelect('')}
+                >
+                  --Tất cả website--
+                </button>
+                {filteredWebsites.map((w, index) => (
+                  <button
+                    key={w}
+                    type="button"
+                    className={`w-full px-3 py-1.5 text-left hover:bg-[#14264b]/5 ${index === activeWebsiteIndex ? 'bg-[#14264b]/10 font-medium' : ''}`}
+                    onClick={() => handleWebsiteSelect(w)}
+                  >
+                    {w}
+                  </button>
+                ))}
+                {filteredWebsites.length === 0 && (
+                  <div className="px-3 py-1.5 text-gray-400">Không có website phù hợp</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quốc gia */}
-          <div className="flex flex-col">
-            <label className="mb-1 block text-xs font-medium text-gray-700">Quốc gia</label>
-            <select
+          <div className="relative flex flex-col">
+            <label htmlFor="order-management-quocgia-filter" className="mb-1 block text-xs font-medium text-gray-700">Quốc gia</label>
+            <input
+              id="order-management-quocgia-filter"
+              type="text"
+              value={quocGiaInput}
+              onChange={(e) => handleQuocGiaInputChange(e.target.value)}
+              onKeyDown={handleQuocGiaKeyDown}
+              onFocus={() => setShowQuocGiaDropdown(true)}
+              onBlur={() => setTimeout(() => setShowQuocGiaDropdown(false), 100)}
+              placeholder="Nhập Quốc gia"
+              autoComplete="off"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
-              value={filters.quocGiaId || ''}
-              onChange={(e) => handleFilterChange('quocGiaId', e.target.value)}
-            >
-              <option value="">--Tất cả quốc gia--</option>
-              {quocGias?.map((qg: any) => (
-                <option key={qg.QuocGiaID} value={qg.QuocGiaID}>
-                  {qg.TenQuocGia}
-                </option>
-              ))}
-            </select>
+            />
+            {showQuocGiaDropdown && (
+              <div
+                onMouseDown={(e) => e.preventDefault()}
+                className="absolute left-0 top-full z-50 mt-1 max-h-64 w-56 overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-sm shadow-lg"
+              >
+                <button
+                  type="button"
+                  className="w-full px-3 py-1.5 text-left text-gray-500 hover:bg-gray-50"
+                  onClick={() => handleQuocGiaSelect(null)}
+                >
+                  --Tất cả quốc gia--
+                </button>
+                {filteredQuocGias.map((qg: any, index: number) => (
+                  <button
+                    key={qg.QuocGiaID}
+                    type="button"
+                    className={`w-full px-3 py-1.5 text-left hover:bg-[#14264b]/5 ${index === activeQuocGiaIndex ? 'bg-[#14264b]/10 font-medium' : ''}`}
+                    onClick={() => handleQuocGiaSelect(qg)}
+                  >
+                    {qg.TenQuocGia}
+                  </button>
+                ))}
+                {filteredQuocGias.length === 0 && (
+                  <div className="px-3 py-1.5 text-gray-400">Không có quốc gia phù hợp</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Username */}
-          <div className="flex flex-col">
-            <label className="mb-1 block text-xs font-medium text-gray-700">Username</label>
-            <select
+          <div className="relative flex flex-col">
+            <label htmlFor="order-management-username-filter" className="mb-1 block text-xs font-medium text-gray-700">Username</label>
+            <input
+              id="order-management-username-filter"
+              type="text"
+              value={usernameInput}
+              onChange={(e) => handleUsernameInputChange(e.target.value)}
+              onKeyDown={handleUsernameKeyDown}
+              onFocus={() => setShowUsernameDropdown(true)}
+              onBlur={() => setTimeout(() => setShowUsernameDropdown(false), 100)}
+              placeholder="Nhập Username"
+              autoComplete="off"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
-              value={filters.username || ''}
-              onChange={(e) => handleFilterChange('username', e.target.value)}
-            >
-              <option value="">--Tất cả user--</option>
-              {usernames?.map((u: any) => (
-                <option key={u.username} value={u.username}>
-                  {u.username}
-                </option>
-              ))}
-            </select>
+            />
+            {showUsernameDropdown && (
+              <div
+                onMouseDown={(e) => e.preventDefault()}
+                className="absolute left-0 top-full z-50 mt-1 max-h-64 w-56 overflow-auto rounded-lg border border-gray-300 bg-white py-1 text-sm shadow-lg"
+              >
+                <button
+                  type="button"
+                  className="w-full px-3 py-1.5 text-left text-gray-500 hover:bg-gray-50"
+                  onClick={() => handleUsernameSelect('')}
+                >
+                  --Tất cả User--
+                </button>
+                {filteredUsernames.map((u: any, index: number) => (
+                  <button
+                    key={u.username}
+                    type="button"
+                    className={`w-full px-3 py-1.5 text-left hover:bg-[#14264b]/5 ${index === activeUsernameIndex ? 'bg-[#14264b]/10 font-medium' : ''}`}
+                    onClick={() => handleUsernameSelect(u.username)}
+                  >
+                    {u.username}
+                  </button>
+                ))}
+                {filteredUsernames.length === 0 && (
+                  <div className="px-3 py-1.5 text-gray-400">Không có username phù hợp</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Search Button */}

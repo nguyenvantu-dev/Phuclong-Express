@@ -13,6 +13,12 @@ export class WebsitesController {
     return { data };
   }
 
+  @Get('received')
+  async findAllReceived() {
+    const data = await this.websitesService.findAllReceived();
+    return { data };
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const data = await this.websitesService.findOne(Number(id));

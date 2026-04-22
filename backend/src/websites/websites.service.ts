@@ -44,6 +44,22 @@ export class WebsitesService {
   }
 
   /**
+   * Get websites that have orders with "Received" status (SP_LayWebsiteByReceived)
+   * Used in order management list dropdown filter
+   */
+  async findAllReceived(): Promise<Website[]> {
+    try {
+      const [data]: any[] = await this.sequelize.query(`
+        EXEC SP_LayWebsiteByReceived
+      `);
+      return data || [];
+    } catch (error: any) {
+      console.error('Error getting received websites:', error?.message || error);
+      return [];
+    }
+  }
+
+  /**
    * Get website by ID
    */
   async findOne(id: number): Promise<Website | null> {

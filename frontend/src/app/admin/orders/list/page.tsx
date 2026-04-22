@@ -962,10 +962,10 @@ export default function EditOrderListPage() {
 
           {/* Export buttons - matching btExportToExcel1Page, btExportToExcelAllWithFilter in C# */}
           <div className="flex items-end gap-2">
-            <button onClick={handleExportCurrentPage} className="rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600">
+            <button onClick={handleExportCurrentPage} className="rounded-lg bg-[#14264b] px-3 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e]">
               Xuất ra excel 1 trang
             </button>
-            <button onClick={handleExportByFilter} className="rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600">
+            <button onClick={handleExportByFilter} className="rounded-lg bg-[#14264b] px-3 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e]">
               Xuất ra excel theo bộ lọc
             </button>
           </div>
