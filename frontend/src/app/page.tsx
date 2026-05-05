@@ -8,6 +8,7 @@ import TestimonialsSection from './components/public-home/testimonials-section';
 import HowItWorksSection from './components/public-home/how-it-works-section';
 import AboutSection from './components/public-home/about-section';
 import CtaSection from './components/public-home/cta-section';
+import WarehousesSection from './components/public-home/warehouses-section';
 
 /**
  * Public Home Page — Phuc Long Express
@@ -35,6 +36,9 @@ export default function HomePage() {
 
       {/* Countries Section */}
       <CategoriesSection />
+
+      {/* Warehouses Section */}
+      <WarehousesSection />
 
       {/* Clients Section */}
       <ClientsSection />

@@ -59,7 +59,7 @@ export default function CtaSection() {
           </Link>
 
           <a
-            href="https://www.facebook.com/phuclongexpress"
+            href="https://www.facebook.com/phuclongexpress.ple"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold transition-all hover:-translate-y-0.5 w-full sm:w-auto justify-center"

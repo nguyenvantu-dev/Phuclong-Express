@@ -357,8 +357,11 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               <div className="flex items-center gap-3 mb-4">
                 <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png" alt="Phuc Long Express" className="h-20 object-contain" />
               </div>
-              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <p className="text-sm leading-relaxed mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 Dịch vụ logistics uy tín — chuyên mua hộ &amp; vận chuyển hàng hóa toàn quốc từ năm 2018.
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                Thương hiệu thuộc <span style={{ color: 'rgba(255,255,255,0.55)' }}>Công ty TNHH Minh Khải Logistic</span>
               </p>
             </div>
 
@@ -394,12 +397,12 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               <ul className="space-y-3">
                 <li>
                   <a
-                    href="mailto:phuclongexpress@gmail.com"
+                    href="mailto:cskh@mklexpress.com"
                     className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
                     style={{ color: 'rgba(255,255,255,0.5)' }}
                   >
                     <FiMail className="w-4 h-4 flex-shrink-0" style={{ color: colors.accent }} />
-                    phuclongexpress@gmail.com
+                    cskh@mklexpress.com
                   </a>
                 </li>
                 <li>
@@ -414,20 +417,41 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 </li>
                 <li>
                   <a
-                    href="https://www.facebook.com/phuclongexpress"
+                    href="https://www.facebook.com/phuclongexpress.ple"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
                     style={{ color: 'rgba(255,255,255,0.5)' }}
                   >
                     <FaFacebook className="w-4 h-4 flex-shrink-0" style={{ color: '#1877F2' }} />
-                    facebook.com/phuclongexpress
+                    facebook.com/phuclongexpress.ple
                   </a>
                 </li>
                 <li>
                   <span className="flex items-start gap-3 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
                     <FiMapPin className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors.accent }} />
-                    Hà Nội, Việt Nam
+                    <span>
+                      <span className="block text-xs font-semibold mb-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Trụ sở chính</span>
+                      60 Trương Công Giai, Cầu Giấy, Hà Nội
+                    </span>
+                  </span>
+                </li>
+                <li>
+                  <span className="flex items-start gap-3 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    <FiMapPin className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors.accent }} />
+                    <span>
+                      <span className="block text-xs font-semibold mb-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Kho Đà Nẵng</span>
+                      84 Bắc Sơn, An Khê, Đà Nẵng
+                    </span>
+                  </span>
+                </li>
+                <li>
+                  <span className="flex items-start gap-3 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    <FiMapPin className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors.accent }} />
+                    <span>
+                      <span className="block text-xs font-semibold mb-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Kho TP. HCM</span>
+                      21 Đào Duy Anh, Đức Nhuận, TP. HCM
+                    </span>
                   </span>
                 </li>
               </ul>
@@ -438,7 +462,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           {/* Bottom bar */}
           <div className="mt-10 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-2" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              © {new Date().getFullYear()} Phuc Long Express (PLE Logistics). All rights reserved.
+              © {new Date().getFullYear()} Phuc Long Express (PLE). All rights reserved.
             </p>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
               Thành lập 2018 · Hà Nội, Việt Nam

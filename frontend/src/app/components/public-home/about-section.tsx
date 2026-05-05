@@ -52,10 +52,10 @@ export default function AboutSection() {
                 Phuc Long Express được thành lập vào năm 2018 tại Hà Nội với giấc mơ xây dựng một đơn vị logistics Việt Nam chuyên nghiệp, tận tâm, dựa trên chất lượng dịch vụ và công nghệ tiên tiến.
               </p>
               <p className="leading-relaxed">
-                Trải qua hơn 8 năm phát triển, PLE Logistics đã có những bước tăng trưởng vượt bậc. Mỗi thành viên trong đội ngũ đều coi vấn đề của khách hàng là của chính mình — nỗ lực đưa ra giải pháp tối ưu và tư vấn để chuỗi giá trị dịch vụ luôn tốt nhất.
+                Trải qua hơn 8 năm phát triển, PLE đã có những bước tăng trưởng vượt bậc. Mỗi thành viên trong đội ngũ đều coi vấn đề của khách hàng là của chính mình — nỗ lực đưa ra giải pháp tối ưu và tư vấn để chuỗi giá trị dịch vụ luôn tốt nhất.
               </p>
               <p className="leading-relaxed">
-                Trong tương lai gần, PLE Logistics định hướng tiếp tục mở rộng mạng lưới quốc tế và cung cấp dịch vụ chuyển phát hàng hóa toàn cầu với chất lượng chuyên nghiệp, tận tâm nhất đến khách hàng.
+                Trong tương lai gần, PLE định hướng tiếp tục mở rộng mạng lưới quốc tế và cung cấp dịch vụ chuyển phát hàng hóa toàn cầu với chất lượng chuyên nghiệp, tận tâm nhất đến khách hàng.
               </p>
             </div>
           </div>
@@ -95,8 +95,8 @@ export default function AboutSection() {
           <div className="px-6 pb-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { icon: <FiPhone className="w-5 h-5 text-white" />, label: 'Hotline', value: '(+84) 344.415.213', href: 'tel:+840344415213' },
-              { icon: <FiMail className="w-5 h-5 text-white" />, label: 'Email', value: 'phuclongexpress@gmail.com', href: 'mailto:phuclongexpress@gmail.com' },
-              { icon: <FaFacebook className="w-5 h-5 text-white" />, label: 'Facebook', value: 'Phuc Long Express', href: 'https://www.facebook.com/phuclongexpress', external: true },
+              { icon: <FiMail className="w-5 h-5 text-white" />, label: 'Email', value: 'cskh@mklexpress.com', href: 'mailto:cskh@mklexpress.com' },
+              { icon: <FaFacebook className="w-5 h-5 text-white" />, label: 'Facebook', value: 'Phuc Long Express', href: 'https://www.facebook.com/phuclongexpress.ple', external: true },
             ].map((item, i) => (
               <a
                 key={i}
