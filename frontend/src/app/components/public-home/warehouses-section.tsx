@@ -82,10 +82,10 @@ export default function WarehousesSection() {
 
           {/* Warehouse cards */}
           <div className="flex-1 flex flex-col gap-0 w-full relative">
-            {/* Vertical connector */}
+            {/* Timeline connector — top/bottom = card-padding + badge-half (p-5+28=48px mobile, p-6+28=52px md) */}
             <div
-              className="absolute left-[27px] top-10 bottom-10 w-px hidden md:block"
-              style={{ background: 'linear-gradient(to bottom, #eb732560, #60a5fa60, #34d39960)' }}
+              className="absolute left-12 md:left-[52px] top-12 md:top-[52px] bottom-12 md:bottom-[52px] w-[2px] hidden md:block"
+              style={{ background: 'linear-gradient(to bottom, #eb732580, #60a5fa80, #34d39980)' }}
             />
             {warehouses.map((wh) => {
               const isActive = active === wh.id;
@@ -105,17 +105,21 @@ export default function WarehousesSection() {
                   onMouseLeave={() => setActive(null)}
                 >
                   {/* Number badge */}
-                  <div
-                    className="w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center"
-                    style={{
-                      background: isActive ? wh.color : 'rgba(255,255,255,0.06)',
-                      border: `1px solid ${isActive ? wh.color : 'rgba(255,255,255,0.1)'}`,
-                      transition: 'all 0.3s ease',
-                    }}
-                  >
-                    <span className="text-lg font-black" style={{ color: isActive ? 'white' : wh.color }}>
-                      {wh.num}
-                    </span>
+                  <div className="flex-shrink-0 relative">
+                    {/* Mask: solid bg blocks the vertical connector line behind badge */}
+                    <div className="absolute inset-0 rounded-2xl" style={{ background: '#0d1929' }} />
+                    <div
+                      className="relative w-14 h-14 rounded-2xl flex items-center justify-center"
+                      style={{
+                        background: isActive ? wh.color : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${isActive ? wh.color : 'rgba(255,255,255,0.1)'}`,
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      <span className="text-lg font-black" style={{ color: isActive ? 'white' : wh.color }}>
+                        {wh.num}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Content */}
@@ -264,7 +268,7 @@ export default function WarehousesSection() {
         >
           {[
             { value: '3', label: 'Kho chiến lược' },
-            { value: '63', label: 'Tỉnh thành phủ sóng' },
+            { value: '34', label: 'Tỉnh thành phủ sóng' },
             { value: '24–72h', label: 'Thời gian giao hàng' },
           ].map((s) => (
             <div key={s.label} className="text-center">
