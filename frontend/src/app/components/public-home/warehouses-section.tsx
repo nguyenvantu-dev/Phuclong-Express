@@ -1,10 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
-
-const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
-const NEIGHBORS = new Set(['116', '418', '764', '156', '458']);
+import Vietnam from '@svg-maps/vietnam';
 
 const warehouses = [
   {
@@ -14,7 +11,8 @@ const warehouses = [
     city: 'Hà Nội',
     label: 'Trụ sở chính',
     address: '60 Trương Công Giai, Cầu Giấy, Hà Nội',
-    coordinates: [105.8412, 21.0245] as [number, number],
+    provinceId: 'hanoi',
+    markerPos: [182, 135] as [number, number],
     color: '#eb7325',
   },
   {
@@ -24,7 +22,8 @@ const warehouses = [
     city: 'Đà Nẵng',
     label: 'Kho trung chuyển',
     address: '84 Bắc Sơn, An Khê, Đà Nẵng',
-    coordinates: [108.2022, 16.0471] as [number, number],
+    provinceId: 'danang',
+    markerPos: [309, 403] as [number, number],
     color: '#60a5fa',
   },
   {
@@ -34,10 +33,13 @@ const warehouses = [
     city: 'TP. Hồ Chí Minh',
     label: 'Kho phía Nam',
     address: '21 Đào Duy Anh, Đức Nhuận, TP. HCM',
-    coordinates: [106.6297, 10.8231] as [number, number],
+    provinceId: 'hcm',
+    markerPos: [236, 684] as [number, number],
     color: '#34d399',
   },
 ];
+
+const provinceToWarehouse = Object.fromEntries(warehouses.map(w => [w.provinceId, w]));
 
 export default function WarehousesSection() {
   const [active, setActive] = useState<string | null>(null);
@@ -49,8 +51,10 @@ export default function WarehousesSection() {
     >
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #eb7325 0%, transparent 70%)' }} />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #eb7325 0%, transparent 70%)' }}
+        />
       </div>
 
       <div className="container mx-auto px-4 max-w-6xl relative z-10">
@@ -79,9 +83,10 @@ export default function WarehousesSection() {
           {/* Warehouse cards */}
           <div className="flex-1 flex flex-col gap-0 w-full relative">
             {/* Vertical connector */}
-            <div className="absolute left-[27px] top-10 bottom-10 w-px hidden md:block"
-              style={{ background: 'linear-gradient(to bottom, #eb732560, #60a5fa60, #34d39960)' }} />
-
+            <div
+              className="absolute left-[27px] top-10 bottom-10 w-px hidden md:block"
+              style={{ background: 'linear-gradient(to bottom, #eb732560, #60a5fa60, #34d39960)' }}
+            />
             {warehouses.map((wh) => {
               const isActive = active === wh.id;
               return (
@@ -108,10 +113,7 @@ export default function WarehousesSection() {
                       transition: 'all 0.3s ease',
                     }}
                   >
-                    <span
-                      className="text-lg font-black"
-                      style={{ color: isActive ? 'white' : wh.color }}
-                    >
+                    <span className="text-lg font-black" style={{ color: isActive ? 'white' : wh.color }}>
                       {wh.num}
                     </span>
                   </div>
@@ -137,100 +139,129 @@ export default function WarehousesSection() {
           <div
             className="flex-shrink-0 rounded-3xl overflow-hidden relative"
             style={{
-              width: '300px',
-              height: '540px',
+              width: '320px',
               background: 'linear-gradient(160deg, #0a1628 0%, #0d1e35 100%)',
               border: '1px solid rgba(255,255,255,0.08)',
               boxShadow: '0 32px 80px rgba(0,0,0,0.4)',
+              padding: '48px 20px 24px',
             }}
           >
             {/* Sea glow */}
-            <div className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(30,64,175,0.2) 0%, transparent 65%)' }} />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(30,64,175,0.2) 0%, transparent 65%)' }}
+            />
 
             {/* Label */}
             <div className="absolute top-4 left-0 right-0 flex justify-center z-20">
-              <span className="text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full"
-                style={{ color: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <span
+                className="text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full"
+                style={{
+                  color: 'rgba(255,255,255,0.4)',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
                 Việt Nam
               </span>
             </div>
 
-            <ComposableMap
-              projection="geoMercator"
-              projectionConfig={{ center: [106.2, 16.2], scale: 1750 }}
-              width={300}
-              height={540}
-              className="relative z-10"
-            >
-              <Geographies geography={GEO_URL}>
-                {({ geographies }: { geographies: { id: string; rsmKey: string }[] }) =>
-                  geographies.map((geo) => {
-                    const isVietnam = geo.id === '704';
-                    const isNeighbor = NEIGHBORS.has(geo.id);
-                    if (!isVietnam && !isNeighbor) return null;
-                    return (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        fill={isVietnam ? '#1e4d8c' : '#111e30'}
-                        stroke={isVietnam ? '#3b6db5' : '#1a2d45'}
-                        strokeWidth={isVietnam ? 1.2 : 0.5}
+            {/* Vietnam SVG map from @svg-maps/vietnam */}
+            <div className="relative z-10">
+              {/* Crops offshore islands (Hoàng Sa x≈574, Trường Sa x≈596–812).
+                  Mainland spans x:0–395, y:0–872. Equal ~18px padding each side centers it. */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="-18 -5 432 882"
+                className="w-full h-auto"
+                aria-label={Vietnam.label}
+              >
+                {Vietnam.locations.map((location: { id: string; path: string; name?: string }) => {
+                  const wh = provinceToWarehouse[location.id];
+                  const isActiveProvince = wh && active === wh.id;
+                  return (
+                    <path
+                      key={location.id}
+                      id={location.id}
+                      d={location.path}
+                      fill={
+                        wh
+                          ? isActiveProvince
+                            ? wh.color
+                            : wh.color + '55'
+                          : '#1e4d8c'
+                      }
+                      stroke={wh ? wh.color : '#3b6db5'}
+                      strokeWidth={wh ? 1.5 : 0.8}
+                      style={{
+                        transition: 'fill 0.25s ease',
+                        cursor: wh ? 'pointer' : 'default',
+                        outline: 'none',
+                      }}
+                      onMouseEnter={() => wh && setActive(wh.id)}
+                      onMouseLeave={() => setActive(null)}
+                    />
+                  );
+                })}
+
+                {/* Warehouse markers */}
+                {warehouses.map((wh) => {
+                  const isActive = active === wh.id;
+                  const [x, y] = wh.markerPos;
+                  return (
+                    <g
+                      key={wh.id}
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {/* Pulse ring */}
+                      <circle
+                        cx={x} cy={y}
+                        r={isActive ? 18 : 13}
+                        fill={wh.color}
+                        opacity={isActive ? 0.25 : 0.12}
+                        style={{ transition: 'all 0.25s ease' }}
+                      />
+                      {/* Dot */}
+                      <circle
+                        cx={x} cy={y}
+                        r={isActive ? 7 : 5}
+                        fill={wh.color}
+                        stroke="white"
+                        strokeWidth={2}
                         style={{
-                          default: { outline: 'none' },
-                          hover: { outline: 'none', fill: isVietnam ? '#2558a0' : '#111e30' },
-                          pressed: { outline: 'none' },
+                          transition: 'all 0.25s ease',
+                          filter: isActive ? `drop-shadow(0 0 8px ${wh.color})` : 'none',
                         }}
                       />
-                    );
-                  })
-                }
-              </Geographies>
-
-              {warehouses.map((wh) => {
-                const isActive = active === wh.id;
-                return (
-                  <Marker
-                    key={wh.id}
-                    coordinates={wh.coordinates}
-                    onMouseEnter={() => setActive(wh.id)}
-                    onMouseLeave={() => setActive(null)}
-                  >
-                    {/* Pulse ring */}
-                    <circle r={isActive ? 18 : 13} fill={wh.color} opacity={isActive ? 0.25 : 0.12}
-                      style={{ transition: 'all 0.25s ease' }} />
-                    {/* Dot */}
-                    <circle r={isActive ? 7 : 5} fill={wh.color} stroke="white" strokeWidth={2}
-                      style={{
-                        transition: 'all 0.25s ease',
-                        cursor: 'pointer',
-                        filter: isActive ? `drop-shadow(0 0 8px ${wh.color})` : 'none',
-                      }} />
-                    {/* Label */}
-                    <text textAnchor="middle" y={-16}
-                      style={{
-                        fontFamily: 'inherit',
-                        fontSize: '8px',
-                        fontWeight: 800,
-                        fill: isActive ? wh.color : 'rgba(255,255,255,0.7)',
-                        pointerEvents: 'none',
-                        letterSpacing: '0.04em',
-                        transition: 'fill 0.25s ease',
-                      }}
-                    >
-                      {wh.city}
-                    </text>
-                  </Marker>
-                );
-              })}
-            </ComposableMap>
+                      {/* City label */}
+                      <text
+                        x={x} y={y - 22}
+                        textAnchor="middle"
+                        style={{
+                          fontFamily: 'inherit',
+                          fontSize: '22px',
+                          fontWeight: 800,
+                          fill: isActive ? wh.color : 'rgba(255,255,255,0.7)',
+                          letterSpacing: '0.04em',
+                          transition: 'fill 0.25s ease',
+                        }}
+                      >
+                        {wh.city}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
           </div>
 
         </div>
 
         {/* Bottom stats */}
-        <div className="mt-14 pt-10 grid grid-cols-3 gap-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div
+          className="mt-14 pt-10 grid grid-cols-3 gap-4"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+        >
           {[
             { value: '3', label: 'Kho chiến lược' },
             { value: '63', label: 'Tỉnh thành phủ sóng' },
