@@ -19,6 +19,7 @@ import {
   FiChevronRight,
 } from 'react-icons/fi';
 import { NotificationBell } from '@/app/components/notifications/notification-bell';
+import { useQnaBadgeCount } from '@/hooks/use-qna-badge-count';
 
 type NavSubItem = {
   href: string;
@@ -48,6 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   const { user, logout } = useAuth();
+  const qnaBadgeCount = useQnaBadgeCount();
 
   // Navigation items with submenus
   const navItems: NavItem[] = [
@@ -238,11 +240,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   title={sidebarCollapsed ? item.label : undefined}
                 >
                   <span
-                    className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors ${
+                    className={`relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors ${
                       isActive ? 'bg-[#eb7325] text-white' : 'bg-white/10 text-white/75 group-hover:bg-white/15 group-hover:text-white'
                     } ${sidebarCollapsed ? '' : 'mr-3'}`}
                   >
                     <IconComponent className="h-4 w-4" />
+                    {item.label === 'THÔNG TIN' && qnaBadgeCount > 0 && (
+                      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-[#14264b]" />
+                    )}
                   </span>
                   {!sidebarCollapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
                   {item.submenu && !sidebarCollapsed && (
@@ -273,7 +278,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           onClick={() => setSidebarOpen(false)}
                         >
                           <span className={`mr-2 h-1.5 w-1.5 rounded-full bg-current ${pathname === subItem.href ? 'opacity-100' : 'opacity-45 group-hover/link:opacity-100'}`} />
-                          <span className="truncate">{subItem.label}</span>
+                          <span className="flex-1 truncate">{subItem.label}</span>
+                          {subItem.href === '/admin/qna' && qnaBadgeCount > 0 && (
+                            <span className="ml-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                              {qnaBadgeCount > 99 ? '99+' : qnaBadgeCount}
+                            </span>
+                          )}
                         </Link>
                       )
                     )}
@@ -303,7 +313,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                               onClick={() => setSidebarOpen(false)}
                             >
                               <span className="mr-2 h-1.5 w-1.5 rounded-full bg-current opacity-50" />
-                              {subItem.label}
+                              <span className="flex-1">{subItem.label}</span>
+                              {subItem.href === '/admin/qna' && qnaBadgeCount > 0 && (
+                                <span className="ml-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                                  {qnaBadgeCount > 99 ? '99+' : qnaBadgeCount}
+                                </span>
+                              )}
                             </Link>
                           )
                         )}

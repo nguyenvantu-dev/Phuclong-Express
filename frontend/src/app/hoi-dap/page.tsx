@@ -22,7 +22,7 @@ interface QnaItem {
  */
 export default function HoiDapPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [questions, setQuestions] = useState<QnaItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +60,7 @@ export default function HoiDapPage() {
       const response = await getQnaList({
         page,
         limit,
+        username: user?.username ?? '',
       });
       setQuestions(response.data || []);
       setTotal(response.total || 0);

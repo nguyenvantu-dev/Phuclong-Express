@@ -19,13 +19,12 @@ export class QnaController {
    */
   @Get()
   async getQnaList(@Query() query: QueryQnaDto, @Request() req: any) {
-    // Use authenticated user's username from JWT — prevents viewing other users' questions
-    return this.qnaService.getQnaList(
-      req.user?.username,
-      query.daTraLoi,
-      query.page,
-      query.limit,
-    );
+    // Regular users (role === 'user' only) can only view their own questions.
+    // Staff/admin roles can filter by any username or see all (empty = all).
+    const roles: string[] = req.user?.roles ?? [];
+    const isRegularUser = roles.length === 1 && roles[0] === 'user';
+    const usernameFilter = isRegularUser ? (req.user?.username ?? '') : (query.username ?? '');
+    return this.qnaService.getQnaList(usernameFilter, query.daTraLoi, query.page, query.limit);
   }
 
   /**
