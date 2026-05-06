@@ -458,25 +458,25 @@ export default function DebtReportsPage() {
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div>
               <p className="text-sm text-gray-600">Đầu kỳ</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-[#14264b]">
                 {formatCurrency(data.summary.dauKy)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Tổng phát sinh</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm text-red-500">Tổng phát sinh</p>
+              <p className="text-xl font-bold text-red-600">
                 {formatCurrency(data.summary.tongPhatSinh)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Đã thanh toán</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm text-emerald-600">Đã thanh toán</p>
+              <p className="text-xl font-bold text-emerald-600">
                 {formatCurrency(data.summary.tongThanhToan)}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Cuối kỳ</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-orange-600">
                 {formatCurrency(data.summary.cuoiKy)}
               </p>
             </div>
@@ -517,10 +517,10 @@ export default function DebtReportsPage() {
                   <th className="px-2 py-3 text-left text-xs font-medium uppercase text-gray-500">
                     Ngày phát sinh
                   </th>
-                  <th className="px-2 py-3 text-right text-xs font-medium uppercase text-gray-500">
+                  <th className="px-2 py-3 text-right text-xs font-medium uppercase text-red-600">
                     Công nợ phát sinh (DR)
                   </th>
-                  <th className="px-2 py-3 text-right text-xs font-medium uppercase text-gray-500">
+                  <th className="px-2 py-3 text-right text-xs font-medium uppercase text-emerald-600">
                     Đã thanh toán (CR)
                   </th>
                   <th className="px-2 py-3 text-right text-xs font-medium uppercase text-gray-500">
@@ -600,7 +600,7 @@ export default function DebtReportsPage() {
                             className="w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right"
                           />
                         ) : (
-                          <span className="font-medium text-gray-900">
+                          <span className="font-medium text-red-600">
                             {formatCurrency(item.DR)}
                           </span>
                         )}
@@ -620,7 +620,7 @@ export default function DebtReportsPage() {
                             className="w-24 rounded border border-gray-300 px-2 py-1 text-sm text-right"
                           />
                         ) : (
-                          <span className="font-medium text-gray-900">
+                          <span className="font-medium text-emerald-600">
                             {formatCurrency(item.CR)}
                           </span>
                         )}

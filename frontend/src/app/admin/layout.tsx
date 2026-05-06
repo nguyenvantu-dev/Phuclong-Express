@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -44,9 +44,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    () => typeof window !== 'undefined' && window.localStorage.getItem('admin-sidebar-collapsed') === 'true'
-  );
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    setSidebarCollapsed(localStorage.getItem('admin-sidebar-collapsed') === 'true');
+  }, []);
 
   const { user, logout } = useAuth();
   const qnaBadgeCount = useQnaBadgeCount();
@@ -79,13 +81,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { href: '/admin/debt-management', label: 'QL công nợ' },
         { href: '/admin/customer-limits', label: 'Hạn mức khách hàng' },
         { href: '', label: 'Báo cáo', type: 'divider' },
-        { href: '/admin/debt-reports', label: 'Báo cáo chi tiết công nợ' },
-        { href: '/admin/debt-reports/by-period', label: 'Báo cáo chi tiết công nợ theo kỳ' },
-        { href: '/admin/debt-reports/total-revenue', label: 'Báo cáo tổng doanh thu' },
-        { href: '/admin/debt-reports/debt-by-user', label: 'Báo cáo tổng công nợ theo user' },
-        { href: '/admin/debt-reports/reconciliation', label: 'Báo cáo kiểm tra đơn hàng mua' },
-        { href: '/admin/debt-reports/customer', label: 'Báo cáo công nợ khách hàng' },
-        { href: '/admin/debt-reports/by-shipment-lot', label: 'Báo cáo công nợ theo đợt hàng' },
+        { href: '/admin/debt-reports', label: 'Chi tiết công nợ' },
+        { href: '/admin/debt-reports/by-period', label: 'Chi tiết công nợ theo kỳ' },
+        { href: '/admin/debt-reports/total-revenue', label: 'Tổng doanh thu' },
+        { href: '/admin/debt-reports/debt-by-user', label: 'Tổng công nợ theo user' },
+        { href: '/admin/debt-reports/reconciliation', label: 'Kiểm tra đơn hàng mua' },
+        { href: '/admin/debt-reports/customer', label: 'Công nợ khách hàng' },
+        { href: '/admin/debt-reports/by-shipment-lot', label: 'Công nợ theo đợt hàng' },
       ],
     },
     {
@@ -270,6 +272,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <Link
                           key={subItem.href}
                           href={subItem.href}
+                          title={subItem.label}
                           className={`group/link flex items-center rounded-lg px-3 py-2 text-sm transition-all duration-150 ${
                             pathname === subItem.href
                               ? 'bg-white text-[#14264b] font-semibold shadow-md shadow-black/10'

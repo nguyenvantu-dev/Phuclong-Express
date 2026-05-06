@@ -259,7 +259,15 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   async createQuickOrderAdd(
     @Body() createQuickOrderDto: CreateQuickOrderDto,
+    @Request() req: any,
   ): Promise<{ success: boolean; error?: string }> {
+    const actorUsername = req.user?.username || '';
+    if (!createQuickOrderDto.usernameSave) {
+      createQuickOrderDto.usernameSave = actorUsername;
+    }
+    if (!createQuickOrderDto.nguoiTao) {
+      createQuickOrderDto.nguoiTao = actorUsername;
+    }
     return this.ordersService.createQuickOrderCoTamTinh(createQuickOrderDto);
   }
 

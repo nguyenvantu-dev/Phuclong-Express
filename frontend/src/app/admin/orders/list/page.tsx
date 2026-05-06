@@ -308,7 +308,7 @@ export default function EditOrderListPage() {
   const [filters, setFilters] = useState<QueryParams & { statuses?: string[] }>({
     page: 1,
     limit: 200, // Match EditOrder.aspx pageSize
-    statuses: ['Ordered'], // Default selected in C#
+    statuses: ['Received', 'Ordered'], // Default selected in C#
     sortBy: 'ID',
     sortOrder: 'DESC',
   });
@@ -323,7 +323,7 @@ export default function EditOrderListPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // Status checkboxes state (matching cblTrangThaiOrder in C#)
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Ordered']);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Received', 'Ordered']);
 
   // Return date modal state
   const [returnDateModalOpen, setReturnDateModalOpen] = useState(false);
@@ -1076,6 +1076,9 @@ export default function EditOrderListPage() {
                     USERNAME
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
+                    ADDED BY
+                  </th>
+                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
                     QUỐC GIA
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
@@ -1180,6 +1183,11 @@ export default function EditOrderListPage() {
                       )}
                       <br />
                       <span className="font-medium">Vùng miền: </span>{order.vungMien || '-'}
+                    </td>
+
+                    {/* ADDED BY */}
+                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
+                      {order.usernameSave || '-'}
                     </td>
 
                     {/* QUỐC GIA */}

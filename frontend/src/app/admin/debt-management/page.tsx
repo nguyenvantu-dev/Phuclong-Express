@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import flatpickr from 'flatpickr';
@@ -16,12 +16,11 @@ import {
   approveDebt,
   DebtManagementItem,
   BatchItem,
+  UpdateDebtParams,
 } from '@/lib/api';
 import { useCurrentUser } from '@/hooks/use-auth';
 import {
-  FiPlus,
   FiUpload,
-  FiSearch,
   FiFilter,
   FiEdit2,
   FiTrash2,
@@ -64,8 +63,7 @@ export default function DebtManagementPage() {
     toDate: '',
   });
 
-  // Modal state for adding new debt
-  const [showAddModal, setShowAddModal] = useState(false);
+  // Form state for adding/editing debt inline on the page
   const [editingId, setEditingId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [newDebt, setNewDebt] = useState({
@@ -83,15 +81,53 @@ export default function DebtManagementPage() {
 
   // UI State
   const [showFilters, setShowFilters] = useState(true);
-  const [newDebtExpanded, setNewDebtExpanded] = useState({
-    username: false,
-    batch: false,
-  });
+  const [usernameInput, setUsernameInput] = useState('');
+  const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
+  const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
+  const [filterUsernameInput, setFilterUsernameInput] = useState('');
+  const [showFilterUsernameDropdown, setShowFilterUsernameDropdown] = useState(false);
+  const [activeFilterUsernameIndex, setActiveFilterUsernameIndex] = useState(0);
 
   // Date input refs for flatpickr
   const fromDateRef = useRef<HTMLInputElement>(null);
   const toDateRef = useRef<HTMLInputElement>(null);
-  const modalDateRef = useRef<HTMLInputElement>(null);
+  const formDateRef = useRef<HTMLInputElement>(null);
+
+  const resetDebtForm = () => {
+    setNewDebt({
+      username: '',
+      noiDung: '',
+      ngay: '',
+      dr: 0,
+      cr: 0,
+      ghiChu: '',
+      loHangId: undefined,
+      loHangText: '',
+      loaiPhatSinh: 2,
+      bankAccount: '',
+    });
+    setUsernameInput('');
+    setEditingId(null);
+    setErrorMessage(null);
+  };
+
+  const getMutationErrorMessage = (error: unknown, fallback: string) => {
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const response = (error as { response?: { data?: { message?: string } } }).response;
+      return response?.data?.message || fallback;
+    }
+
+    return fallback;
+  };
+
+  const handleFilterChange = useCallback((key: keyof typeof filters, value: string | number | null) => {
+    // Convert "-1" to null for loaiPhatSinh filter
+    if (key === 'loaiPhatSinh' && value === '-1') {
+      setFilters((prev) => ({ ...prev, [key]: null, page: 1 }));
+    } else {
+      setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    }
+  }, []);
 
   // Initialize flatpickr for filter date inputs
   useEffect(() => {
@@ -121,12 +157,12 @@ export default function DebtManagementPage() {
         fpTo.destroy();
       };
     }
-  }, []);
+  }, [handleFilterChange]);
 
-  // Initialize flatpickr for modal date input
+  // Initialize flatpickr for inline form date input
   useEffect(() => {
-    if (showAddModal && modalDateRef.current) {
-      const fp = flatpickr(modalDateRef.current, {
+    if (formDateRef.current) {
+      const fp = flatpickr(formDateRef.current, {
         dateFormat: 'd/m/Y',
         defaultDate: newDebt.ngay ? newDebt.ngay : undefined,
         onChange: (dates) => {
@@ -141,7 +177,7 @@ export default function DebtManagementPage() {
         fp.destroy();
       };
     }
-  }, [showAddModal, newDebt.username]);
+  }, [newDebt.ngay]);
 
   // Fetch debt list
   const { data, isLoading, error } = useQuery({
@@ -154,6 +190,111 @@ export default function DebtManagementPage() {
     queryKey: ['debt-report-users'],
     queryFn: getDebtReportUsers,
   });
+
+  const filteredUsernames = useMemo(() => {
+    const search = usernameInput.trim().toLowerCase();
+    return (users || [])
+      .filter((user) => !search || user.UserName.toLowerCase().includes(search))
+      .slice(0, 50);
+  }, [users, usernameInput]);
+
+  const filteredFilterUsernames = useMemo(() => {
+    const search = filterUsernameInput.trim().toLowerCase();
+    return (users || [])
+      .filter((user) => !search || user.UserName.toLowerCase().includes(search))
+      .slice(0, 50);
+  }, [users, filterUsernameInput]);
+
+  const handleUsernameInputChange = (value: string) => {
+    setUsernameInput(value);
+    setShowUsernameDropdown(true);
+    setActiveUsernameIndex(0);
+
+    if (!value || value !== newDebt.username) {
+      setNewDebt((prev) => ({ ...prev, username: '', loHangId: undefined, loHangText: '' }));
+    }
+  };
+
+  const handleUsernameSelect = (value: string) => {
+    setUsernameInput(value);
+    setNewDebt((prev) => ({ ...prev, username: value, loHangId: undefined, loHangText: '' }));
+    setShowUsernameDropdown(false);
+    setActiveUsernameIndex(0);
+    setErrorMessage(null);
+  };
+
+  const handleUsernameKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowUsernameDropdown(true);
+      if (filteredUsernames.length > 0) {
+        setActiveUsernameIndex((prev) => (prev + 1) % filteredUsernames.length);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      setShowUsernameDropdown(true);
+      if (filteredUsernames.length > 0) {
+        setActiveUsernameIndex((prev) => (prev - 1 + filteredUsernames.length) % filteredUsernames.length);
+      }
+      return;
+    }
+
+    const activeUsername = filteredUsernames[activeUsernameIndex]?.UserName;
+    if (activeUsername) {
+      handleUsernameSelect(activeUsername);
+    } else if (!usernameInput.trim()) {
+      handleUsernameSelect('');
+    }
+  };
+
+  const handleFilterUsernameInputChange = (value: string) => {
+    setFilterUsernameInput(value);
+    setShowFilterUsernameDropdown(true);
+    setActiveFilterUsernameIndex(0);
+
+    if (!value) {
+      handleFilterChange('username', '');
+    }
+  };
+
+  const handleFilterUsernameSelect = (value: string) => {
+    setFilterUsernameInput(value);
+    handleFilterChange('username', value);
+    setShowFilterUsernameDropdown(false);
+    setActiveFilterUsernameIndex(0);
+  };
+
+  const handleFilterUsernameKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setShowFilterUsernameDropdown(true);
+      if (filteredFilterUsernames.length > 0) {
+        setActiveFilterUsernameIndex((prev) => (prev + 1) % filteredFilterUsernames.length);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      setShowFilterUsernameDropdown(true);
+      if (filteredFilterUsernames.length > 0) {
+        setActiveFilterUsernameIndex((prev) => (prev - 1 + filteredFilterUsernames.length) % filteredFilterUsernames.length);
+      }
+      return;
+    }
+
+    const activeUsername = filteredFilterUsernames[activeFilterUsernameIndex]?.UserName;
+    if (activeUsername) {
+      handleFilterUsernameSelect(activeUsername);
+    } else if (!filterUsernameInput.trim()) {
+      handleFilterUsernameSelect('');
+    }
+  };
 
   // Fetch bank accounts
   const { data: bankAccounts } = useQuery({
@@ -174,43 +315,29 @@ export default function DebtManagementPage() {
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['debt-management'] });
-        setShowAddModal(false);
-        setNewDebt({
-          username: '',
-          noiDung: '',
-          ngay: '',
-          dr: 0,
-          cr: 0,
-          ghiChu: '',
-          loHangId: undefined,
-          loHangText: '',
-          loaiPhatSinh: 2,
-          bankAccount: '',
-        });
-        setErrorMessage(null);
+        resetDebtForm();
       } else {
         setErrorMessage(result.message || 'Thêm mới thất bại');
       }
     },
-    onError: (error: any) => {
-      setErrorMessage(error?.response?.data?.message || 'Thêm mới thất bại');
+    onError: (error: unknown) => {
+      setErrorMessage(getMutationErrorMessage(error, 'Thêm mới thất bại'));
     },
   });
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => updateDebt(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateDebtParams }) => updateDebt(id, data),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['debt-management'] });
-        setEditingId(null);
-        setShowAddModal(false);
+        resetDebtForm();
       } else {
         setErrorMessage(result.message || 'Cập nhật thất bại');
       }
     },
-    onError: (error: any) => {
-      setErrorMessage(error?.response?.data?.message || 'Cập nhật thất bại');
+    onError: (error: unknown) => {
+      setErrorMessage(getMutationErrorMessage(error, 'Cập nhật thất bại'));
     },
   });
 
@@ -230,22 +357,8 @@ export default function DebtManagementPage() {
     },
   });
 
-  const handleFilterChange = (key: string, value: any) => {
-    // Convert "-1" to null for loaiPhatSinh filter
-    if (key === 'loaiPhatSinh' && value === '-1') {
-      setFilters((prev) => ({ ...prev, [key]: null, page: 1 }));
-    } else {
-      setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
-    }
-  };
-
   const handlePageChange = (newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createMutation.mutate(newDebt);
   };
 
   const totalPages = Math.ceil((data?.total || 0) / filters.limit);
@@ -267,34 +380,243 @@ export default function DebtManagementPage() {
             <FiUpload className="w-4 h-4" />
             <span className="hidden sm:inline">Import Excel</span>
           </Link>
-          <button
-            onClick={() => {
-              setShowAddModal(true);
-              setEditingId(null);
-              setErrorMessage(null);
-              setNewDebt({
-                username: '',
-                noiDung: '',
-                ngay: '',
-                dr: 0,
-                cr: 0,
-                ghiChu: '',
-                loHangId: undefined,
-                loHangText: '',
-                loaiPhatSinh: 2,
-                bankAccount: '',
-              });
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#14264b] to-cyan-400 text-white rounded-xl hover:from-[#4bb3dd] hover:to-cyan-300 transition-all duration-200 font-medium shadow-lg shadow-cyan-500/25 cursor-pointer"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span className="hidden sm:inline">Thêm mới</span>
-          </button>
         </div>
       </div>
 
+      {/* Inline Add/Edit Form */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-visible">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-800">
+                {editingId ? 'Sửa công nợ' : 'Thêm công nợ mới'}
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {editingId ? 'Cập nhật thông tin công nợ' : 'Nhập thông tin công nợ'}
+              </p>
+            </div>
+          </div>
+
+          {errorMessage && (
+            <div className="mx-4 mt-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs text-red-600">{errorMessage}</p>
+            </div>
+          )}
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!newDebt.username || usernameInput !== newDebt.username) {
+                setErrorMessage('Vui lòng chọn User từ danh sách');
+                setShowUsernameDropdown(true);
+                return;
+              }
+
+              if (editingId) {
+                updateMutation.mutate({
+                  id: editingId,
+                  data: {
+                    username: newDebt.username,
+                    noiDung: newDebt.noiDung,
+                    dr: newDebt.dr,
+                    cr: newDebt.cr,
+                    ghiChu: newDebt.ghiChu,
+                    updatedBy: currentUser?.username || 'admin',
+                  },
+                });
+              } else {
+                createMutation.mutate(newDebt);
+              }
+            }}
+            className="p-4 space-y-3"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                  <FiUser className="w-3.5 h-3.5 text-[#14264b]" />
+                  User <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={usernameInput}
+                    onChange={(e) => handleUsernameInputChange(e.target.value)}
+                    onKeyDown={handleUsernameKeyDown}
+                    onFocus={() => setShowUsernameDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowUsernameDropdown(false), 100)}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
+                    placeholder="Nhập User"
+                    autoComplete="off"
+                    required
+                  />
+                  <FiChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  {showUsernameDropdown && (
+                    <div
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="absolute left-0 top-full z-[100] mt-1 max-h-56 w-56 overflow-auto rounded-lg border border-slate-200 bg-white py-1 text-xs shadow-lg"
+                    >
+                      {filteredUsernames.map((user, index) => (
+                        <button
+                          key={user.Id}
+                          type="button"
+                          className={`w-full px-3 py-1.5 text-left hover:bg-[#14264b]/5 ${index === activeUsernameIndex ? 'bg-[#14264b]/10 font-medium text-[#14264b]' : 'text-slate-700'}`}
+                          onClick={() => handleUsernameSelect(user.UserName)}
+                        >
+                          {user.UserName}
+                        </button>
+                      ))}
+                      {filteredUsernames.length === 0 && (
+                        <div className="px-3 py-1.5 text-slate-400">Không có user phù hợp</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1 lg:col-span-2">
+                <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                  <FiFileText className="w-3.5 h-3.5 text-[#14264b]" />
+                  Nội dung <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newDebt.noiDung}
+                  onChange={(e) => setNewDebt({ ...newDebt, noiDung: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
+                  required
+                  placeholder="Nhập nội dung công nợ"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                  <FiCalendar className="w-3.5 h-3.5 text-[#14264b]" />
+                  Ngày <span className="text-red-500">*</span>
+                </label>
+                <input
+                  ref={formDateRef}
+                  type="text"
+                  value={newDebt.ngay}
+                  onChange={(e) => setNewDebt({ ...newDebt, ngay: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
+                  placeholder="dd/mm/yyyy"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">Loại phát sinh</label>
+                <div className="relative">
+                  <select
+                    value={newDebt.loaiPhatSinh}
+                    onChange={(e) => setNewDebt({ ...newDebt, loaiPhatSinh: Number(e.target.value) })}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
+                  >
+                    <option value={2}>Phí mua hàng và phát sinh khác</option>
+                    <option value={8}>Cân Kg</option>
+                  </select>
+                  <FiChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">Tài khoản</label>
+                <div className="relative">
+                  <select
+                    value={newDebt.bankAccount}
+                    onChange={(e) => setNewDebt({ ...newDebt, bankAccount: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
+                  >
+                    <option value="">--Chọn tài khoản--</option>
+                    {bankAccounts?.map((bank) => (
+                      <option key={bank.ID} value={bank.TenTaiKhoanNganHang || ''}>
+                        {bank.TenTaiKhoanNganHang}
+                      </option>
+                    ))}
+                  </select>
+                  <FiChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {newDebt.username && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-700">Lô hàng</label>
+                  <div className="relative">
+                    <select
+                      value={newDebt.loHangId || ''}
+                      onChange={(e) => {
+                        const selected = batches?.find((b: BatchItem) => b.LoHang_ID === Number(e.target.value));
+                        setNewDebt({ ...newDebt, loHangId: e.target.value ? Number(e.target.value) : undefined, loHangText: selected?.TenLoHang || '' });
+                      }}
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
+                    >
+                      <option value="">--Chọn lô hàng--</option>
+                      {batches?.map((batch: BatchItem) => (
+                        <option key={batch.LoHang_ID} value={batch.LoHang_ID}>
+                          {batch.TenLoHang}
+                        </option>
+                      ))}
+                    </select>
+                    <FiChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">Tiền Nợ (DR)</label>
+                <input
+                  type="number"
+                  value={newDebt.dr}
+                  onChange={(e) => setNewDebt({ ...newDebt, dr: Number(e.target.value) })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">Tiền Có (CR)</label>
+                <input
+                  type="number"
+                  value={newDebt.cr}
+                  onChange={(e) => setNewDebt({ ...newDebt, cr: Number(e.target.value) })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="space-y-1 md:col-span-2 xl:col-span-3">
+                <label className="text-xs font-medium text-slate-700">Ghi chú</label>
+                <textarea
+                  value={newDebt.ghiChu}
+                  onChange={(e) => setNewDebt({ ...newDebt, ghiChu: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all resize-none"
+                  rows={2}
+                  placeholder="Nhập ghi chú (nếu có)"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={resetDebtForm}
+                className="px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-[#14264b] to-cyan-400 rounded-lg hover:from-[#4bb3dd] hover:to-cyan-300 transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+              >
+                {(createMutation.isPending || updateMutation.isPending) && <FiLoader className="w-3.5 h-3.5 animate-spin" />}
+                {editingId ? 'Cập nhật' : 'Lưu'}
+              </button>
+            </div>
+          </form>
+        </div>
+
       {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-visible">
         {/* Filter Header */}
         <button
           onClick={() => setShowFilters(!showFilters)}
@@ -320,23 +642,49 @@ export default function DebtManagementPage() {
         {showFilters && (
           <div className="px-4 pb-4 border-t border-slate-100">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-4">
-              <div className="space-y-1.5">
+              <div className="relative space-y-1.5">
                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
                   <FiUser className="w-3.5 h-3.5" />
                   User
                 </label>
-                <select
-                  value={filters.username}
-                  onChange={(e) => handleFilterChange('username', e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer"
-                >
-                  <option value="">--Tất cả User--</option>
-                  {users?.map((user) => (
-                    <option key={user.Id} value={user.UserName}>
-                      {user.UserName}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  value={filterUsernameInput}
+                  onChange={(e) => handleFilterUsernameInputChange(e.target.value)}
+                  onKeyDown={handleFilterUsernameKeyDown}
+                  onFocus={() => setShowFilterUsernameDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowFilterUsernameDropdown(false), 100)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white"
+                  placeholder="Nhập User"
+                  autoComplete="off"
+                />
+                {showFilterUsernameDropdown && (
+                  <div
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="absolute left-0 top-full z-[100] mt-1 max-h-64 w-56 overflow-auto rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg"
+                  >
+                    <button
+                      type="button"
+                      className="w-full px-3 py-1.5 text-left text-slate-500 hover:bg-slate-50"
+                      onClick={() => handleFilterUsernameSelect('')}
+                    >
+                      --Tất cả User--
+                    </button>
+                    {filteredFilterUsernames.map((user, index) => (
+                      <button
+                        key={user.Id}
+                        type="button"
+                        className={`w-full px-3 py-1.5 text-left hover:bg-[#14264b]/5 ${index === activeFilterUsernameIndex ? 'bg-[#14264b]/10 font-medium text-[#14264b]' : 'text-slate-700'}`}
+                        onClick={() => handleFilterUsernameSelect(user.UserName)}
+                      >
+                        {user.UserName}
+                      </button>
+                    ))}
+                    {filteredFilterUsernames.length === 0 && (
+                      <div className="px-3 py-1.5 text-slate-400">Không có user phù hợp</div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Trạng thái</label>
@@ -505,7 +853,8 @@ export default function DebtManagementPage() {
                                 loaiPhatSinh: 2,
                                 bankAccount: '',
                               });
-                              setShowAddModal(true);
+                              setUsernameInput(item.UserName || '');
+                              setErrorMessage(null);
                             }}
                             className="p-1.5 text-[#14264b] hover:bg-[#14264b]/5 rounded-lg transition-colors cursor-pointer"
                             title="Sửa"
@@ -569,245 +918,6 @@ export default function DebtManagementPage() {
           </>
         )}
       </div>
-
-      {/* Add/Edit Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            onClick={() => setShowAddModal(false)}
-          />
-
-          {/* Modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">
-                  {editingId ? 'Sửa công nợ' : 'Thêm công nợ mới'}
-                </h2>
-                <p className="text-sm text-slate-500 mt-0.5">
-                  {editingId ? 'Cập nhật thông tin công nợ' : 'Nhập thông tin công nợ'}
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingId(null);
-                  setErrorMessage(null);
-                }}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              >
-                <FiX className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Error Message */}
-            {errorMessage && (
-              <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{errorMessage}</p>
-              </div>
-            )}
-
-            {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-180px)]">
-              {/* User Selection */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                  <FiUser className="w-4 h-4 text-[#14264b]" />
-                  User <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={newDebt.username}
-                    onChange={(e) => setNewDebt({ ...newDebt, username: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
-                    required
-                  >
-                    <option value="">--Chọn User--</option>
-                    {users?.map((user) => (
-                      <option key={user.Id} value={user.UserName}>
-                        {user.UserName}
-                      </option>
-                    ))}
-                  </select>
-                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                  <FiFileText className="w-4 h-4 text-[#14264b]" />
-                  Nội dung <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newDebt.noiDung}
-                  onChange={(e) => setNewDebt({ ...newDebt, noiDung: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
-                  required
-                  placeholder="Nhập nội dung công nợ"
-                />
-              </div>
-
-              {/* Date */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                  <FiCalendar className="w-4 h-4 text-[#14264b]" />
-                  Ngày <span className="text-red-500">*</span>
-                </label>
-                <input
-                  ref={modalDateRef}
-                  type="text"
-                  value={newDebt.ngay}
-                  onChange={(e) => setNewDebt({ ...newDebt, ngay: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
-                  placeholder="dd/mm/yyyy"
-                  required
-                />
-              </div>
-
-              {/* Loại phát sinh */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Loại phát sinh</label>
-                <div className="relative">
-                  <select
-                    value={newDebt.loaiPhatSinh}
-                    onChange={(e) => setNewDebt({ ...newDebt, loaiPhatSinh: Number(e.target.value) })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
-                  >
-                    <option value={2}>Phí mua hàng và phát sinh khác</option>
-                    <option value={8}>Cân Kg</option>
-                  </select>
-                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Bank Account */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Tài khoản</label>
-                <div className="relative">
-                  <select
-                    value={newDebt.bankAccount}
-                    onChange={(e) => setNewDebt({ ...newDebt, bankAccount: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
-                  >
-                    <option value="">--Chọn tài khoản--</option>
-                    {bankAccounts?.map((bank) => (
-                      <option key={bank.ID} value={bank.TenTaiKhoanNganHang || ''}>
-                        {bank.TenTaiKhoanNganHang}
-                      </option>
-                    ))}
-                  </select>
-                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* DR/CR Amount */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Tiền Nợ (DR)</label>
-                  <input
-                    type="number"
-                    value={newDebt.dr}
-                    onChange={(e) => setNewDebt({ ...newDebt, dr: Number(e.target.value) })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Tiền Có (CR)</label>
-                  <input
-                    type="number"
-                    value={newDebt.cr}
-                    onChange={(e) => setNewDebt({ ...newDebt, cr: Number(e.target.value) })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              {/* Batch Selection - Only show when user selected */}
-              {newDebt.username && (
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Lô hàng</label>
-                  <div className="relative">
-                    <select
-                      value={newDebt.loHangId || ''}
-                      onChange={(e) => {
-                        const selected = batches?.find((b: BatchItem) => b.LoHang_ID === Number(e.target.value));
-                        setNewDebt({ ...newDebt, loHangId: e.target.value ? Number(e.target.value) : undefined, loHangText: selected?.TenLoHang || '' });
-                      }}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
-                    >
-                      <option value="">--Chọn lô hàng--</option>
-                      {batches?.map((batch: BatchItem) => (
-                        <option key={batch.LoHang_ID} value={batch.LoHang_ID}>
-                          {batch.TenLoHang}
-                        </option>
-                      ))}
-                    </select>
-                    <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              )}
-
-              {/* Note */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Ghi chú</label>
-                <textarea
-                  value={newDebt.ghiChu}
-                  onChange={(e) => setNewDebt({ ...newDebt, ghiChu: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all resize-none"
-                  rows={3}
-                  placeholder="Nhập ghi chú (nếu có)"
-                />
-              </div>
-            </form>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingId(null);
-                }}
-                className="px-4 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                onClick={() => {
-                  if (editingId) {
-                    updateMutation.mutate({
-                      id: editingId,
-                      data: {
-                        username: newDebt.username,
-                        noiDung: newDebt.noiDung,
-                        dr: newDebt.dr,
-                        cr: newDebt.cr,
-                        ghiChu: newDebt.ghiChu,
-                        updatedBy: currentUser?.username || 'admin',
-                      },
-                    });
-                  } else {
-                    createMutation.mutate(newDebt);
-                  }
-                }}
-                className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-[#14264b] to-cyan-400 rounded-xl hover:from-[#4bb3dd] hover:to-cyan-300 transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
-              >
-                {(createMutation.isPending || updateMutation.isPending) && <FiLoader className="w-4 h-4 animate-spin" />}
-                {editingId ? 'Cập nhật' : 'Lưu'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

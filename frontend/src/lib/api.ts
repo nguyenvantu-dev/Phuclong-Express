@@ -252,6 +252,7 @@ export const addQuickOrder = async (order: {
   saleOff?: number;
   quocGiaId?: number;
   nguoiTao?: string;
+  usernameSave?: string;
   websiteName?: string;
   username?: string;
   shipUsa?: number;
