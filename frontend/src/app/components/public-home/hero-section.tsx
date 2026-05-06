@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { useProtectedLink } from '@/hooks/use-protected-link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectFade, Autoplay } from 'swiper/modules';
@@ -104,7 +105,15 @@ export default function HeroSection() {
         >
           {slides.map((slide, index) => (
             <SwiperSlide key={index} className="h-full">
-              <img className="w-full h-full object-cover" src={slide.src} alt={slide.alt} />
+              <Image
+                src={slide.src}
+                alt={slide.alt}
+                fill
+                className="object-cover"
+                priority={index === 0}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                sizes="100vw"
+              />
             </SwiperSlide>
           ))}
         </Swiper>

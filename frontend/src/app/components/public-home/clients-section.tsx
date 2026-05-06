@@ -1,9 +1,6 @@
 'use client';
 
-/**
- * Brands Section — local brand images in dual-direction marquee
- * Images in /public/image1/brand-*.png and brand-2-*.jpg
- */
+import Image from 'next/image';
 
 const rowOne = [
   { name: 'Amazon',       src: '/image2/amazon-logo-squid-ink-smile-orange.png' },
@@ -51,14 +48,13 @@ function BrandCard({ brand }: { brand: Brand }) {
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}
     >
-      <img
+      <Image
         src={brand.src}
         alt={brand.name}
+        width={130}
+        height={80}
         className="object-contain"
-        style={{ width: '130px', height: '80px' }}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.display = 'none';
-        }}
+        loading="lazy"
       />
     </div>
   );

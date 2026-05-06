@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 
 type SubItem = { label: string; href: string };
@@ -28,6 +29,17 @@ function NotifBadge({ count: _ }: { count: number }) {
   );
 }
 
+const colors = {
+  primary: '#14264b',
+  primaryHover: '#1f3a6d',
+  primaryLight: 'rgba(235,115,37,0.08)',
+  accent: '#eb7325',
+  accentHover: '#d65f15',
+  text: '#111827',
+  textMuted: '#6b7280',
+  bg: '#f8fafc',
+};
+
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
@@ -37,18 +49,6 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   const { unreadCount } = useNotifications('debt', isAuthenticated);
   const { unreadCount: infoUnreadCount } = useNotifications('info', isAuthenticated);
   const { unreadCount: orderUnreadCount } = useNotifications('order', isAuthenticated);
-
-  // Brand colors: #14264b (navy) + #eb7325 (orange)
-  const colors = {
-    primary: '#14264b',
-    primaryHover: '#1f3a6d',
-    primaryLight: 'rgba(235,115,37,0.08)',
-    accent: '#eb7325',
-    accentHover: '#d65f15',
-    text: '#111827',
-    textMuted: '#6b7280',
-    bg: '#f8fafc',
-  };
 
   const publicNavItems: NavItem[] = [
     { label: 'TRANG CHỦ', href: '/' },
@@ -99,7 +99,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 cursor-pointer group">
-              <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL.png" alt="Phuc Long Express" className="h-32 object-contain transition-transform group-hover:scale-105" />
+              <Image src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL.png" alt="Phuc Long Express" width={180} height={128} className="h-32 w-auto object-contain transition-transform group-hover:scale-105" priority />
             </Link>
 
             {/* Desktop Navigation */}
@@ -356,7 +356,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             {/* Col 1: Brand */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png" alt="Phuc Long Express" className="h-20 object-contain" />
+                <Image src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png" alt="Phuc Long Express" width={160} height={80} className="h-20 w-auto object-contain" />
               </div>
               <p className="text-sm leading-relaxed mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 Dịch vụ logistics uy tín — chuyên mua hộ &amp; vận chuyển hàng hóa toàn quốc từ năm 2018.

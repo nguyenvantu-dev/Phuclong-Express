@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/use-auth-context';
 
 interface LoginModalProps {
@@ -81,8 +82,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
               </svg>
             </button>
 
-            <img src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png" alt="Phuc Long Express"
-              className="relative z-10 h-20 object-contain mb-2" />
+            <Image src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png" alt="Phuc Long Express"
+              width={160} height={80} className="relative z-10 h-20 w-auto object-contain mb-2" />
             <p className="relative z-10 text-[11px] font-semibold tracking-[0.25em] uppercase"
               style={{ color: 'rgba(235,115,37,0.9)' }}>
               Vận chuyển &amp; Logistics

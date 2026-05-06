@@ -1,14 +1,17 @@
+import dynamic from 'next/dynamic';
 import PublicLayout from './components/public-home/public-layout';
 import HeroSection from './components/public-home/hero-section';
 import ServicesSection from './components/public-home/services-section';
-import CategoriesSection from './components/public-home/categories-section';
-import ClientsSection from './components/public-home/clients-section';
-import StatsSection from './components/public-home/stats-section';
-import TestimonialsSection from './components/public-home/testimonials-section';
 import HowItWorksSection from './components/public-home/how-it-works-section';
-import AboutSection from './components/public-home/about-section';
-import CtaSection from './components/public-home/cta-section';
-import WarehousesSection from './components/public-home/warehouses-section';
+
+// Below-fold: lazy load to reduce initial bundle
+const CategoriesSection  = dynamic(() => import('./components/public-home/categories-section'));
+const WarehousesSection  = dynamic(() => import('./components/public-home/warehouses-section'));
+const ClientsSection     = dynamic(() => import('./components/public-home/clients-section'));
+const StatsSection       = dynamic(() => import('./components/public-home/stats-section'));
+const TestimonialsSection = dynamic(() => import('./components/public-home/testimonials-section'));
+const AboutSection       = dynamic(() => import('./components/public-home/about-section'));
+const CtaSection         = dynamic(() => import('./components/public-home/cta-section'));
 
 /**
  * Public Home Page — Phuc Long Express
