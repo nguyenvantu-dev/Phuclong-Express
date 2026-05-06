@@ -207,6 +207,11 @@ export default function HeroSection() {
                 className="w-full px-4 py-3 rounded-xl text-white placeholder-white/50 outline-none focus:ring-2 backdrop-blur-sm transition-all border bg-white/10"
                 style={{ borderColor: 'rgba(255,255,255,0.2)', '--tw-ring-color': colors.primary } as React.CSSProperties}
               />
+              {/* Always visible notice */}
+              <div className="p-3 rounded-xl text-xs" style={{ backgroundColor: 'rgba(235,115,37,0.15)', border: '1px solid rgba(235,115,37,0.35)', color: 'rgba(255,255,255,0.85)' }}>
+                Tracking chưa có thông tin. Quý khách vui lòng inbox nhóm làm việc ngay để được kiểm tra và giải đáp.
+              </div>
+
               <button
                 type="submit"
                 className="w-full py-3 rounded-xl font-bold transition-all duration-200 cursor-pointer hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2 text-white"
@@ -226,11 +231,8 @@ export default function HeroSection() {
                   </div>
                 )}
                 {trackingResult.status === 'not_found' && (
-                  <div className="p-3 rounded-xl text-sm space-y-1.5" style={{ backgroundColor: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                  <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.3)' }}>
                     <p style={{ color: '#fca5a5' }}>{trackingResult.message}</p>
-                    <p className="font-medium text-xs" style={{ color: '#fed7aa' }}>
-                      Tracking chưa có thông tin. Quý khách vui lòng inbox nhóm làm việc ngay để được kiểm tra và giải đáp.
-                    </p>
                   </div>
                 )}
                 {trackingResult.status === 'error' && (
