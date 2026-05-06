@@ -7,6 +7,7 @@ type SubItem = { label: string; href: string };
 type NavItem = { label: string; href: string; dropdown?: never } | { label: string; href?: never; dropdown: SubItem[] };
 import { FiChevronDown, FiMenu, FiX, FiUser, FiLogOut, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
 import { FaFacebook } from 'react-icons/fa';
+import { SiZalo, SiViber } from 'react-icons/si';
 import { useAuth } from '@/hooks/use-auth-context';
 import { useNotifications } from '@/hooks/use-notifications';
 import LoginModal from './login-modal';
@@ -413,6 +414,28 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                   >
                     <FiPhone className="w-4 h-4 flex-shrink-0" style={{ color: colors.accent }} />
                     (+84) 344.415.213
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://zalo.me/0344415213"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    <SiZalo className="w-4 h-4 flex-shrink-0" style={{ color: '#0068FF' }} />
+                    Zalo: 0344.415.213
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="viber://chat?number=%2B840344415213"
+                    className="flex items-center gap-3 text-sm transition-colors duration-200 cursor-pointer hover:text-white"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    <SiViber className="w-4 h-4 flex-shrink-0" style={{ color: '#7360F2' }} />
+                    Viber: 0344.415.213
                   </a>
                 </li>
                 <li>

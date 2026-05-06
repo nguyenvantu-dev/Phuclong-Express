@@ -18,19 +18,19 @@ const steps = [
   {
     step: '03',
     title: 'Thanh toán & đặt hàng',
-    desc: 'Bạn chuyển khoản theo báo giá. Chúng tôi tiến hành đặt hàng trên website quốc tế và cung cấp mã tracking để theo dõi.',
+    desc: 'Bạn chuyển khoản theo báo giá. Chúng tôi tiến hành đặt hàng trên website quốc tế và cung cấp mã tracking nếu khách yêu cầu.',
     icon: '💳',
   },
   {
     step: '04',
-    title: 'Gom hàng & kiểm tra',
-    desc: 'Hàng về kho trung chuyển, đội ngũ kiểm tra số lượng và tình trạng sản phẩm trước khi gom lô vận chuyển về Việt Nam.',
+    title: 'Gom hàng & vận chuyển',
+    desc: 'Hàng về kho trung chuyển quốc tế, đội ngũ tiếp nhận, repack (theo yêu cầu), đóng hàng và vận chuyển về Việt Nam.',
     icon: '📦',
   },
   {
     step: '05',
     title: 'Nhận hàng tại Việt Nam',
-    desc: 'Hàng về Hà Nội, chúng tôi thông báo và giao tận nơi hoặc bạn đến nhận. Toàn bộ quá trình minh bạch, có tracking.',
+    desc: 'Hàng về Hà Nội/ Đà Nẵng/HCM chúng tôi thông báo và giao tận nơi hoặc bạn đến nhận. Toàn bộ quá trình minh bạch, có tracking.',
     icon: '🏠',
   },
 ];
