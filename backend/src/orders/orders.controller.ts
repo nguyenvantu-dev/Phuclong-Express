@@ -231,7 +231,7 @@ export class OrdersController {
   @Post('quick/calculate')
   @HttpCode(HttpStatus.OK)
   async calculateTienCong(
-    @Body() params: { loaiTien: string; donGiaWeb: number; soLuong: number; saleOff: number; cong: number; tyGia: number; username: string },
+    @Body() params: { loaiTien: string; donGiaWeb: number; soLuong: number; saleOff: number; cong: number; tyGia: number; username: string; tax?: number; shipUsa?: number; phuThu?: number },
   ): Promise<{ tienCongVnd: number; giaSauOffUsd: number; tongTienUsd: number; tongTienVnd: number }> {
     return this.ordersService.calculateTienCong(params);
   }

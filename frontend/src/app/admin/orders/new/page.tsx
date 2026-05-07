@@ -258,11 +258,14 @@ export default function QLDatHangThemPage() {
       }
 
       // When form values change, recalculate
-      if (['donGiaWeb', 'soLuong', 'saleOff', 'cong', 'tyGia'].includes(field)) {
+      if (['donGiaWeb', 'soLuong', 'saleOff', 'cong', 'phuThu', 'shipUsa', 'tax'].includes(field)) {
         const donGiaWeb = parseFloat(field === 'donGiaWeb' ? value : prev.donGiaWeb) || 0;
         const soLuong = parseInt(field === 'soLuong' ? value : prev.soLuong) || 1;
         const saleOff = parseFloat(field === 'saleOff' ? value : prev.saleOff) || 0;
         const cong = parseFloat(field === 'cong' ? value : prev.cong) || 0;
+        const phuThu = parseFloat(field === 'phuThu' ? value : prev.phuThu) || 0;
+        const shipUsa = parseFloat(field === 'shipUsa' ? value : prev.shipUsa) || 0;
+        const tax = parseFloat(field === 'tax' ? value : prev.tax) || 0;
         const tyGia = field === 'loaiTienValue' ? value : updated.loaiTienValue || 1;
 
         if (donGiaWeb > 0 && currentUsername) {
@@ -274,6 +277,9 @@ export default function QLDatHangThemPage() {
             cong,
             tyGia,
             username: currentUsername,
+            phuThu,
+            shipUsa,
+            tax,
           });
         }
       }

@@ -325,30 +325,28 @@ export class OrdersService {
     cong: number;
     tyGia: number;
     username: string;
+    tax?: number;
+    shipUsa?: number;
+    phuThu?: number;
   }): Promise<{ tienCongVnd: number; giaSauOffUsd: number; tongTienUsd: number; tongTienVnd: number }> {
-    const { loaiTien, donGiaWeb, soLuong, saleOff, cong, tyGia, username } = params;
+    const { loaiTien, donGiaWeb, soLuong, saleOff, cong, tyGia, username, tax = 0, shipUsa = 0, phuThu = 0 } = params;
 
-    // Calculate giaSauOffUsd = (100 - saleOff) / 100 * donGiaWeb * soLuong
+    // giaSauOffUsd = (100 - saleOff) / 100 * donGiaWeb * soLuong
     const giaSauOffUsd = ((100 - saleOff) / 100) * donGiaWeb * soLuong;
 
-    // Get GiaTienCong
     const giaTienCong = await this.getGiaTienCong(loaiTien, donGiaWeb, username);
     let tienCongVnd: number;
 
     if (giaTienCong.tinhTheoPhanTram) {
-      // tienCongVnd = giaSauOffUsd * cong/100 * tyGia
       tienCongVnd = giaSauOffUsd * cong / 100 * tyGia;
     } else {
-      // tienCongVnd = TienCong1Mon * soLuong
       tienCongVnd = giaTienCong.tienCong1Mon * soLuong;
     }
 
-    // Calculate tongTienUsd = giaSauOffUsd * (1 + tax/100)
-    // Note: shipUsa and phuThu per item added in backend SP
-    const tongTienUsd = giaSauOffUsd; // shipUSA and phuThu added in SP
+    // tongTienUsd = giaSauOff + tax% + shipUsa/item + phuThu/item (mirrors old C# formula)
+    const tongTienUsd = giaSauOffUsd + giaSauOffUsd * 0.01 * tax + shipUsa * soLuong + phuThu * soLuong;
 
-    // Calculate tongTienVnd = tongTienUsd * tyGia + tienCongVnd
-    const tongTienVnd = Math.ceil(giaSauOffUsd * tyGia + tienCongVnd);
+    const tongTienVnd = Math.ceil(tongTienUsd * tyGia + tienCongVnd);
 
     return { tienCongVnd, giaSauOffUsd, tongTienUsd, tongTienVnd };
   }

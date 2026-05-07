@@ -219,6 +219,9 @@ export const calculateTienCong = async (params: {
   cong: number;
   tyGia: number;
   username: string;
+  tax?: number;
+  shipUsa?: number;
+  phuThu?: number;
 }): Promise<{ tienCongVnd: number; giaSauOffUsd: number; tongTienUsd: number; tongTienVnd: number }> => {
   const response = await apiClient.post<{ tienCongVnd: number; giaSauOffUsd: number; tongTienUsd: number; tongTienVnd: number }>('/orders/quick/calculate', params);
   return response.data;
