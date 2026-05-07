@@ -37,7 +37,6 @@ export function middleware(request: NextRequest) {
     '/danh-sach-tracking',
     '/sua-tracking',
     '/thong-tin-lo-hang',
-    '/ty-gia',
     '/chuyen-khoan',
     '/bao-cao-cong-no',
     '/hoi-dap',
