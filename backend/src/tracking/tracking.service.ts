@@ -15,6 +15,8 @@ import { SystemLogsService } from '../system-logs/system-logs.service';
  */
 @Injectable()
 export class TrackingService {
+  private readonly procedureParamsCache = new Map<string, Set<string>>();
+
   constructor(
     @Inject('SEQUELIZE') private sequelize: Sequelize,
     private readonly systemLogsService: SystemLogsService,
@@ -279,10 +281,7 @@ export class TrackingService {
    * Logs: ThemSystemLogs with nguon='Tracking_ThemSua:CapNhatTracking', hanhDong='Chinh sua'
    */
   async update(id: number, updateTrackingDto: UpdateTrackingDto, actorUsername?: string): Promise<any> {
-    await this.findOne(id);
-
     try {
-      // Get current tracking to provide all fields for SP (even unchanged ones)
       const currentTracking = await this.findOne(id);
       const allValues: Record<string, any> = {
         id,
@@ -378,23 +377,25 @@ export class TrackingService {
   }
 
   private async getProcedureParams(procedureName: string): Promise<Set<string>> {
+    if (this.procedureParamsCache.has(procedureName)) {
+      return this.procedureParamsCache.get(procedureName)!;
+    }
+
     const rows = await this.sequelize.query(
-      `
-        SELECT p.name AS parameterName
-        FROM sys.parameters p
-        WHERE p.object_id = OBJECT_ID(:procedureName)
-      `,
-      {
-        replacements: { procedureName },
-        type: QueryTypes.SELECT,
-      },
+      `SELECT p.name AS parameterName
+       FROM sys.parameters p
+       WHERE p.object_id = OBJECT_ID(:procedureName)`,
+      { replacements: { procedureName }, type: QueryTypes.SELECT },
     );
 
-    return new Set(
+    const result = new Set(
       (rows as Array<{ parameterName: string }>)
         .map((x) => (x.parameterName || '').replace(/^@/, '').toLowerCase())
         .filter(Boolean),
     );
+
+    this.procedureParamsCache.set(procedureName, result);
+    return result;
   }
 
   /**
@@ -562,16 +563,14 @@ export class TrackingService {
    * Matches: SuaTracking.cs -> LoadDataChiTietTracking -> SP_Lay_DanhSachChiTietTrackingByID(@TrackingID)
    */
   async findDetails(id: number): Promise<any> {
-    const tracking = await this.findOne(id);
-
-    // Get chi tiet tracking via SP (SuaTracking.cs -> SP_Lay_DanhSachChiTietTrackingByID)
-    const chiTiet = await this.sequelize.query(
-      `EXEC dbo.SP_Lay_DanhSachChiTietTrackingByID @TrackingID = :id`,
-      { replacements: { id }, type: QueryTypes.SELECT },
-    );
-
-    // Get lich su tracking
-    const history = await this.findHistory(id);
+    const [tracking, chiTiet, history] = await Promise.all([
+      this.findOne(id),
+      this.sequelize.query(
+        `EXEC dbo.SP_Lay_DanhSachChiTietTrackingByID @TrackingID = :id`,
+        { replacements: { id }, type: QueryTypes.SELECT },
+      ),
+      this.findHistory(id),
+    ]);
 
     return {
       ...tracking,
@@ -601,8 +600,6 @@ export class TrackingService {
    * Note: No dedicated SP in C#, uses direct INSERT
    */
   async addHistory(id: number, ghiChu: string): Promise<any> {
-    await this.findOne(id);
-
     try {
       await this.sequelize.query(`
         INSERT INTO dbo.tbTinhTrangTracking (TrackingID, GhiChu, NgayTao)

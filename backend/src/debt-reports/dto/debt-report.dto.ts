@@ -119,8 +119,9 @@ export class UpdateOrderTotalVndDto {
   @IsString()
   ordernumber!: string;
 
+  @IsOptional()
   @IsString()
-  trackingNumber!: string;
+  trackingNumber?: string;
 
   @Type(() => Number)
   @IsInt()

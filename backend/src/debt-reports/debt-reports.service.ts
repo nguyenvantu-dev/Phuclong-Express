@@ -596,7 +596,7 @@ export class DebtReportsService {
   /**
    * Get debt reconciliation report (BaoCao_DoiChieuCongNo)
    * Matches: DBConnect.BaoCaoDoiChieuCongNo() -> SP_BaoCao_DoiChieuCongNo1
-   * Data: ordernumber, UserName, ngaymuahang, SoLinkA, SotienA, SoLinkB, SotienB, tracking_number, SotienAVND, SotienBVND, KiemTraVND
+   * Data: ordernumber, UserName, ngaymuahang, SoLinkA, SotienA, SoLinkB, SotienB, tracking_number, SoTienAVND, SotienBVND, KiemTraVND
    */
   async getDebtReconciliationReport(
     fromDate?: string,
@@ -605,29 +605,22 @@ export class DebtReportsService {
     orderNumber?: string,
   ): Promise<any[]> {
     try {
-      // Parse dates - default to first day of current month if empty
-      let tuNgay: string | null = null;
-      let denNgay: string | null = null;
+      // Parse ISO dates (YYYY-MM-DD) sent by frontend — avoid new Date() UTC offset issues
+      const parseIsoToSqlDate = (dateStr: string): string | null => {
+        if (!dateStr) return null;
+        // YYYY-MM-DD → use directly
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+        // dd/MM/yyyy → convert
+        const parts = dateStr.split('/');
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        return null;
+      };
 
-      if (fromDate) {
-        try {
-          tuNgay = this.parseDateToSql(fromDate);
-        } catch (e) {
-          // Use default
-          const now = new Date();
-          tuNgay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        }
-      }
+      const tuNgay = parseIsoToSqlDate(fromDate || '');
+      const rawDenNgay = parseIsoToSqlDate(toDate || '');
+      const denNgay = rawDenNgay ? `${rawDenNgay} 23:59:59` : null;
 
-      if (toDate) {
-        try {
-          denNgay = this.parseDateToSql(toDate);
-        } catch (e) {
-          denNgay = new Date().toISOString();
-        }
-      }
-
-      const [results] = await this.sequelize.query(
+      const results = await this.sequelize.query(
         `EXEC SP_BaoCao_DoiChieuCongNo1
           @TuNgay = :tuNgay,
           @DenNgay = :denNgay,
@@ -643,8 +636,7 @@ export class DebtReportsService {
           type: 'SELECT' as const,
         },
       );
-
-      return results || [];
+      return (results as any[]) || [];
     } catch (error) {
       console.error('Error in getDebtReconciliationReport:', error.message);
       return [];
@@ -765,7 +757,7 @@ export class DebtReportsService {
       const lines: string[] = [];
       // Headers
       lines.push(
-        'ordernumber,UserName,ngaymuahang,SoLinkA,SotienA,SoLinkB,SotienB,tracking_number,SotienAVND,SotienBVND,KiemTraVND',
+        'ordernumber,UserName,ngaymuahang,SoLinkA,SotienA,SoLinkB,SotienB,tracking_number,SoTienAVND,SotienBVND,KiemTraVND',
       );
 
       for (const row of data) {
@@ -778,7 +770,7 @@ export class DebtReportsService {
           row.SoLinkB || '0',
           row.SotienB || '0',
           row.tracking_number || '',
-          row.SotienAVND || '0',
+          row.SoTienAVND || '0',
           row.SotienBVND || '0',
           row.KiemTraVND || '0',
         ];

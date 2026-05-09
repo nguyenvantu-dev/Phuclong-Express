@@ -20,7 +20,7 @@ import {
  * Converted from admin/BaoCao_DoiChieuCongNo.aspx
  * Features:
  * - Filter panel: From date, To date, User, Order number
- * - Data table with columns: ordernumber, UserName, ngaymuahang, SoLinkA, SotienA, SoLinkB, SotienB, tracking_number, SotienAVND, SotienBVND, KiemTraVND
+ * - Data table with columns: ordernumber, UserName, ngaymuahang, SoLinkA, SotienA, SoLinkB, SotienB, tracking_number, SoTienAVND, SotienBVND, KiemTraVND
  * - Inline edit: SotienBVND
  * - Actions: Edit row, Update SotienBVND, Chuyển về Received, Export Excel
  * - Date defaults: first day of current month, today
@@ -288,7 +288,7 @@ export default function DebtReconciliationPage() {
   const handleEdit = (item: DebtReconciliationItem) => {
     setEditingRow({
       ordernumber: item.ordernumber,
-      tracking_number: item.tracking_number,
+      tracking_number: item.tracking_number ?? '',
     });
     setEditValue(item.SotienBVND?.toString() || '0');
     setErrorMessage('');
@@ -304,8 +304,9 @@ export default function DebtReconciliationPage() {
   const handleSaveEdit = () => {
     if (!editingRow) return;
 
-    // Validation matching C# code
-    const value = parseFloat(editValue);
+    // Validation matching C# code: empty → 0, non-numeric → error
+    const trimmed = editValue.trim();
+    const value = trimmed === '' ? 0 : parseFloat(trimmed);
     if (isNaN(value)) {
       setErrorMessage('Tiền thực trả (VNĐ) phải là kiểu số');
       return;
@@ -343,7 +344,7 @@ export default function DebtReconciliationPage() {
   // Check if a row is being edited
   const isEditing = (item: DebtReconciliationItem) =>
     editingRow?.ordernumber === item.ordernumber &&
-    editingRow?.tracking_number === item.tracking_number;
+    editingRow?.tracking_number === (item.tracking_number ?? '');
 
   return (
     <div className="space-y-4">
@@ -534,7 +535,7 @@ export default function DebtReconciliationPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {data.map((item) => {
+                {data.slice(0, -1).map((item) => {
                   const rowEditing = isEditing(item);
 
                   return (
@@ -546,13 +547,13 @@ export default function DebtReconciliationPage() {
                             <button
                               onClick={handleSaveEdit}
                               disabled={updateTotalVndMutation.isPending}
-                              className="text-green-600 hover:text-green-800"
+                              className="rounded bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
                             >
                               Update
                             </button>
                             <button
                               onClick={handleCancelEdit}
-                              className="text-red-600 hover:text-red-800"
+                              className="rounded bg-red-500 px-2 py-1 text-xs font-medium text-white hover:bg-red-600"
                             >
                               Cancel
                             </button>
@@ -560,7 +561,7 @@ export default function DebtReconciliationPage() {
                         ) : (
                           <button
                             onClick={() => handleEdit(item)}
-                            className="text-[#14264b] hover:text-[#14264b]"
+                            className="rounded bg-gray-500 px-2 py-1 text-xs font-medium text-white hover:bg-gray-600"
                           >
                             Edit
                           </button>
@@ -598,9 +599,9 @@ export default function DebtReconciliationPage() {
                       <td className="whitespace-nowrap px-2 py-2 text-gray-900">
                         {item.tracking_number}
                       </td>
-                      {/* SotienAVND */}
+                      {/* SoTienAVND */}
                       <td className="whitespace-nowrap px-2 py-2 text-right font-medium text-gray-900">
-                        {formatCurrency(item.SotienAVND)}
+                        {formatCurrency(item.SoTienAVND)}
                       </td>
                       {/* SotienBVND - matching ItemStyle-ForeColor="Red" in aspx */}
                       <td className="whitespace-nowrap px-2 py-2 text-right">
@@ -627,7 +628,7 @@ export default function DebtReconciliationPage() {
                         <button
                           onClick={() => handleMoveToReceived(item.ordernumber)}
                           disabled={moveToReceivedMutation.isPending}
-                          className="text-[#14264b] hover:text-[#14264b]"
+                          className="rounded bg-[#14264b] px-2 py-1 text-xs font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50"
                         >
                           Chuyển về Received
                         </button>

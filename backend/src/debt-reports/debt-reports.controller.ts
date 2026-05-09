@@ -187,7 +187,7 @@ export class DebtReportsController {
   ) {
     return this.debtReportsService.updateOrderTotalVND(
       body.ordernumber,
-      body.trackingNumber,
+      body.trackingNumber ?? '',
       body.tongTienOrderVND,
       req.user?.username || 'system',
     );

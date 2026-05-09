@@ -825,7 +825,7 @@ export interface DebtReconciliationItem {
   SoLinkB: number;
   SotienB: number;
   tracking_number: string;
-  SotienAVND: number;
+  SoTienAVND: number;
   SotienBVND: number;
   KiemTraVND: number;
 }
