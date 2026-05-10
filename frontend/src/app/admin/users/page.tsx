@@ -13,6 +13,7 @@ import {
   FiExternalLink,
 } from 'react-icons/fi';
 import apiClient from '@/lib/api-client';
+import { downloadDataAsExcel } from '@/lib/excel-download';
 
 interface User {
   Id: string;
@@ -69,23 +70,14 @@ export default function ListUserPage() {
     }
   };
 
-  // Export to CSV (matching C# export behavior: CSV with .xls extension)
   const handleExport = () => {
-    const cols = ['ID', 'UserName', 'HoTen', 'DiaChi', 'Email', 'PhoneNumber', 'TinhThanh', 'SoTaiKhoan', 'HinhThucNhanHang', 'KhachBuon', 'LinkTaiKhoanMang'];
+    const headers = ['ID', 'UserName', 'HoTen', 'DiaChi', 'Email', 'PhoneNumber', 'TinhThanh', 'SoTaiKhoan', 'HinhThucNhanHang', 'KhachBuon', 'LinkTaiKhoanMang'];
     const rows = users.map(u => [
-      u.Id, u.UserName, u.HoTen, u.DiaChi, u.Email, u.PhoneNumber,
-      u.TinhThanh, u.SoTaiKhoan, u.HinhThucNhanHang,
-      u.KhachBuon ? 'true' : 'false', u.LinkTaiKhoanMang,
-    ].map(v => String(v ?? '').replace(',', ';')).join(','));
-
-    const csv = [cols.join(','), ...rows].join('\r\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'application/vnd.xls' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `DanhSachUser_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xls`;
-    a.click();
-    URL.revokeObjectURL(url);
+      u.Id, u.UserName || '', u.HoTen || '', u.DiaChi || '', u.Email || '',
+      u.PhoneNumber || '', u.TinhThanh || '', u.SoTaiKhoan || '',
+      u.HinhThucNhanHang || '', u.KhachBuon ? 'true' : 'false', u.LinkTaiKhoanMang || '',
+    ]);
+    downloadDataAsExcel([headers, ...rows], `DanhSachUser_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`);
   };
 
   return (

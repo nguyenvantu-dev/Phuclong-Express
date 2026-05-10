@@ -6,6 +6,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import { getDebtByUser, exportDebtByUser, getDebtReportUsers } from '@/lib/api';
+import { downloadCsvAsExcel } from '@/lib/excel-download';
 
 /**
  * Total Debt By User Report Page
@@ -172,11 +173,7 @@ export default function DebtByUserPage() {
   const exportMutation = useMutation({
     mutationFn: () => exportDebtByUser(filters.fromDate, filters.toDate, filters.username),
     onSuccess: (result) => {
-      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = result.filename;
-      link.click();
+      downloadCsvAsExcel(result.csv, result.filename);
     },
     onError: (err: Error) => {
       setErrorMessage('Export thất bại: ' + err.message);

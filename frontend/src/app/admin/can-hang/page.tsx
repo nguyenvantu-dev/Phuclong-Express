@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { getOrders, updateOrder, massUpdate, getUsernames, getBatches, getProductTypes, getStatusCounts, calculateShipping } from '@/lib/api';
+import { downloadDataAsExcel } from '@/lib/excel-download';
 import { Order, QueryParams } from '@/types/order';
 import { OrderStatus, OrderStatusConfig } from '@/types/order-status';
 
@@ -248,13 +249,7 @@ export default function CanHangPage() {
       order.ghiChu || '',
     ]);
 
-    const csvContent = [headers, ...rows].map((row) => row.join('\t')).join('\n');
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'DanhSachCanHang.xls';
-    link.click();
+    downloadDataAsExcel([headers, ...rows], 'DanhSachCanHang.xlsx');
   };
 
   // Handle edit row

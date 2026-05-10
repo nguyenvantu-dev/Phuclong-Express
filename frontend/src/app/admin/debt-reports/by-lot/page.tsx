@@ -8,6 +8,7 @@ import {
   getDebtReportByLot,
   exportDebtReportByLot,
 } from '@/lib/api';
+import { downloadCsvAsExcel } from '@/lib/excel-download';
 
 /**
  * Debt Reports By Lot Page
@@ -117,11 +118,7 @@ export default function DebtReportsByLotPage() {
     },
     onSuccess: (result) => {
       // Create and download CSV file
-      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = result.filename;
-      link.click();
+      downloadCsvAsExcel(result.csv, result.filename);
     },
     onError: (err: Error) => {
       setErrorMessage('Export thất bại: ' + err.message);

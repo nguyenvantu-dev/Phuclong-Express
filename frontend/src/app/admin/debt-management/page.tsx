@@ -21,6 +21,7 @@ import {
 import { useCurrentUser } from '@/hooks/use-auth';
 import {
   FiUpload,
+  FiDownload,
   FiFilter,
   FiEdit2,
   FiTrash2,
@@ -34,6 +35,7 @@ import {
   FiChevronUp,
   FiLoader,
 } from 'react-icons/fi';
+import { downloadDataAsExcel } from '@/lib/excel-download';
 
 /**
  * Debt Management Page
@@ -357,6 +359,65 @@ export default function DebtManagementPage() {
     },
   });
 
+  const loaiPhatSinhMap: Record<number, string> = {
+    1: 'Phí mua hàng',
+    2: 'Phát sinh khác',
+    3: 'Phí ship từ nước ngoài về',
+    4: 'Phí ship trong nước',
+    5: 'Đặt cọc',
+    6: 'Phí ship về VN lô hàng',
+    7: 'Thuế hải quan lô hàng',
+    8: 'Cân Kg',
+  };
+
+  const getLoaiPhatSinhLabel = (item: DebtManagementItem): string =>
+    item.LoaiPhatSinhText || (item.LoaiPhatSinh != null ? loaiPhatSinhMap[item.LoaiPhatSinh] || '' : '');
+
+  const buildExcelRows = (items: DebtManagementItem[]) => {
+    const headers = [
+      'CongNo_ID', 'User Name', 'Lô hàng', 'Nội Dung', 'Ngày phát sinh',
+      'Phát sinh nợ', 'Phát sinh có', 'Ghi Chú', 'Loại phát sinh',
+      'Trạng thái', 'Người tạo', 'Người cập nhật cuối', 'Ngày cập nhật cuối',
+    ];
+    const rows = items.map((item) => [
+      item.CongNo_ID,
+      item.UserName || '',
+      item.TenLoHang || '',
+      item.NoiDung || '',
+      item.NgayGhiNo ? new Date(item.NgayGhiNo).toLocaleDateString('vi-VN') : '',
+      item.DR ?? 0,
+      item.CR ?? 0,
+      item.GhiChu || '',
+      getLoaiPhatSinhLabel(item),
+      item.Status ? 'Approved' : 'Pending',
+      item.NguoiTao || '',
+      item.NguoiCapNhatCuoi || '',
+      item.NgayCapNhatCuoi ? new Date(item.NgayCapNhatCuoi).toLocaleDateString('vi-VN') : '',
+    ]);
+    return [headers, ...rows];
+  };
+
+  const handleExportCurrentPage = () => {
+    if (!data?.data?.length) return;
+    downloadDataAsExcel(
+      buildExcelRows(data.data),
+      `QuanLyCongNo_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`,
+    );
+  };
+
+  const exportAllMutation = useMutation({
+    mutationFn: () => getDebtManagementList({ ...filters, page: 1, limit: 10000 }),
+    onSuccess: (result) => {
+      downloadDataAsExcel(
+        buildExcelRows(result.data),
+        `QuanLyCongNo_BoLoc_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`,
+      );
+    },
+    onError: (err: Error) => {
+      setErrorMessage('Export thất bại: ' + err.message);
+    },
+  });
+
   const handlePageChange = (newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage }));
   };
@@ -373,6 +434,24 @@ export default function DebtManagementPage() {
           <p className="text-sm text-slate-500 mt-1">Quản lý và theo dõi công nợ khách hàng</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportCurrentPage}
+            disabled={!data?.data?.length}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-colors duration-200 font-medium shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiDownload className="w-4 h-4" />
+            <span className="hidden sm:inline">Xuất ra excel 1 trang</span>
+          </button>
+          <button
+            onClick={() => exportAllMutation.mutate()}
+            disabled={exportAllMutation.isPending || !data?.data?.length}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-700 text-white rounded-xl hover:bg-cyan-400 transition-colors duration-200 font-medium shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiDownload className="w-4 h-4" />
+            <span className="hidden sm:inline">
+              {exportAllMutation.isPending ? 'Đang xuất...' : 'Xuất ra excel theo bộ lọc'}
+            </span>
+          </button>
           <Link
             href="/admin/debt-management/import"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#14264b] text-white rounded-xl hover:bg-cyan-400 transition-colors duration-200 font-medium shadow-sm cursor-pointer"
@@ -789,6 +868,9 @@ export default function DebtManagementPage() {
                     <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Nợ (DR)</th>
                     <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Có (CR)</th>
                     <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ghi chú</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Loại phát sinh</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Người cập nhật</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày cập nhật</th>
                     <th className="px-4 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -812,6 +894,15 @@ export default function DebtManagementPage() {
                       </td>
                       <td className="px-4 py-3.5 text-sm text-slate-500 max-w-[250px] truncate" title={item.GhiChu}>
                         {item.GhiChu || '-'}
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-slate-600">
+                        {getLoaiPhatSinhLabel(item) || '-'}
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-slate-500">
+                        {item.NguoiCapNhatCuoi || '-'}
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-slate-500 whitespace-nowrap">
+                        {item.NgayCapNhatCuoi ? new Date(item.NgayCapNhatCuoi).toLocaleDateString('vi-VN') : '-'}
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         {item.Status ? (

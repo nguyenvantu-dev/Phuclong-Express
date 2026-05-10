@@ -12,6 +12,7 @@ import {
   DebtReportItem,
   PeriodItem,
 } from '@/lib/api';
+import { downloadCsvAsExcel } from '@/lib/excel-download';
 
 /**
  * Debt Reports By Period Page
@@ -127,12 +128,7 @@ export default function DebtReportsByPeriodPage() {
         filters.kyId!,
       ),
     onSuccess: (result) => {
-      // Create and download CSV file
-      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = result.filename;
-      link.click();
+      downloadCsvAsExcel(result.csv, result.filename);
     },
     onError: (err: Error) => {
       setErrorMessage('Export thất bại: ' + err.message);
@@ -233,12 +229,7 @@ export default function DebtReportsByPeriodPage() {
       lines.push(values.join(','));
     }
 
-    const csv = '\uFEFF' + lines.join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `ChiTietCongNo_${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}.csv`;
-    link.click();
+    downloadCsvAsExcel(lines.join('\r\n'), `ChiTietCongNo_${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}.xlsx`);
   };
 
   // Handle export all with filter - matching btExportToExcelAllWithFilter_Click in C#

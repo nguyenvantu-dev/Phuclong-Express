@@ -7,6 +7,7 @@ import {
   exportCustomerDebtReport,
   CustomerDebtReportItem,
 } from '@/lib/api';
+import { downloadCsvAsExcel } from '@/lib/excel-download';
 
 /**
  * Customer Debt Report Page (BaoCao_CongNoKhachHang)
@@ -35,12 +36,7 @@ export default function CustomerDebtReportPage() {
   const exportMutation = useMutation({
     mutationFn: exportCustomerDebtReport,
     onSuccess: (result) => {
-      // Create and download CSV file
-      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = result.filename;
-      link.click();
+      downloadCsvAsExcel(result.csv, result.filename);
     },
     onError: (err: Error) => {
       setErrorMessage('Export thất bại: ' + err.message);

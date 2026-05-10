@@ -17,6 +17,7 @@ import {
   batchShippedOrders,
   getUsernames,
 } from '@/lib/api';
+import { downloadCsvAsExcel } from '@/lib/excel-download';
 import { QueryParams } from '@/types/order';
 
 /**
@@ -279,11 +280,7 @@ export default function DeletedOrdersPage() {
     }
 
     const csv = '﻿' + lines.join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `DonHangDaXoa_${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}.csv`;
-    link.click();
+    downloadCsvAsExcel(csv, `DonHangDaXoa_${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}.xlsx`);
   };
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 0;

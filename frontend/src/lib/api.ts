@@ -1040,6 +1040,10 @@ export interface DebtManagementItem {
   NguoiTao: string;
   LoHangID?: number;
   TenLoHang?: string;
+  LoaiPhatSinh?: number;
+  LoaiPhatSinhText?: string;
+  NguoiCapNhatCuoi?: string;
+  NgayCapNhatCuoi?: string;
 }
 
 export interface DebtManagementResponse {

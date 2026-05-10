@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-import {
-  getDebtReportByShipmentLot,
-  exportDebtReportByShipmentLot,
-} from '@/lib/api';
+import { getDebtReportByShipmentLot } from '@/lib/api';
+import { downloadDataAsExcel } from '@/lib/excel-download';
 
 /**
  * Debt Reports By Shipment Lot Page
@@ -96,24 +94,6 @@ export default function DebtReportsByShipmentLotPage() {
     enabled: !!filters.fromDate && !!filters.toDate,
   });
 
-  // Export mutation
-  const exportMutation = useMutation({
-    mutationFn: () => {
-      const { fromDate, toDate } = getAPIDates();
-      return exportDebtReportByShipmentLot(fromDate, toDate);
-    },
-    onSuccess: (result) => {
-      // Create and download CSV file
-      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = result.filename;
-      link.click();
-    },
-    onError: (err: Error) => {
-      setErrorMessage('Export thất bại: ' + err.message);
-    },
-  });
 
   // Handle search button click - matching tbTim_Click in C#
   const handleSearch = () => {
@@ -140,13 +120,26 @@ export default function DebtReportsByShipmentLotPage() {
     toDate: convertToISODate(filters.toDate),
   });
 
-  // Handle export - matching btExportToExcel_Click in C#
   const handleExport = () => {
     if (!data?.length) {
       setErrorMessage('Không có dữ liệu để xuất');
       return;
     }
-    exportMutation.mutate();
+    const rows: (string | number | null)[][] = [
+      ['UserName', 'HoTen', 'NgayVeVN', 'TienHang', 'TienShip', 'TongTien', 'PhoneNumber', 'DiaChi'],
+      ...data.map(row => [
+        row.UserName || '',
+        row.HoTen || '',
+        row.NgayVeVN ? formatDate(row.NgayVeVN) : '',
+        row.TienHang ?? 0,
+        row.TienShip ?? 0,
+        row.TongTien ?? 0,
+        row.PhoneNumber || '',
+        row.DiaChi || '',
+      ]),
+    ];
+    const filename = `CongNoTheoDotHang_${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}`;
+    downloadDataAsExcel(rows, filename);
   };
 
   // Format currency - matching {0:n0} in C#
@@ -224,10 +217,10 @@ export default function DebtReportsByShipmentLotPage() {
             </button>
             <button
               onClick={handleExport}
-              disabled={!data?.length || exportMutation.isPending}
+              disabled={!data?.length}
               className="rounded-lg bg-[#14264b] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e3a6e] disabled:opacity-50"
             >
-              {exportMutation.isPending ? 'Đang xuất...' : 'Export to excel'}
+              Export to excel
             </button>
           </div>
         </div>

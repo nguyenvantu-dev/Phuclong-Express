@@ -13,6 +13,7 @@ import {
   DebtReportItem,
   PeriodItem,
 } from '@/lib/api';
+import { downloadCsvAsExcel } from '@/lib/excel-download';
 
 /**
  * Debt Reports Page
@@ -117,12 +118,7 @@ export default function DebtReportsPage() {
         filters.toKyId ?? 0,
       ),
     onSuccess: (result) => {
-      // Create and download CSV file
-      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = result.filename;
-      link.click();
+      downloadCsvAsExcel(result.csv, result.filename);
     },
     onError: (err: Error) => {
       setErrorMessage('Export thất bại: ' + err.message);
@@ -230,10 +226,10 @@ export default function DebtReportsPage() {
 
     // Build CSV from current page data
     const lines: string[] = [];
-    lines.push(`Đầu kỳ,${data.summary.dauKy.toString().replace(/,/g, '')}`);
-    lines.push(`Tổng phát sinh,${data.summary.tongPhatSinh.toString().replace(/,/g, '')}`);
-    lines.push(`Đã thanh toán,${data.summary.tongThanhToan.toString().replace(/,/g, '')}`);
-    lines.push(`Cuối kỳ,${data.summary.cuoiKy.toString().replace(/,/g, '')}`);
+    lines.push(`Đầu kỳ,${formatCurrency(data.summary.dauKy)}`);
+    lines.push(`Tổng phát sinh,${formatCurrency(data.summary.tongPhatSinh)}`);
+    lines.push(`Đã thanh toán,${formatCurrency(data.summary.tongThanhToan)}`);
+    lines.push(`Cuối kỳ,${formatCurrency(data.summary.cuoiKy)}`);
     lines.push('');
 
     const headers = ['CongNo_ID', 'NoiDung', 'NgayGhiNo', 'DR', 'CR', 'LuyKe', 'GhiChu'];
@@ -244,20 +240,15 @@ export default function DebtReportsPage() {
         row.CongNo_ID || '',
         (row.NoiDung || '').replace(/,/g, ';').replace(/\n/g, ' ').replace(/\r/g, ' '),
         row.NgayGhiNo ? new Date(row.NgayGhiNo).toLocaleDateString('vi-VN') : '',
-        row.DR || '0',
-        row.CR || '0',
-        row.LuyKe || '0',
+        formatCurrency(row.DR as number),
+        formatCurrency(row.CR as number),
+        formatCurrency(row.LuyKe as number),
         (row.GhiChu || '').replace(/,/g, ';').replace(/\n/g, ' ').replace(/\r/g, ' '),
       ];
       lines.push(values.join(','));
     }
 
-    const csv = '\uFEFF' + lines.join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `ChiTietCongNo_${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}.csv`;
-    link.click();
+    downloadCsvAsExcel(lines.join('\r\n'), `ChiTietCongNo_${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}.xlsx`);
   };
 
   // Handle export all with filter

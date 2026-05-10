@@ -5,6 +5,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import { getProfitLossByLot, exportProfitLossByLot, ProfitLossByLotItem } from '@/lib/api';
+import { downloadCsvAsExcel } from '@/lib/excel-download';
 
 /**
  * Profit/Loss By Lot Report Page
@@ -90,11 +91,7 @@ export default function ProfitLossByLotPage() {
   const exportMutation = useMutation({
     mutationFn: () => exportProfitLossByLot(filters.fromDate, filters.toDate),
     onSuccess: (result) => {
-      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = result.filename;
-      link.click();
+      downloadCsvAsExcel(result.csv, result.filename);
     },
     onError: (err: Error) => {
       setErrorMessage('Export thất bại: ' + err.message);

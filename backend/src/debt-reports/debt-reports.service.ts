@@ -1250,7 +1250,28 @@ export class DebtReportsService {
       const firstItem = data.length > 0 ? data[0] as any : null;
       const total = firstItem?.TOTALROW ? Number(firstItem.TOTALROW) : 0;
 
-      return { data: data.slice(1), total, page, limit };
+      const loaiPhatSinhMap: Record<number, string> = {
+        1: 'Phí mua hàng',
+        2: 'Phát sinh khác',
+        3: 'Phí ship từ nước ngoài về',
+        4: 'Phí ship trong nước',
+        5: 'Đặt cọc',
+        6: 'Phí ship về VN lô hàng',
+        7: 'Thuế hải quan lô hàng',
+        8: 'Cân Kg',
+      };
+
+      // SP returns column "style" (int) — BLL.cs line 371: dtRow["style"]
+      const rows = (data.slice(1) as any[]).map((row) => {
+        const style = row.style ?? 2;
+        return {
+          ...row,
+          LoaiPhatSinh: style,
+          LoaiPhatSinhText: loaiPhatSinhMap[style] || '',
+        };
+      });
+
+      return { data: rows, total, page, limit };
     } catch (error) {
       console.error('Error in getDebtManagementList:', error.message);
       return { data: [], total: 0, page, limit };

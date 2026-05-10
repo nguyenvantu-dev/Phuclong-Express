@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FiPlus } from 'react-icons/fi';
 import { deleteOrderForUser, getOrdersQLDatHang, getUserStatusCounts } from '@/lib/api';
+import { downloadCsvAsExcel } from '@/lib/excel-download';
 import { notificationsApiClient } from '@/lib/notifications-api-client';
 import { Order } from '@/types/order';
 import { useAuthStore } from '@/hooks/use-auth';
@@ -124,11 +125,7 @@ export default function DanhSachDonHangPage() {
       headers.join(','),
       ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')),
     ].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `DanhSachDatHang_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+    downloadCsvAsExcel(csv, `DanhSachDatHang_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const formatNumber = (num: number | null | undefined) => {
