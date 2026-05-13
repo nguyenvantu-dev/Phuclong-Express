@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';

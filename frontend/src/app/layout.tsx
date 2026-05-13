@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
@@ -12,6 +14,9 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "Phuc Long Express",
   description: "Admin panel for Phuc Long Express",
+  icons: {
+    icon: "/LOGO_ONLY_PHUC_LONG_EXPRESS_WHITE.png",
+  },
 };
 
 export default function RootLayout({

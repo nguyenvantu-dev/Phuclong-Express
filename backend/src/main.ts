@@ -7,7 +7,7 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://phuclong-express.vercel.app'],
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://phuclong-express.vercel.app', 'https://phuclongexpress.com'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

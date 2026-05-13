@@ -19,7 +19,7 @@
     "date-fns": "^4.1.0",
     "exceljs": "^4.4.0",
     "flatpickr": "^4.6.13",
-    "next": "16.1.7",
+    "next": "15.3.9",
     "next-auth": "^5.0.0-beta.30",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -38,7 +38,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.7",
+    "eslint-config-next": "15.3.9",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -1,31 +1,27 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { AuthProvider } from '@/hooks/use-auth-context';
 import { useLoginModalStore } from '@/lib/login-modal-store';
 import LoginModal from '@/app/components/public-home/login-modal';
 import '@/lib/axios-setup';
 
-/**
- * Detects ?auth=1 injected by middleware and opens the login modal.
- * Wrapped in Suspense because useSearchParams suspends in App Router.
- */
+// Detects ?auth=1 injected by middleware and opens the login modal.
+// Uses window.location/history directly to avoid depending on App Router context,
+// which can be duplicated by Windows IIS path casing (C:\Inetpub vs C:\inetpub).
 function AuthParamWatcher() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const openModal = useLoginModalStore((s) => s.openModal);
 
   useEffect(() => {
-    if (searchParams.get('auth') === '1') {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auth') === '1') {
       openModal();
-      const clean = new URL(window.location.href);
-      clean.searchParams.delete('auth');
-      router.replace(clean.pathname + (clean.search || ''));
+      params.delete('auth');
+      const cleaned = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+      window.history.replaceState(null, '', cleaned);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [openModal]);
 
   return null;
 }
@@ -33,14 +29,13 @@ function AuthParamWatcher() {
 /** Global login modal driven by useLoginModalStore. */
 function GlobalLoginModal() {
   const { isOpen, redirectTo, closeModal } = useLoginModalStore();
-  const router = useRouter();
 
   const handleSuccess = () => {
     closeModal();
     if (redirectTo) {
-      router.push(redirectTo);
+      window.location.href = redirectTo;
     } else {
-      router.refresh();
+      window.location.reload();
     }
   };
 
@@ -60,9 +55,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <Suspense fallback={null}>
-          <AuthParamWatcher />
-        </Suspense>
+        <AuthParamWatcher />
         <GlobalLoginModal />
         {children}
       </QueryClientProvider>

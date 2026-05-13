@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { notificationsApiClient, Notification } from '@/lib/notifications-api-client';
+import { getAccessToken } from '@/hooks/use-auth';
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -17,6 +18,7 @@ export function useNotifications(type?: string, enabled = true) {
   const intervalRef                       = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchUnreadCount = useCallback(async () => {
+    if (!getAccessToken()) return;
     try {
       const res = await notificationsApiClient.getUnreadCount(type);
       setUnreadCount(res.data.count);
