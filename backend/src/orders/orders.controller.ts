@@ -22,7 +22,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { QueryOrderDto } from './dto/query-order.dto';
 import { QueryOrderListDto } from './dto/query-order-list.dto';
-import { MassUpdateDto, MassDeleteDto, MassCompleteDto, MassReceivedDto, MassShippedDto } from './dto/mass-update.dto';
+import { MassUpdateDto, MassDeleteDto, MassCompleteDto, MassReceivedDto, MassShippedDto, MassCancelDto } from './dto/mass-update.dto';
 import { UpdateOrderNoteDto } from './dto/update-order-note.dto';
 import { BatchUpdateNoteDto } from './dto/batch-update-note.dto';
 import { UpdateReturnDateDto } from './dto/update-return-date.dto';
@@ -215,11 +215,24 @@ export class OrdersController {
    * Create quick order (DatHangM - simple order)
    * Converted from: DatHangM.aspx - ThemDatHangSimple
    */
+  /**
+   * Inject actor từ JWT để fallback cho `usernameSave` & `nguoiTao` khi FE quên gửi.
+   * SP_Them_DonHang_Simple dùng `@usernamesave` làm NguoiTao khi insert CONGNO (note.txt:5565),
+   * nếu trống sẽ tạo CONGNO `NguoiTao=''`. Legacy luôn pass `base.User.Identity.GetUserName()`.
+   */
   @Post('quick')
   @HttpCode(HttpStatus.OK)
   async createQuickOrder(
     @Body() createQuickOrderDto: CreateQuickOrderDto,
+    @Request() req: any,
   ): Promise<{ success: boolean; error?: string }> {
+    const actorUsername = req.user?.username || '';
+    if (!createQuickOrderDto.usernameSave) {
+      createQuickOrderDto.usernameSave = actorUsername;
+    }
+    if (!createQuickOrderDto.nguoiTao) {
+      createQuickOrderDto.nguoiTao = actorUsername;
+    }
     return this.ordersService.createQuickOrder(createQuickOrderDto);
   }
 
@@ -293,6 +306,17 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   async massDelete(@Body() massDeleteDto: MassDeleteDto, @Request() req: any): Promise<{ deleted: number }> {
     return this.ordersService.massDelete(massDeleteDto, req.user?.username || 'system');
+  }
+
+  /**
+   * POST /orders/mass-cancel
+   * Mass cancel orders với ghi chú lý do hủy (legacy parity).
+   * Calls SP_CapNhat_MassCancel(@id, @ghichu, @NguoiTao) — KHÔNG dùng SP_ShareOrders.
+   */
+  @Post('mass-cancel')
+  @HttpCode(HttpStatus.OK)
+  async massCancel(@Body() massCancelDto: MassCancelDto, @Request() req: any): Promise<{ cancelled: number }> {
+    return this.ordersService.massCancel(massCancelDto, req.user?.username || 'system');
   }
 
   /**
@@ -408,14 +432,16 @@ export class OrdersController {
 
   /**
    * PUT /orders/:id
-   * Update order
+   * Update order — inject actor từ JWT (req.user) để truyền `@NguoiTao` xuống SP,
+   * tránh fallback 'system' khi FE quên gửi `usernameSave` trong body.
    */
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateOrderDto: UpdateOrderDto,
+    @Request() req: any,
   ): Promise<Order> {
-    return this.ordersService.update(id, updateOrderDto);
+    return this.ordersService.update(id, updateOrderDto, req.user?.username || '');
   }
 
   /**

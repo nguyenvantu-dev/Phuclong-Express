@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -32,6 +32,8 @@ const STYLES = {
  */
 
 // Zod schema with field names matching old ASP.NET code
+// Number fields must be registered with { valueAsNumber: true } so React Hook Form
+// converts <input type="number"> string values to numbers before zod validates.
 const orderEditFormSchema = z.object({
   // Order info (snake_case like old code)
   ordernumber: z.string().min(1, 'Số đơn hàng là bắt buộc'),
@@ -43,8 +45,8 @@ const orderEditFormSchema = z.object({
   linkhinh: z.string().optional(),
   corlor: z.string().optional(),
   size: z.string().optional(),
-  soluong: z.number().min(1, 'Số lượng phải lớn hơn 0'),
-  dongiaweb: z.number().min(0, 'Đơn giá phải là số'),
+  soluong: z.number({ error: 'Số lượng phải là số' }).min(1, 'Số lượng phải lớn hơn 0'),
+  dongiaweb: z.number({ error: 'Đơn giá phải là số' }).min(0, 'Đơn giá phải là số'),
 
   // Pricing (snake_case like old code)
   saleoff: z.number().min(0).default(0),
@@ -71,28 +73,10 @@ const orderEditFormSchema = z.object({
   ngaymuahang: z.string().optional(),
   ngayveVN: z.string().optional(),
 
-  // References (like old code)
-  LoaiHangID: z.union([z.number(), z.string()]).optional(),
-  QuocGiaID: z.union([z.number(), z.string()]).optional(),
-}).transform((data) => ({
-  ...data,
-  soluong: Number(data.soluong),
-  dongiaweb: Number(data.dongiaweb),
-  saleoff: Number(data.saleoff),
-  phuthu: Number(data.phuthu),
-  shipUSA: Number(data.shipUSA),
-  tax: Number(data.tax),
-  cong: Number(data.cong),
-  tygia: Number(data.tygia),
-  giasauoffUSD: Number(data.giasauoffUSD),
-  giasauoffVND: Number(data.giasauoffVND),
-  tiencongUSD: Number(data.tiencongUSD),
-  tiencongVND: Number(data.tiencongVND),
-  tongtienUSD: Number(data.tongtienUSD),
-  tongtienVND: Number(data.tongtienVND),
-  LoaiHangID: data.LoaiHangID ? (typeof data.LoaiHangID === 'string' ? (data.LoaiHangID ? Number(data.LoaiHangID) : undefined) : data.LoaiHangID) : undefined,
-  QuocGiaID: data.QuocGiaID ? (typeof data.QuocGiaID === 'string' ? (data.QuocGiaID ? Number(data.QuocGiaID) : undefined) : data.QuocGiaID) : undefined,
-}));
+  // References (number from <select> setValueAs)
+  LoaiHangID: z.number().optional(),
+  QuocGiaID: z.number().optional(),
+});
 
 type OrderEditFormData = z.input<typeof orderEditFormSchema>;
 
@@ -147,6 +131,9 @@ function EditOrderDetailPageContent() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [congEnabled, setCongEnabled] = useState<boolean>(true);
+  // Mirror C# giaTienCong.TienCong1Mon — used as fixed fee per item when !TinhTheoPhanTram
+  const [tienCong1Mon, setTienCong1Mon] = useState<number>(0);
+  const isInitialLoad = useRef(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Get order ID from query param
@@ -215,7 +202,9 @@ function EditOrderDetailPageContent() {
   const watchedUsername = watch('username');
   const watchedLoaiTien = watch('loaitien');
 
-  // Fetch GiaTienCong when username or loaitien changes
+  // Mirror old C# EditOrderDetail + EditOrderDetail.aspx changetygia/changeloaihang:
+  // - Initial load: only enable/disable cong field (preserve existing order cong value)
+  // - User changes loaiTien/donGiaWeb: auto-set cong to DB default (TienCong1Mon) like LayPhanTramCongTheoLoaiTien
   useEffect(() => {
     const fetchGiaTienCong = async () => {
       if (watchedUsername && watchedLoaiTien && watchedFields[0]) {
@@ -226,10 +215,11 @@ function EditOrderDetailPageContent() {
             username: watchedUsername,
           });
           setCongEnabled(result.tinhTheoPhanTram);
-          if (result.tinhTheoPhanTram) {
+          setTienCong1Mon(Number(result.tienCong1Mon) || 0);
+          if (isInitialLoad.current) {
+            isInitialLoad.current = false;
+          } else if (result.tinhTheoPhanTram) {
             setValue('cong', result.tienCong1Mon);
-          } else {
-            setValue('cong', 0);
           }
         } catch (error) {
           console.error('Error fetching GiaTienCong:', error);
@@ -239,26 +229,57 @@ function EditOrderDetailPageContent() {
     fetchGiaTienCong();
   }, [watchedUsername, watchedLoaiTien, watchedFields[0], setValue]);
 
-  // Calculate prices when fields change
+  // Calculate prices when fields change.
+  // Mirror C# OrderServices.TinhTienOrder (OrderServices.cs:77-108) exactly:
+  //   num = (1 - saleoff/100) * dongia * soLuong
+  //   if TinhTheoPhanTram: tienCongUSD = num * cong/100; tienCongVND = tienCongUSD * tygia
+  //   else:                tienCongUSD = 0;             tienCongVND = TienCong1Mon * soLuong
+  //   num += num * tax/100   (tax LÀ PHẦN TRĂM)
+  //   num += ship * soLuong
+  //   num += phuThu * soLuong
+  //   tongTienUSD = num + tienCongUSD
+  //   tongTienVND = RoundUp(num * tygia + tienCongVND, 0)
   useEffect(() => {
     const [dongiaweb, saleoff, phuthu, shipUSA, tax, cong, tygia, soluong] = watchedFields;
 
-    if (dongiaweb && !isNaN(dongiaweb)) {
-      const giasauoffUSD = dongiaweb * (1 - (saleoff || 0) / 100);
-      const tongtienUSD = (giasauoffUSD + (phuthu || 0) + (shipUSA || 0) + (tax || 0)) * (soluong || 1);
-      const tiencongUSD = cong ? (cong / 100) * giasauoffUSD * (soluong || 1) : 0;
+    if (!dongiaweb || isNaN(dongiaweb)) return;
 
-      setValue('giasauoffUSD', Math.round(giasauoffUSD * 100) / 100);
-      setValue('tongtienUSD', Math.round(tongtienUSD * 100) / 100);
-      setValue('tiencongUSD', Math.round(tiencongUSD * 100) / 100);
+    const sl = soluong || 1;
+    const tygiaNum = Number(tygia) || 1;
 
-      // VND calculation
-      const tygiaNum = Number(tygia) || 1;
-      setValue('giasauoffVND', Math.round(giasauoffUSD * tygiaNum));
-      setValue('tongtienVND', Math.round(tongtienUSD * tygiaNum));
-      setValue('tiencongVND', Math.round(tiencongUSD * tygiaNum));
+    // num = giaSauOff × soLuong (tổng)
+    let num = (1 - (saleoff || 0) / 100) * dongiaweb * sl;
+
+    // tienCong — branch theo congEnabled (== TinhTheoPhanTram trong C#)
+    let tienCongUSD: number;
+    let tienCongVND: number;
+    if (congEnabled) {
+      tienCongUSD = num * (cong || 0) / 100;
+      tienCongVND = tienCongUSD * tygiaNum;
+    } else {
+      tienCongUSD = 0;
+      tienCongVND = tienCong1Mon * sl;
     }
-  }, [watchedFields, setValue]);
+
+    // tax là %, ship/phuThu là số tuyệt đối/món
+    num += num * 0.01 * (tax || 0);
+    num += (shipUSA || 0) * sl;
+    num += (phuthu || 0) * sl;
+
+    const tongTienUSD = num + tienCongUSD;
+    // RoundUp đến số nguyên (EnhancedMath.RoundUp(..., 0))
+    const tongTienVND = Math.ceil(num * tygiaNum + tienCongVND);
+
+    // giaSauOff per-unit (giữ nguyên ý nghĩa hiển thị field)
+    const giaSauOffPerUnit = dongiaweb * (1 - (saleoff || 0) / 100);
+
+    setValue('giasauoffUSD', Math.round(giaSauOffPerUnit * 100) / 100);
+    setValue('giasauoffVND', Math.round(giaSauOffPerUnit * tygiaNum));
+    setValue('tiencongUSD', Math.round(tienCongUSD * 100) / 100);
+    setValue('tiencongVND', Math.round(tienCongVND));
+    setValue('tongtienUSD', Math.round(tongTienUSD * 100) / 100);
+    setValue('tongtienVND', tongTienVND);
+  }, [watchedFields, congEnabled, tienCong1Mon, setValue]);
 
   // Scroll to top when error occurs
   useEffect(() => {
@@ -270,29 +291,36 @@ function EditOrderDetailPageContent() {
   // Populate form when order loads
   useEffect(() => {
     if (order) {
-      // Map API response (various formats) to form fields (snake_case like old code)
+      // Map API response (various formats) to form fields (snake_case like old code).
+      // SQL Server DECIMAL columns come back as strings via sequelize — coerce to number
+      // so zod's z.number() validation passes.
       const o = order as any;
+      const toNum = (v: any, fallback = 0): number => {
+        if (v === null || v === undefined || v === '') return fallback;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : fallback;
+      };
       setValue('ordernumber', o.ordernumber || o.OrderNumber || o.ordernumber || '');
       setValue('username', o.username || o.UserName || '');
       setValue('linkweb', o.linkweb || o.LinkWeb || o.linkweb || '');
       setValue('linkhinh', o.linkhinh || o.LinkHinh || o.linkhinh || '');
       setValue('corlor', o.corlor || o.Color || o.corlor || '');
       setValue('size', o.size || o.Size || '');
-      setValue('soluong', o.soluong || o.SoLuong || o.soluong || 1);
-      setValue('dongiaweb', o.dongiaweb || o.DonGiaWeb || o.dongiaweb || 0);
-      setValue('saleoff', o.saleoff || o.SaleOff || o.saleoff || 0);
-      setValue('phuthu', o.phuthu || o.PhuThu || o.phuthu || 0);
-      setValue('shipUSA', o.shipUSA || o.ShipUSA || o.shipUSA || 0);
-      setValue('tax', o.tax || o.Tax || 0);
-      setValue('cong', o.cong || o.Cong || 0);
+      setValue('soluong', toNum(o.soluong ?? o.SoLuong, 1));
+      setValue('dongiaweb', toNum(o.dongiaweb ?? o.DonGiaWeb));
+      setValue('saleoff', toNum(o.saleoff ?? o.SaleOff));
+      setValue('phuthu', toNum(o.phuthu ?? o.PhuThu));
+      setValue('shipUSA', toNum(o.shipUSA ?? o.ShipUSA));
+      setValue('tax', toNum(o.tax ?? o.Tax));
+      setValue('cong', toNum(o.cong ?? o.Cong));
       setValue('loaitien', o.loaitien || o.LoaiTien || o.loaitien || 'USD');
-      setValue('tygia', o.tygia || o.TyGia || o.tygia || 1);
-      setValue('giasauoffUSD', o.giasauoffUSD || o.GiaSauOffUSD || o.giasauoffUSD || 0);
-      setValue('giasauoffVND', o.giasauoffVND || o.GiaSauOffVND || o.giasauoffVND || 0);
-      setValue('tiencongUSD', o.tiencongUSD || o.TienCongUSD || o.tiencongUSD || 0);
-      setValue('tiencongVND', o.tiencongVND || o.TienCongVND || o.tiencongVND || 0);
-      setValue('tongtienUSD', o.tongtienUSD || o.TongTienUSD || o.tongtienUSD || 0);
-      setValue('tongtienVND', o.tongtienVND || o.TongTienVND || o.tongtienVND || 0);
+      setValue('tygia', toNum(o.tygia ?? o.TyGia, 1));
+      setValue('giasauoffUSD', toNum(o.giasauoffUSD ?? o.GiaSauOffUSD));
+      setValue('giasauoffVND', toNum(o.giasauoffVND ?? o.GiaSauOffVND));
+      setValue('tiencongUSD', toNum(o.tiencongUSD ?? o.TienCongUSD));
+      setValue('tiencongVND', toNum(o.tiencongVND ?? o.TienCongVND));
+      setValue('tongtienUSD', toNum(o.tongtienUSD ?? o.TongTienUSD));
+      setValue('tongtienVND', toNum(o.tongtienVND ?? o.TongTienVND));
       setValue('ghichu', o.ghichu || o.GhiChu || o.ghichu || '');
       setValue('trangthaiOrder', o.trangthaiOrder || o.TrangThaiOrder || o.trangthaiOrder || '');
       setValue('adminNote', o.adminNote || o.AdminNote || '');
@@ -308,8 +336,10 @@ function EditOrderDetailPageContent() {
       };
       setValue('ngaymuahang', parseDate(o.ngaymuahang || o.NgayMuaHang || o.ngaymuahang));
       setValue('ngayveVN', parseDate(o.ngayveVN || o.NgayVeVN || o.ngayveVN));
-      setValue('LoaiHangID', o.LoaiHangID || o.loaiHangId || undefined);
-      setValue('QuocGiaID', o.QuocGiaID || o.quocGiaId || undefined);
+      const loaiHang = o.LoaiHangID ?? o.loaiHangId;
+      const quocGia = o.QuocGiaID ?? o.quocGiaId;
+      setValue('LoaiHangID', loaiHang ? toNum(loaiHang, 0) || undefined : undefined);
+      setValue('QuocGiaID', quocGia ? toNum(quocGia, 0) || undefined : undefined);
       // Set image preview
       if (o.linkhinh || o.LinkHinh || o.linkhinh) {
         setImagePreview(o.linkhinh || o.LinkHinh || o.linkhinh);
@@ -403,6 +433,14 @@ function EditOrderDetailPageContent() {
     }
   };
 
+  // Surface zod validation failures instead of silently doing nothing
+  const onInvalid = (formErrors: typeof errors) => {
+    const messages = Object.entries(formErrors)
+      .map(([field, err]: [string, any]) => `${field}: ${err?.message || 'không hợp lệ'}`)
+      .join('; ');
+    setErrorMessage(`Dữ liệu không hợp lệ — ${messages}`);
+  };
+
   // Handle back
   const handleBack = () => {
     router.push(returnUrl);
@@ -474,7 +512,7 @@ function EditOrderDetailPageContent() {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
         {/* Order Info Section */}
         <div className={STYLES.card}>
           <h2 className={STYLES.sectionTitle}>Thông tin đơn hàng</h2>
@@ -656,7 +694,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Số lượng</label>
               <input
-                {...register('soluong')}
+                {...register('soluong', { valueAsNumber: true })}
                 type="number"
                 min="1"
                 className={STYLES.input}
@@ -670,7 +708,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Đơn giá web</label>
               <input
-                {...register('dongiaweb')}
+                {...register('dongiaweb', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 min="0"
@@ -691,7 +729,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Sale off (%)</label>
               <input
-                {...register('saleoff')}
+                {...register('saleoff', { valueAsNumber: true })}
                 type="number"
                 min="0"
                 max="100"
@@ -703,7 +741,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Phụ thu</label>
               <input
-                {...register('phuthu')}
+                {...register('phuthu', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 min="0"
@@ -715,7 +753,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Ship USA</label>
               <input
-                {...register('shipUSA')}
+                {...register('shipUSA', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 min="0"
@@ -727,7 +765,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Thuế</label>
               <input
-                {...register('tax')}
+                {...register('tax', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 min="0"
@@ -739,7 +777,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>% Công</label>
               <input
-                {...register('cong')}
+                {...register('cong', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 min="0"
@@ -767,7 +805,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Tỷ giá</label>
               <input
-                {...register('tygia')}
+                {...register('tygia', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 min="0"
@@ -782,7 +820,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Giá sau off (USD)</label>
               <input
-                {...register('giasauoffUSD')}
+                {...register('giasauoffUSD', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 readOnly
@@ -793,7 +831,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Giá sau off (VND)</label>
               <input
-                {...register('giasauoffVND')}
+                {...register('giasauoffVND', { valueAsNumber: true })}
                 type="number"
                 readOnly
                 className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"
@@ -803,7 +841,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Tiền công (USD)</label>
               <input
-                {...register('tiencongUSD')}
+                {...register('tiencongUSD', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 readOnly
@@ -814,7 +852,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Tiền công (VND)</label>
               <input
-                {...register('tiencongVND')}
+                {...register('tiencongVND', { valueAsNumber: true })}
                 type="number"
                 readOnly
                 className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"
@@ -824,7 +862,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Tổng tiền (USD)</label>
               <input
-                {...register('tongtienUSD')}
+                {...register('tongtienUSD', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
                 readOnly
@@ -835,7 +873,7 @@ function EditOrderDetailPageContent() {
             <div>
               <label className={STYLES.label}>Tổng tiền (VND)</label>
               <input
-                {...register('tongtienVND')}
+                {...register('tongtienVND', { valueAsNumber: true })}
                 type="number"
                 readOnly
                 className="w-full px-3 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-gray-600"

@@ -6,7 +6,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { QueryOrderDto } from './dto/query-order.dto';
 import { CreateQuickOrderDto, CreateQuickOrdersDto } from './dto/create-quick-order.dto';
-import { MassUpdateDto, MassDeleteDto, MassCompleteDto, MassReceivedDto, MassShippedDto } from './dto/mass-update.dto';
+import { MassUpdateDto, MassDeleteDto, MassCompleteDto, MassReceivedDto, MassShippedDto, MassCancelDto } from './dto/mass-update.dto';
 import { UpdateOrderNoteDto } from './dto/update-order-note.dto';
 import { UpdateReturnDateDto } from './dto/update-return-date.dto';
 import { ImportOrdersDto } from './dto/import-orders.dto';
@@ -795,7 +795,7 @@ export class OrdersService {
    * - tongTienUsd = giaSauOffUsd * (1 + tax/100) + (shipUsa + phuThu) * soLuong
    * - tongTienVnd = tongTienUsd * tyGia + tienCongVnd
    */
-  async update(id: number, updateOrderDto: UpdateOrderDto): Promise<Order> {
+  async update(id: number, updateOrderDto: UpdateOrderDto, actorUsername = ''): Promise<Order> {
     const order = await this.findOne(id);
 
     // Build old data for logging
@@ -821,6 +821,10 @@ export class OrdersService {
       quocGiaId,
       usernameSave = '',
     } = updateOrderDto as any;
+
+    // Ưu tiên usernameSave từ body (FE chủ động set, e.g. legacy parity);
+    // fallback sang actor đăng nhập từ JWT để SP nhận đúng `@NguoiTao` thay vì 'system'.
+    const effectiveUsernameSave = usernameSave || actorUsername || '';
 
     await this.sequelize.query(
       `EXEC dbo.SP_CapNhatDonHangSimpleCoTamTinh
@@ -863,7 +867,7 @@ export class OrdersService {
           tax,
           phuThu,
           quocGiaId: quocGiaId || null,
-          usernameSave: (usernameSave || '').toString().replace(/'/g, "''"),
+          usernameSave: effectiveUsernameSave.toString().replace(/'/g, "''"),
         },
         type: QueryTypes.RAW,
       },
@@ -872,7 +876,7 @@ export class OrdersService {
     // Log the update action
     const newDataStr = `Website: ${websiteName}, Username: ${username}, Link: ${linkWeb}, SL: ${soLuong}, Gia: ${donGiaWeb}`;
     await this.systemLogsService.create({
-      nguoiTao: usernameSave || 'system',
+      nguoiTao: effectiveUsernameSave || 'system',
       nguon: 'QLDatHang_LietKe:CapNhatDonHangSimpleCoTamTinh',
       hanhDong: 'Chinh sua',
       doiTuong: id.toString(),
@@ -957,6 +961,67 @@ export class OrdersService {
     );
 
     return { deleted: ids.length };
+  }
+
+  /**
+   * Mass cancel orders với ghi chú lý do hủy (legacy parity với QLDatHang_LietKe).
+   * Converted from: QLDatHang_LietKe.cs -> QLDatHang_MassCancel.aspx -> DBConnect.MassCancel
+   * Calls: SP_CapNhat_MassCancel(@id, @ghichu, @NguoiTao)
+   *
+   * Khác massDelete (SP_CapNhat_MassCancel1) ở chỗ append `ghichu` vào field `ghichu` của DON_HANG.
+   */
+  async massCancel(dto: MassCancelDto, nguoiTao = 'system'): Promise<{ cancelled: number }> {
+    const { ids, ghiChu = '' } = dto;
+
+    // Check kỳ đóng (giống legacy EditOrder.cs:406 KiemTraDuocCapNhatCongNo)
+    const ngayGhiNo = new Date().toISOString().split('T')[0];
+    const [checkResult]: any[] = await this.sequelize.query(
+      `DECLARE @ret int; EXEC @ret = dbo.SP_KiemTra_DuocCapNhatCongNo @NgayGhiNo = :ngayGhiNo, @UserName = :username; SELECT @ret AS DuocCapNhat`,
+      {
+        replacements: { ngayGhiNo, username: nguoiTao || '' },
+        type: QueryTypes.RAW,
+      },
+    );
+    const checkValue = (Array.isArray(checkResult) && checkResult.length > 0 ? (checkResult[0] as any).DuocCapNhat : -1) ?? -1;
+    if (checkValue !== 0) {
+      throw new BadRequestException('Kỳ đã đóng không thể thực hiện cancel');
+    }
+
+    try {
+      await this.sequelize.query(
+        `EXEC dbo.SP_CapNhat_MassCancel @id = :ids, @ghichu = :ghichu, @NguoiTao = :username`,
+        {
+          replacements: { ids: ids.join(','), ghichu: ghiChu, username: nguoiTao || '' },
+          type: QueryTypes.RAW,
+        },
+      );
+    } catch (error) {
+      console.error('MassCancel error:', error);
+      throw new BadRequestException('Failed to mass cancel orders');
+    }
+
+    // Log legacy parity: HanhDong='Xoa', DoiTuong=ids csv, NoiDung="ID: " + ids csv
+    // (giống QLDatHang_MassCancel.cs:37 - ThemSystemLogs với HanhDong.Xoa)
+    const idsCsv = ids.join(',');
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'QLDatHang_MassCancel:MassCancel',
+      hanhDong: 'Xoa',
+      doiTuong: idsCsv,
+      noiDung: `ID: ${idsCsv}`,
+    });
+
+    // V2 enhancement (legacy KHÔNG có): notify chủ đơn về việc hủy
+    const cancelledOrders = await this.getOrdersInfo(ids);
+    this.notifyOrderUsers(
+      cancelledOrders,
+      'Đơn hàng đã bị hủy',
+      (o) => `Đơn hàng #${o.orderNumber} của bạn đã bị hủy bởi admin${ghiChu ? `: ${ghiChu}` : ''}.`,
+      cancelledOrders.map((o) => o.id),
+      nguoiTao,
+    );
+
+    return { cancelled: ids.length };
   }
 
   /**
@@ -1814,8 +1879,6 @@ export class OrdersService {
       phuthu?: number;
       phuThu?: number;
       shipUSA?: number;
-      shipUsa?: number;
-      shipusa?: number;
       tax?: number;
       cong?: number;
       loaitien?: string;
@@ -1864,7 +1927,8 @@ export class OrdersService {
       dongiaweb: donGiaWeb,
       saleoff: saleOff,
       phuthu: phuThu,
-      shipusa: shipUsa,
+      // Frontend gửi `shipUSA` (chữ hoa USA) — destructure phải khớp key
+      shipUSA: shipUsa,
       tax,
       cong,
       loaitien: loaiTien,
@@ -2141,15 +2205,12 @@ export class OrdersService {
       );
       const khachBuon = (users as any[])?.[0]?.KhachBuon || false;
 
-      // Get service fee from GiaTienCong table
-      // TinhTheoPhanTram = 1 means percentage-based
+      // Call SP_Lay_GiaTienCong exactly as old C# code: DBConnect.LayGiaTienCong(LoaiTien, SoTien1Mon, KhachBuon)
       try {
         const [giaTienCong] = await this.sequelize.query(
-          `SELECT TOP 1 TienCong1Mon, TinhTheoPhanTram FROM dbo.GiaTienCong
-           WHERE LoaiTien = :loaiTien
-           ORDER BY ID DESC`,
+          `EXEC SP_Lay_GiaTienCong @LoaiTien = :loaiTien, @SoTien1Mon = :donGiaWeb, @KhachBuon = :khachBuon`,
           {
-            replacements: { loaiTien },
+            replacements: { loaiTien, donGiaWeb, khachBuon: khachBuon ? 1 : 0 },
             type: QueryTypes.RAW,
           },
         );

@@ -157,3 +157,22 @@ export class MassShippedDto {
   @IsOptional()
   nguon?: string;
 }
+
+/**
+ * Mass Cancel DTO
+ *
+ * Data Transfer Object for mass cancelling orders with a reason note.
+ * Converted from QLDatHang_LietKe.cs -> QLDatHang_MassCancel.aspx -> DBConnect.MassCancel
+ * Calls: SP_CapNhat_MassCancel(@id, @ghichu, @NguoiTao)
+ *
+ * Khác MassDelete (SP_CapNhat_MassCancel1) ở chỗ append `ghichu` vào field `ghichu` của DON_HANG.
+ */
+export class MassCancelDto {
+  @IsArray()
+  @IsNumber({}, { each: true })
+  ids: number[];
+
+  @IsString()
+  @IsOptional()
+  ghiChu?: string;
+}

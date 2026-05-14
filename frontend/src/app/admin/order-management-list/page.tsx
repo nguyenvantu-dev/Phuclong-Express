@@ -11,7 +11,6 @@ import { getOrdersQLDatHang, getUsernames, getCountries, massDelete, massUpdate,
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/hooks/use-auth';
 import { Order, QueryParams } from '@/types/order';
-import { OrderStatus } from '@/types/order-status';
 
 /**
  * MassUpdate Modal Component
@@ -713,13 +712,12 @@ export default function QLDatHangLietKePage() {
     });
   };
 
-  // Handle mass cancel
+  // Handle mass cancel — legacy parity: prompt ghi chú lý do hủy, gọi SP_CapNhat_MassCancel (qua /orders/mass-cancel)
+  // Tương đương QLDatHang_LietKe.aspx → QLDatHang_MassCancel.aspx → DBConnect.MassCancel
   const handleMassCancel = useMutation({
-    mutationFn: async () => {
-      const { massUpdate } = await import('@/lib/api');
-      return massUpdate(
-        selectedIds.map((id) => ({ id, trangThaiOrder: OrderStatus.CANCELLED })),
-      );
+    mutationFn: async (ghiChu: string) => {
+      const { massCancel } = await import('@/lib/api');
+      return massCancel(selectedIds, ghiChu);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -1024,9 +1022,10 @@ export default function QLDatHangLietKePage() {
           )}
           <button
             onClick={() => {
-              if (confirm(`Hủy ${selectedIds.length} đơn hàng đã chọn?`)) {
-                handleMassCancel.mutate();
-              }
+              if (!confirm(`Hủy ${selectedIds.length} đơn hàng đã chọn?`)) return;
+              // Legacy parity: nhập lý do hủy (giống tbGhiChu ở QLDatHang_MassCancel.aspx)
+              const ghiChu = prompt('Nhập lý do hủy (sẽ được append vào ghi chú đơn hàng):') ?? '';
+              handleMassCancel.mutate(ghiChu);
             }}
             disabled={selectedIds.length === 0 || handleMassCancel.isPending}
             className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-40"
@@ -1143,7 +1142,7 @@ export default function QLDatHangLietKePage() {
                       <td className="whitespace-nowrap px-1 py-1 text-[11px] font-medium text-gray-900">
                         {order.id}
                       </td>
-                      <td className="min-w-[120px] px-1 py-1 text-[11px] text-gray-900">
+                      <td className="min-w-[70px] max-w-[90px] truncate px-1 py-1 text-[11px] text-gray-900">
                         {editingOrderId === order.id ? (
                           <input
                             type="text"
@@ -1219,9 +1218,9 @@ export default function QLDatHangLietKePage() {
                             target={linkDisabled ? '_self' : '_blank'}
                             rel="noopener noreferrer"
                             title={order.linkWeb}
-                            className={linkDisabled ? 'pointer-events-none text-gray-400' : 'inline-flex items-center gap-0.5 rounded border border-[#14264b]/20 bg-[#14264b]/5 px-1.5 py-0.5 text-[10px] font-medium text-[#14264b] hover:bg-[#14264b]/10'}
+                            className={linkDisabled ? 'pointer-events-none truncate block text-gray-400' : 'truncate block text-[#14264b] hover:underline'}
                           >
-                            Xem →
+                            {order.linkWeb}
                           </a>
                         ) : (
                           '-'

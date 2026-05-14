@@ -338,6 +338,25 @@ export const massUpdate = async (
 };
 
 /**
+ * Mass cancel orders with reason note — legacy parity với QLDatHang_LietKe.
+ * Calls: SP_CapNhat_MassCancel (@id, @ghichu, @NguoiTao).
+ * Khác massDelete (= SP_CapNhat_MassCancel1) ở chỗ append ghi chú vào field `ghichu` của DON_HANG.
+ *
+ * @param ids - Array of order IDs to cancel
+ * @param ghiChu - Lý do hủy (optional, append vào ghichu của đơn)
+ */
+export const massCancel = async (
+  ids: number[],
+  ghiChu?: string,
+): Promise<{ cancelled: number }> => {
+  const response = await apiClient.post<{ cancelled: number }>('/orders/mass-cancel', {
+    ids,
+    ghiChu,
+  });
+  return response.data;
+};
+
+/**
  * Mass complete orders using stored procedure (giống EditOrder logic)
  *
  * @param ids - Array of order IDs to complete

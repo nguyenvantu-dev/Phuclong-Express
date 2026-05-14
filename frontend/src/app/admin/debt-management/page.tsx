@@ -55,6 +55,11 @@ export default function DebtManagementPage() {
   const queryClient = useQueryClient();
   const currentUser = useCurrentUser();
 
+  const getTodayFormatted = () => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
   // Filter state
   const [filters, setFilters] = useState({
     page: 1,
@@ -73,7 +78,7 @@ export default function DebtManagementPage() {
   const [newDebt, setNewDebt] = useState({
     username: '',
     noiDung: '',
-    ngay: '',
+    ngay: getTodayFormatted(),
     dr: 0,
     cr: 0,
     ghiChu: '',
@@ -101,7 +106,7 @@ export default function DebtManagementPage() {
     setNewDebt({
       username: '',
       noiDung: '',
-      ngay: '',
+      ngay: getTodayFormatted(),
       dr: 0,
       cr: 0,
       ghiChu: '',
@@ -937,7 +942,7 @@ export default function DebtManagementPage() {
                               setNewDebt({
                                 username: item.UserName || '',
                                 noiDung: item.NoiDung || '',
-                                ngay: item.NgayGhiNo ? new Date(item.NgayGhiNo).toISOString().split('T')[0] : '',
+                                ngay: item.NgayGhiNo ? (() => { const d = new Date(item.NgayGhiNo); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; })() : getTodayFormatted(),
                                 dr: item.DR || 0,
                                 cr: item.CR || 0,
                                 ghiChu: item.GhiChu || '',

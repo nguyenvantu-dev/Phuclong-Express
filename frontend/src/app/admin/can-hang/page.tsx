@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { getOrders, updateOrder, massUpdate, getUsernames, getBatches, getProductTypes, getStatusCounts, calculateShipping } from '@/lib/api';
+import { getOrders, updateOrder, massComplete, massShipped, getUsernames, getBatches, getProductTypes, getStatusCounts, calculateShipping } from '@/lib/api';
 import { downloadDataAsExcel } from '@/lib/excel-download';
 import { Order, QueryParams } from '@/types/order';
 import { OrderStatus, OrderStatusConfig } from '@/types/order-status';
@@ -89,30 +89,18 @@ export default function CanHangPage() {
       }),
   });
 
-  // Mass complete mutation
+  // Mass complete mutation — gọi SP_CapNhat_MassComplete (KHÔNG dùng SP_ShareOrders để tránh ép status='Ordered' và xóa ordernumber)
   const completeMutation = useMutation({
-    mutationFn: (ids: number[]) =>
-      massUpdate(
-        ids.map((id) => ({
-          id,
-          trangThaiOrder: OrderStatus.COMPLETED,
-        })),
-      ),
+    mutationFn: (ids: number[]) => massComplete(ids),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       setSelectedIds([]);
     },
   });
 
-  // Mass shipped mutation
+  // Mass shipped mutation — gọi SP_CapNhat_MassShipped (KHÔNG dùng SP_ShareOrders)
   const shippedMutation = useMutation({
-    mutationFn: (ids: number[]) =>
-      massUpdate(
-        ids.map((id) => ({
-          id,
-          trangThaiOrder: OrderStatus.SHIPPED,
-        })),
-      ),
+    mutationFn: (ids: number[]) => massShipped(ids),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       setSelectedIds([]);

@@ -43,7 +43,7 @@ export class QnaService {
 
       const data = Array.isArray(results) ? results : [];
       const firstItem = data.length > 0 ? data[0] as any : null;
-      const total = firstItem?.TOTALROW ? firstItem.TOTALROW : data.length;
+      const total = firstItem?.TOTALROW != null ? Number(firstItem.TOTALROW) : data.length;
 
       return { data: data.slice(1), total: Number(total), page, limit };
     } catch (error) {

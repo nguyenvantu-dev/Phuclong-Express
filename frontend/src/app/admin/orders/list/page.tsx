@@ -1076,9 +1076,6 @@ export default function EditOrderListPage() {
                     USERNAME
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    ADDED BY
-                  </th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
                     QUỐC GIA
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
@@ -1123,6 +1120,9 @@ export default function EditOrderListPage() {
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
                     GHI CHÚ
                   </th>
+                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
+                    ADDED BY
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -1153,7 +1153,7 @@ export default function EditOrderListPage() {
                     </td>
 
                     {/* THÔNG TIN ĐH - matching ID, ngaymuahang, ordernumber, trangthaiOrder in C# */}
-                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
+                    <td className="px-1 py-1 text-left whitespace-nowrap max-w-[200px] text-gray-900">
                       <div className="text-left">
                         <span className="font-bold">Mã ĐH: </span>{order.id}
                         <br />
@@ -1185,18 +1185,13 @@ export default function EditOrderListPage() {
                       <span className="font-medium">Vùng miền: </span>{order.vungMien || '-'}
                     </td>
 
-                    {/* ADDED BY */}
-                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
-                      {order.usernameSave || '-'}
-                    </td>
-
                     {/* QUỐC GIA */}
                     <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
                       {order.tenQuocGia || '-'}
                     </td>
 
                     {/* LINK - matching linkweb, corlor, size in C# */}
-                    <td className="px-1 py-1 text-left max-w-[100px] text-gray-900">
+                    <td className="px-1 py-1 text-left max-w-[220px] min-w-[180px] text-gray-900">
                       {order.linkWeb ? (
                         <a
                           href={order.linkWeb}
@@ -1295,6 +1290,11 @@ export default function EditOrderListPage() {
                     {/* GHI CHÚ */}
                     <td className="px-1 py-1 text-left max-w-[150px] truncate text-gray-900">
                       {order.ghiChu || order.adminNote || '-'}
+                    </td>
+
+                    {/* ADDED BY */}
+                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
+                      {order.usernameSave || '-'}
                     </td>
                   </tr>
                 ))}

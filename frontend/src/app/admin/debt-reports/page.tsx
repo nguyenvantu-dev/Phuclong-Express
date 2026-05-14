@@ -618,7 +618,7 @@ export default function DebtReportsPage() {
                       </td>
                       {/* LuyKe */}
                       <td className="whitespace-nowrap px-2 py-2 text-right font-medium text-gray-900">
-                        {formatCurrency(item.LuyKe)}
+                        {formatCurrency(Math.round(item.LuyKe ?? 0))}
                       </td>
                       {/* GhiChu */}
                       <td className="max-w-[200px] px-2 py-2">

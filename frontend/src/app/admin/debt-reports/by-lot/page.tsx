@@ -360,7 +360,7 @@ export default function DebtReportsByLotPage() {
                     </td>
                     {/* ConLai - matching ItemStyle-ForeColor="Red" in aspx */}
                     <td className="whitespace-nowrap px-2 py-2 text-right font-bold text-red-600">
-                      {formatCurrency(item.ConLai)}
+                      {formatCurrency(Math.round(item.ConLai ?? 0))}
                     </td>
                   </tr>
                 ))}
@@ -385,7 +385,7 @@ export default function DebtReportsByLotPage() {
                       {formatCurrency(totals.daThu)}
                     </td>
                     <td className="px-2 py-3 text-right text-red-600">
-                      {formatCurrency(totals.conLai)}
+                      {formatCurrency(Math.round(totals.conLai))}
                     </td>
                   </tr>
                 </tfoot>

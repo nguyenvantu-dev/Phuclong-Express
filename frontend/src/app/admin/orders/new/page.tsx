@@ -237,7 +237,7 @@ export default function QLDatHangThemPage() {
 
         const currencyCountryMap: Record<string, string[]> = {
           USD: ['mỹ', 'hoa kỳ', 'usa'],
-          EUR: ['đức', 'pháp', 'châu âu', 'eu'],
+          EUR: ['tây ban nha', 'spain'],
           GBP: ['anh', 'uk', 'britain'],
           JPY: ['nhật', 'japan'],
           CNY: ['trung', 'china'],
