@@ -290,13 +290,13 @@ export default function EditOrderListPage() {
   const isKho = userRoles.includes('Kho');
   const isSale = userRoles.includes('Sale');
 
-  // Buttons visibility
-  const canUpdateNgayVe = isAdminOrOrder; // Cập nhật ngày về
-  const canMassCancel = isAdminOrOrder; // Mass cancel
-  const canMassComplete = isAdminOrOrder; // Mass complete
-  const canMassReceived = isAdminOrOrder; // Mass received
-  const canMassShipped = isAdminOrOrder; // Mass shipped
-  const canBoSungGhiChu = isAdminOrOrder; // Bổ sung ghi chú
+  // Buttons visibility - luôn hiển thị tất cả mass actions
+  const canUpdateNgayVe = true; // Cập nhật ngày về
+  const canMassCancel = true; // Mass cancel
+  const canMassComplete = true; // Mass complete
+  const canMassReceived = true; // Mass received
+  const canMassShipped = true; // Mass shipped
+  const canBoSungGhiChu = true; // Bổ sung ghi chú
 
   // Refs for date inputs
   const startDateRef = useRef<HTMLInputElement>(null);

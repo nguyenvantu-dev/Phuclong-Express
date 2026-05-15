@@ -89,6 +89,16 @@ export class OrdersController {
   }
 
   /**
+   * GET /orders/current-ty-gia?ids=1,2,3
+   * Lấy tỷ giá hiện tại theo loại tiền của đơn hàng đầu tiên trong danh sách ID.
+   * Dùng để auto-fill tỷ giá ở popup Mass Update (QLDatHang_MassUpdate.aspx → LoadTyGia).
+   */
+  @Get('current-ty-gia')
+  async getCurrentTyGia(@Query('ids') ids: string): Promise<{ tyGia: number | null; loaiTien: string | null }> {
+    return this.ordersService.getCurrentTyGiaFromOrders(ids || '');
+  }
+
+  /**
    * GET /orders/deleted
    * List deleted orders with filters
    */

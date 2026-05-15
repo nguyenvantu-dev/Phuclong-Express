@@ -91,6 +91,38 @@ export class OrdersService {
   }
 
   /**
+   * Lấy tỷ giá hiện tại theo loại tiền của đơn hàng đầu tiên trong danh sách ID.
+   * Tương đương: DBConnect.LayTyGiaHienTaiTuDanhSachDonHang(string id)
+   *   → SP_Lay_TyGiaHienTaiTuDanhSachDonHang (note.txt:5075)
+   *
+   *   SELECT TyGiaVND FROM TY_GIA
+   *   WHERE Name = (SELECT TOP 1 loaitien FROM DON_HANG
+   *                 WHERE ID IN (SELECT CAST(s as int) FROM dbo.SplitString(@id, ',')))
+   *
+   * Trả null nếu không tìm thấy. Caller có quyền hiển thị "" để user nhập tay.
+   */
+  async getCurrentTyGiaFromOrders(ids: string): Promise<{ tyGia: number | null; loaiTien: string | null }> {
+    const idList = (ids || '')
+      .split(',')
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (!idList.length) return { tyGia: null, loaiTien: null };
+
+    const [rows]: any[] = await this.sequelize.query(
+      `SELECT TOP 1 t.TyGiaVND AS tyGia, d.loaitien AS loaiTien
+       FROM dbo.DON_HANG d
+       LEFT JOIN dbo.TY_GIA t ON t.Name = d.loaitien
+       WHERE d.ID IN (${idList.join(',')})`,
+    );
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) return { tyGia: null, loaiTien: null };
+    return {
+      tyGia: row.tyGia !== null && row.tyGia !== undefined ? Number(row.tyGia) : null,
+      loaiTien: row.loaiTien ?? null,
+    };
+  }
+
+  /**
    * Send order notifications to affected users after an admin action.
    * Fires-and-forgets (non-blocking) — errors are logged but do not fail the request.
    */

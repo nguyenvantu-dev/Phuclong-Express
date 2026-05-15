@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-import { getOrdersQLDatHang, getUsernames, getCountries, massDelete, massUpdate, updateOrder } from '@/lib/api';
+import { getOrdersQLDatHang, getUsernames, getCountries, massDelete, massUpdate, updateOrder, getCurrentTyGiaFromOrders } from '@/lib/api';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/hooks/use-auth';
 import { Order, QueryParams } from '@/types/order';
@@ -39,6 +39,47 @@ function MassUpdateModal({
   const [totalItem, setTotalItem] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loaiTien, setLoaiTien] = useState<string | null>(null);
+  const [tyGiaLoading, setTyGiaLoading] = useState(false);
+
+  // Auto-load tỷ giá hiện tại theo loại tiền của các đơn đã chọn khi popup mở.
+  // Tương đương QLDatHang_MassUpdate.aspx.cs → Page_Load → LoadTyGia(id).
+  useEffect(() => {
+    if (!open) {
+      // Reset form khi đóng để lần mở sau không lưu giá trị cũ
+      setOrderNumber('');
+      setTyGia('');
+      setCong('');
+      setSaleOff('');
+      setTax('');
+      setTotalCharged('');
+      setTotalItem('');
+      setError('');
+      setLoaiTien(null);
+      return;
+    }
+    if (!selectedIds.length) return;
+    let cancelled = false;
+    setTyGiaLoading(true);
+    getCurrentTyGiaFromOrders(selectedIds)
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.tyGia !== null && res?.tyGia !== undefined) {
+          setTyGia(String(res.tyGia));
+        }
+        setLoaiTien(res?.loaiTien ?? null);
+      })
+      .catch(() => {
+        // Im lặng giống legacy: catch{} trong DBConnect.LayTyGiaHienTaiTuDanhSachDonHang.
+        // User vẫn có thể tự nhập tỷ giá nếu lookup thất bại.
+      })
+      .finally(() => {
+        if (!cancelled) setTyGiaLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, selectedIds]);
 
   const updateMutation = useMutation({
     mutationFn: (params: { items: { id: number; orderNumber?: string; tyGia?: number; cong?: number; saleOff?: number; tax?: number; totalCharged?: number; totalItem?: number }[]; username?: string }) =>
@@ -89,7 +130,8 @@ function MassUpdateModal({
       setError('Phải nhập Total item');
       return;
     }
-    if (isNaN(Number(totalItem))) {
+    // Parity với C# int.TryParse: chỉ chấp nhận số nguyên (không decimal).
+    if (!/^-?\d+$/.test(totalItem.trim()) || !Number.isInteger(Number(totalItem))) {
       setError('Total item phải là kiểu số');
       return;
     }
@@ -144,8 +186,16 @@ function MassUpdateModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Tỷ giá <span className="text-red-500">*</span>
+            <label className="mb-1 flex items-center justify-between text-sm font-medium text-gray-700">
+              <span>
+                Tỷ giá <span className="text-red-500">*</span>
+                {loaiTien && (
+                  <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs font-normal text-gray-600">
+                    {loaiTien}
+                  </span>
+                )}
+              </span>
+              {tyGiaLoading && <span className="text-xs text-gray-400">Đang tải...</span>}
             </label>
             <input
               type="number"
@@ -153,7 +203,8 @@ function MassUpdateModal({
               value={tyGia}
               onChange={(e) => setTyGia(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
-              placeholder="Nhập tỷ giá"
+              placeholder={tyGiaLoading ? 'Đang tải tỷ giá...' : 'Nhập tỷ giá'}
+              disabled={tyGiaLoading}
             />
           </div>
 
@@ -213,6 +264,8 @@ function MassUpdateModal({
             </label>
             <input
               type="number"
+              step="1"
+              min="0"
               value={totalItem}
               onChange={(e) => setTotalItem(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#14264b] focus:outline-none"
@@ -474,29 +527,38 @@ export default function QLDatHangLietKePage() {
     },
   });
 
-  // Calculate selected totals
+  // Calculate selected totals — gom tổng tiền theo từng loại tiền (USD/EUR/GBP/CNY/JPY/...)
   const selectedSummary = useMemo(() => {
-    if (!data?.danhSachDonHang || selectedIds.length === 0) {
-      return { totalItems: 0, totalPriceUsd: 0, totalPriceVnd: 0 };
-    }
+    const empty = { totalItems: 0, totalsByCurrency: {} as Record<string, number>, totalPriceVnd: 0 };
+    if (!data?.danhSachDonHang || selectedIds.length === 0) return empty;
 
     const selectedOrders = data.danhSachDonHang.filter(o => selectedIds.includes(o.id));
-    return selectedOrders.reduce(
+    return selectedOrders.reduce<typeof empty>(
       (acc, order) => {
         const tyGia = order.tyGia || 1;
         const tongTienVnd = (order.tongTienVnd && order.tongTienVnd > 0)
           ? order.tongTienVnd
           : ((Number(order.tongTienUsd) || 0) * tyGia) + (Number(order.tienCongVnd) || 0);
 
-        return {
-          totalItems: acc.totalItems + order.soLuong,
-          totalPriceUsd: acc.totalPriceUsd + (Number(order.donGiaWeb) || 0) * order.soLuong,
-          totalPriceVnd: acc.totalPriceVnd + tongTienVnd,
-        };
+        const currency = (order.loaiTien || 'USD').toUpperCase();
+        const amount = (Number(order.donGiaWeb) || 0) * order.soLuong;
+        acc.totalsByCurrency[currency] = (acc.totalsByCurrency[currency] || 0) + amount;
+        acc.totalItems += order.soLuong;
+        acc.totalPriceVnd += tongTienVnd;
+        return acc;
       },
-      { totalItems: 0, totalPriceUsd: 0, totalPriceVnd: 0 },
+      { totalItems: 0, totalsByCurrency: {}, totalPriceVnd: 0 },
     );
   }, [data?.danhSachDonHang, selectedIds]);
+
+  // Safe per-currency formatter — fallback nếu mã tiền không hợp lệ với Intl
+  const formatByCurrency = (value: number, currency: string) => {
+    try {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency }).format(value);
+    } catch {
+      return `${new Intl.NumberFormat('vi-VN').format(value)} ${currency}`;
+    }
+  };
 
   // Filtered websites based on input (deduplicated)
   const filteredWebsites = useMemo(() => {
@@ -988,8 +1050,18 @@ export default function QLDatHangLietKePage() {
             <span className="text-xl font-bold text-[#14264b]">{selectedSummary.totalItems}</span>
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2">
-            <span className="text-xs font-medium text-emerald-600">Tổng USD</span>
-            <span className="text-xl font-bold text-emerald-700">{formatCurrency(selectedSummary.totalPriceUsd, 'USD')}</span>
+            <span className="text-xs font-medium text-emerald-600">Tổng tiền</span>
+            {Object.keys(selectedSummary.totalsByCurrency).length === 0 ? (
+              <span className="text-xl font-bold text-emerald-700">-</span>
+            ) : (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                {Object.entries(selectedSummary.totalsByCurrency).map(([cur, val]) => (
+                  <span key={cur} className="text-xl font-bold text-emerald-700">
+                    {formatByCurrency(val, cur)}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-orange-50 px-4 py-2">
             <span className="text-xs font-medium text-orange-600">Tổng VND</span>

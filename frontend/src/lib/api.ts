@@ -338,6 +338,24 @@ export const massUpdate = async (
 };
 
 /**
+ * Lấy tỷ giá hiện tại theo loại tiền của các đơn hàng đã chọn.
+ * Legacy parity: QLDatHang_MassUpdate.aspx.cs → LoadTyGia → SP_Lay_TyGiaHienTaiTuDanhSachDonHang.
+ *
+ * @param ids - Mảng order ID (sẽ join thành chuỗi "1,2,3")
+ * @returns { tyGia, loaiTien } - tyGia có thể null nếu không tra được
+ */
+export const getCurrentTyGiaFromOrders = async (
+  ids: number[],
+): Promise<{ tyGia: number | null; loaiTien: string | null }> => {
+  if (!ids || !ids.length) return { tyGia: null, loaiTien: null };
+  const response = await apiClient.get<{ tyGia: number | null; loaiTien: string | null }>(
+    '/orders/current-ty-gia',
+    { params: { ids: ids.join(',') } },
+  );
+  return response.data;
+};
+
+/**
  * Mass cancel orders with reason note — legacy parity với QLDatHang_LietKe.
  * Calls: SP_CapNhat_MassCancel (@id, @ghichu, @NguoiTao).
  * Khác massDelete (= SP_CapNhat_MassCancel1) ở chỗ append ghi chú vào field `ghichu` của DON_HANG.

@@ -22,9 +22,9 @@ const TH = ({
   className?: string;
 }) => (
   <th
-    className={`border-b border-slate-200 px-1 py-2 ${
+    className={`border-b border-slate-200 px-2 py-2 ${
       align === 'right' ? 'text-right' : 'text-left'
-    } text-slate-500 font-semibold text-[9px] uppercase tracking-wide whitespace-normal break-words bg-slate-50 ${className}`}
+    } text-slate-500 font-semibold text-[9px] uppercase tracking-wide whitespace-nowrap bg-slate-50 ${className}`}
   >
     {children}
   </th>
@@ -45,53 +45,30 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 shadow-sm">
-      <table className="w-full table-fixed border-collapse text-[11px]">
-        <colgroup>
-          <col className="w-[12%] sm:w-[8%] lg:w-[6%]" />
-          <col className="w-[14%] sm:w-[9%] lg:w-[7%]" />
-          <col className="hidden md:table-column md:w-[8%]" />
-          <col className="w-[14%] sm:w-[9%] lg:w-[6%]" />
-          <col className="hidden md:table-column md:w-[6%]" />
-          <col className="hidden md:table-column md:w-[6%]" />
-          <col className="hidden md:table-column md:w-[5%]" />
-          <col className="w-[8%] lg:w-[4%]" />
-          <col className="hidden xl:table-column xl:w-[5%]" />
-          <col className="hidden xl:table-column xl:w-[4%]" />
-          <col className="hidden xl:table-column xl:w-[5%]" />
-          <col className="hidden xl:table-column xl:w-[4%]" />
-          <col className="hidden xl:table-column xl:w-[5%]" />
-          <col className="hidden xl:table-column xl:w-[5%]" />
-          <col className="hidden xl:table-column xl:w-[5%]" />
-          <col className="hidden xl:table-column xl:w-[6%]" />
-          <col className="w-[16%] sm:w-[11%] lg:w-[7%]" />
-          <col className="w-[15%] sm:w-[10%] lg:w-[7%]" />
-          <col className="hidden lg:table-column lg:w-[7%]" />
-          <col className="hidden md:table-column md:w-[8%]" />
-          <col className="w-[12%] sm:w-[8%] lg:w-[5%]" />
-        </colgroup>
+    <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+      <table className="w-full min-w-[1200px] border-collapse text-[11px]">
         <thead>
           <tr>
             <TH>Mã ĐH</TH>
             <TH>Ngày ĐH</TH>
-            <TH className="hidden md:table-cell">Order Number</TH>
+            <TH>Order Number</TH>
             <TH>Link</TH>
-            <TH className="hidden md:table-cell">Hình</TH>
-            <TH className="hidden md:table-cell">Màu</TH>
-            <TH className="hidden md:table-cell">Size</TH>
+            <TH>Hình</TH>
+            <TH>Màu</TH>
+            <TH>Size</TH>
             <TH align="right">SL</TH>
-            <TH align="right" className="hidden xl:table-cell">Giá web</TH>
-            <TH align="right" className="hidden xl:table-cell">% off</TH>
-            <TH align="right" className="hidden xl:table-cell">Ship</TH>
-            <TH align="right" className="hidden xl:table-cell">% Tax</TH>
-            <TH align="right" className="hidden xl:table-cell">% Công</TH>
-            <TH align="right" className="hidden xl:table-cell">Công NT</TH>
-            <TH align="right" className="hidden xl:table-cell">Tổng NT</TH>
-            <TH align="right" className="hidden xl:table-cell">Tỷ giá</TH>
+            <TH align="right">Giá web</TH>
+            <TH align="right">% off</TH>
+            <TH align="right">Ship</TH>
+            <TH align="right">% Tax</TH>
+            <TH align="right">% Công</TH>
+            <TH align="right">Công NT</TH>
+            <TH align="right">Tổng NT</TH>
+            <TH align="right">Tỷ giá</TH>
             <TH align="right">Tổng VND</TH>
             <TH>Status</TH>
-            <TH className="hidden lg:table-cell">VN Status</TH>
-            <TH className="hidden md:table-cell">Ghi chú</TH>
+            <TH>VN Status</TH>
+            <TH>Ghi chú</TH>
             <TH></TH>
           </tr>
         </thead>
@@ -106,19 +83,19 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                 }`}
               >
                 {/* Mã ĐH */}
-                <td className="border-b border-slate-100 px-2 py-2.5 font-semibold text-[#14264b] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 font-semibold text-[#14264b] whitespace-nowrap">
                   #{order.id}
                 </td>
 
                 {/* Ngày ĐH */}
-                <td className="border-b border-slate-100 px-2 py-2.5 text-slate-500 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-slate-500 text-[10px] whitespace-nowrap">
                   {order.ngayMuaHang
                     ? new Date(order.ngayMuaHang).toLocaleDateString('vi-VN')
                     : '—'}
                 </td>
 
                 {/* Order Number */}
-                <td className="hidden md:table-cell border-b border-slate-100 px-2 py-2.5 text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-slate-600 text-[10px] whitespace-nowrap">
                   {order.orderNumber || '—'}
                 </td>
 
@@ -129,7 +106,7 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                       href={order.linkWeb}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-w-0 max-w-full items-center gap-1 text-[#14264b] hover:text-[#0f1e38] cursor-pointer text-[10px]"
+                      className="inline-flex min-w-0 max-w-[180px] items-center gap-1 text-[#14264b] hover:text-[#0f1e38] cursor-pointer text-[10px]"
                     >
                       <FiExternalLink className="w-3 h-3 flex-shrink-0" />
                       <span className="truncate">{order.linkWeb.replace(/^https?:\/\//, '').substring(0, 25)}…</span>
@@ -140,7 +117,7 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                 </td>
 
                 {/* Hình */}
-                <td className="hidden md:table-cell border-b border-slate-100 px-2 py-2.5">
+                <td className="border-b border-slate-100 px-2 py-2.5">
                   {order.linkHinh ? (
                     <img
                       src={order.linkHinh}
@@ -158,67 +135,67 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                 </td>
 
                 {/* Màu */}
-                <td className="hidden md:table-cell border-b border-slate-100 px-2 py-2.5 text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-slate-600 text-[10px] whitespace-nowrap">
                   {order.color || '—'}
                 </td>
 
                 {/* Size */}
-                <td className="hidden md:table-cell border-b border-slate-100 px-2 py-2.5 text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-slate-600 text-[10px] whitespace-nowrap">
                   {order.size || '—'}
                 </td>
 
                 {/* SL */}
-                <td className="border-b border-slate-100 px-2 py-2.5 text-right font-semibold text-slate-700 break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right font-semibold text-slate-700 whitespace-nowrap">
                   {order.soLuong}
                 </td>
 
                 {/* Giá web */}
-                <td className="hidden xl:table-cell border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] whitespace-nowrap">
                   {formatNumber(order.donGiaWeb)}
                 </td>
 
                 {/* % off */}
-                <td className="hidden xl:table-cell border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] whitespace-nowrap">
                   {order.saleOff != null ? `${order.saleOff}%` : '—'}
                 </td>
 
                 {/* Ship */}
-                <td className="hidden xl:table-cell border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] whitespace-nowrap">
                   {order.shipUsa != null ? formatNumber(order.shipUsa) : '—'}
                 </td>
 
                 {/* % Tax */}
-                <td className="hidden xl:table-cell border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] whitespace-nowrap">
                   {order.tax != null ? `${order.tax}%` : '—'}
                 </td>
 
                 {/* % Công */}
-                <td className="hidden xl:table-cell border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] whitespace-nowrap">
                   {order.cong != null ? `${order.cong}%` : '—'}
                 </td>
 
                 {/* Công NT */}
-                <td className="hidden xl:table-cell border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right text-slate-600 text-[10px] whitespace-nowrap">
                   {formatNumber(order.tienCongUsd)}
                 </td>
 
                 {/* Tổng NT */}
-                <td className="hidden xl:table-cell border-b border-slate-100 px-2 py-2.5 text-right font-semibold text-slate-700 break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right font-semibold text-slate-700 whitespace-nowrap">
                   {formatNumber(order.tongTienUsd)}
                 </td>
 
                 {/* Tỷ giá */}
-                <td className="hidden xl:table-cell border-b border-slate-100 px-2 py-2.5 text-right text-slate-500 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right text-slate-500 text-[10px] whitespace-nowrap">
                   {formatNumber(order.tyGia)}
                 </td>
 
                 {/* Tổng VND */}
-                <td className="border-b border-slate-100 px-2 py-2.5 text-right font-bold text-[#14264b] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-right font-bold text-[#14264b] whitespace-nowrap">
                   {formatNumber(order.tongTienVnd)}
                 </td>
 
                 {/* Status */}
-                <td className="border-b border-slate-100 px-2 py-2.5">
+                <td className="border-b border-slate-100 px-2 py-2.5 whitespace-nowrap">
                   <OrderStatusBadge
                     status={order.trangThaiOrder}
                     asLink={order.trangThaiOrder === 'Shipped'}
@@ -227,24 +204,26 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                 </td>
 
                 {/* VN Status */}
-                <td className="hidden lg:table-cell border-b border-slate-100 px-2 py-2.5 text-slate-500 text-[10px] break-words">
+                <td className="border-b border-slate-100 px-2 py-2.5 text-slate-500 text-[10px] whitespace-nowrap">
                   {order.ngayVeVn
                     ? `Đợt ${new Date(order.ngayVeVn).toLocaleDateString('vi-VN')}`
                     : '—'}
                 </td>
 
                 {/* Ghi chú */}
-                <td className="hidden md:table-cell border-b border-slate-100 px-2 py-2.5 text-slate-400 text-[10px] whitespace-normal break-words">
-                  {order.ghiChu || '—'}
+                <td className="border-b border-slate-100 px-2 py-2.5 text-slate-400 text-[10px]">
+                  <div className="max-w-[180px] whitespace-normal break-words">
+                    {order.ghiChu || '—'}
+                  </div>
                 </td>
 
                 {/* Actions */}
                 <td className="border-b border-slate-100 px-1 py-1.5">
-                  <div className="flex w-full flex-col gap-1">
+                  <div className="flex w-full items-center gap-1">
                     {canEdit && (
                       <Link
                         href={`/sua-don-hang?id=${order.id}`}
-                        className="flex w-full items-center justify-center rounded-md bg-[#14264b]/5 px-1 py-2 text-[#14264b] hover:bg-[#14264b]/10 cursor-pointer transition-colors duration-150"
+                        className="flex items-center justify-center rounded-md bg-[#14264b]/5 px-2 py-2 text-[#14264b] hover:bg-[#14264b]/10 cursor-pointer transition-colors duration-150"
                         title="Sửa đơn hàng"
                       >
                         <FiEdit2 className="w-3 h-3" />
@@ -255,7 +234,7 @@ export default function OrderListTable({ orders, deletingId, onDelete, formatNum
                         type="button"
                         onClick={() => onDelete(order)}
                         disabled={deletingId === order.id}
-                        className="flex w-full items-center justify-center rounded-md bg-red-50 px-1 py-2 text-red-600 hover:bg-red-100 cursor-pointer transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center rounded-md bg-red-50 px-2 py-2 text-red-600 hover:bg-red-100 cursor-pointer transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Xóa đơn hàng"
                       >
                         <FiTrash2 className="w-3 h-3" />
