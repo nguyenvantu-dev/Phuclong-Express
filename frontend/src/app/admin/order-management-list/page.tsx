@@ -448,11 +448,35 @@ export default function QLDatHangLietKePage() {
     }
   };
 
+  // Map mã tiền tệ -> keyword khớp TenQuocGia (lowercase). Khi đổi loaiTien
+  // tự tìm quốc gia tương ứng theo includes().
+  const currencyCountryMap: Record<string, string[]> = {
+    USD: ['mỹ', 'hoa kỳ', 'usa'],
+    VND: ['việt nam', 'viet nam', 'vietnam'],
+    PLN: ['ba lan', 'balan', 'poland'],
+    EUR: ['tây ban nha', 'spain'],
+    GBP: ['anh', 'uk', 'britain'],
+    JPY: ['nhật', 'japan'],
+    CNY: ['trung', 'china'],
+  };
+
   // Update form field
   const handleEditFormChange = (field: string, value: any) => {
-    if (editForm) {
-      setEditForm({ ...editForm, [field]: value });
+    if (!editForm) return;
+    const updated: typeof editForm = { ...editForm, [field]: value };
+
+    // Khi đổi tỷ giá -> auto chọn quốc gia tương ứng
+    if (field === 'loaiTien') {
+      const keywords = currencyCountryMap[String(value).toUpperCase()] || [];
+      const matched = keywords.length > 0
+        ? (quocGias as { QuocGiaID: number; TenQuocGia: string }[] | undefined)?.find(c =>
+            keywords.some(kw => c.TenQuocGia.toLowerCase().includes(kw))
+          )
+        : undefined;
+      if (matched) updated.quocGiaId = matched.QuocGiaID;
     }
+
+    setEditForm(updated);
   };
 
   // Initialize flatpickr for date inputs
@@ -1249,6 +1273,8 @@ export default function QLDatHangLietKePage() {
                             className="w-16 rounded border border-gray-300 px-1 py-1 text-xs"
                           >
                             <option value="USD">USD</option>
+                            <option value="VND">VND</option>
+                            <option value="PLN">PLN</option>
                             <option value="EUR">EUR</option>
                             <option value="GBP">GBP</option>
                             <option value="CNY">CNY</option>

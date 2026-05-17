@@ -1,8 +1,18 @@
 import dynamic from 'next/dynamic';
+import { buildMetadata } from '@/lib/seo/build-metadata';
+import { SITE_NAME, SITE_TAGLINE, SITE_DESCRIPTION } from '@/lib/seo/site-config';
 import PublicLayout from './components/public-home/public-layout';
 import HeroSection from './components/public-home/hero-section';
 import ServicesSection from './components/public-home/services-section';
 import HowItWorksSection from './components/public-home/how-it-works-section';
+
+export const metadata = buildMetadata({
+  // absoluteTitle bypasses root `title.template` so home page does not get
+  // "... | Phuc Long Express" appended on top of its already-branded title.
+  absoluteTitle: `${SITE_NAME} — ${SITE_TAGLINE}`,
+  description: SITE_DESCRIPTION,
+  path: '/',
+});
 
 // Below-fold: lazy load to reduce initial bundle
 const CategoriesSection  = dynamic(() => import('./components/public-home/categories-section'));

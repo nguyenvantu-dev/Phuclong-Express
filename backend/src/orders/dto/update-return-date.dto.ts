@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsBoolean, IsOptional } from 'class-validator';
 
 /**
  * DTO for updating order return date to Vietnam (NgayVeVN)
@@ -11,7 +11,7 @@ import { IsString, IsBoolean, IsOptional, IsDateString } from 'class-validator';
  * - Optional: change status to Completed
  */
 export class UpdateReturnDateDto {
-  @IsDateString()
+  @IsString()
   ngayVeVn: string;
 
   @IsString()

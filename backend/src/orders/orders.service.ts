@@ -9,6 +9,7 @@ import { CreateQuickOrderDto, CreateQuickOrdersDto } from './dto/create-quick-or
 import { MassUpdateDto, MassDeleteDto, MassCompleteDto, MassReceivedDto, MassShippedDto, MassCancelDto } from './dto/mass-update.dto';
 import { UpdateOrderNoteDto } from './dto/update-order-note.dto';
 import { UpdateReturnDateDto } from './dto/update-return-date.dto';
+import { formatSqlDate, parseVietnameseDate } from '../helpers/sql-date.helper';
 import { ImportOrdersDto } from './dto/import-orders.dto';
 import { QueryQLDatHangDto, QLDatHangResponseDto } from './dto/query-qldathang.dto';
 import { SystemLogsService } from '../system-logs/system-logs.service';
@@ -1593,12 +1594,15 @@ export class OrdersService {
   ): Promise<Order> {
     const { ngayVeVn, boSungGhiChu, chuyenVeCompleted } = updateReturnDateDto;
 
-    // Parse the return date
-    const returnDate = new Date(ngayVeVn);
-
-    // Format date for SQL (yyyyMMdd)
-    const tenDotHang = returnDate.toISOString().slice(0, 10).replace(/-/g, '');
-    const sqlDate = returnDate.toISOString().slice(0, 10);
+    // Reuse helper port của DateTimeUtil.getSqlDatetime:
+    // parseVietnameseDate accept DD/MM/YYYY (legacy datepicker) + ISO YYYY-MM-DD (FE mới).
+    // formatSqlDate ↔ getSqlDatetime(DateTime) → yyyy-MM-dd.
+    const parsed = parseVietnameseDate(ngayVeVn);
+    if (!parsed) {
+      throw new BadRequestException(`ngayVeVn invalid format: ${ngayVeVn}`);
+    }
+    const sqlDate = formatSqlDate(parsed);
+    const tenDotHang = sqlDate.replace(/-/g, '');
 
     // Call stored procedure SP_CapNhat_NgayVeVN
     await this.sequelize.query(

@@ -324,7 +324,7 @@ export default function DebtManagementPage() {
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['debt-management'] });
-        resetDebtForm();
+        setErrorMessage(null);
       } else {
         setErrorMessage(result.message || 'Thêm mới thất bại');
       }
@@ -651,8 +651,8 @@ export default function DebtManagementPage() {
                 <label className="text-xs font-medium text-slate-700">Tiền Nợ (DR)</label>
                 <input
                   type="number"
-                  value={newDebt.dr}
-                  onChange={(e) => setNewDebt({ ...newDebt, dr: Number(e.target.value) })}
+                  value={newDebt.dr === 0 ? '' : newDebt.dr}
+                  onChange={(e) => setNewDebt({ ...newDebt, dr: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                   placeholder="0"
                 />
@@ -662,8 +662,8 @@ export default function DebtManagementPage() {
                 <label className="text-xs font-medium text-slate-700">Tiền Có (CR)</label>
                 <input
                   type="number"
-                  value={newDebt.cr}
-                  onChange={(e) => setNewDebt({ ...newDebt, cr: Number(e.target.value) })}
+                  value={newDebt.cr === 0 ? '' : newDebt.cr}
+                  onChange={(e) => setNewDebt({ ...newDebt, cr: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
                   placeholder="0"
                 />

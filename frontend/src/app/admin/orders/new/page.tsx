@@ -53,6 +53,36 @@ interface GridRow {
   status: 'pending' | 'success' | 'error';
 }
 
+// Mã tiền tệ -> keyword khớp TenQuocGia (lowercase, includes).
+// Khi đổi loaiTien (hoặc mount với loaiTien mặc định) tự tìm quốc gia tương ứng.
+const CURRENCY_COUNTRY_MAP: Record<string, string[]> = {
+  USD: ['mỹ', 'hoa kỳ', 'usa'],
+  VND: ['việt nam', 'viet nam', 'vietnam'],
+  PLN: ['ba lan', 'balan', 'poland'],
+  EUR: ['tây ban nha', 'spain'],
+  GBP: ['anh', 'uk', 'britain'],
+  JPY: ['nhật', 'japan'],
+  CNY: ['trung', 'china'],
+  KRW: ['hàn', 'korea'],
+  AUD: ['úc', 'australia'],
+  CAD: ['canada'],
+  SGD: ['singapore'],
+  THB: ['thái', 'thailand'],
+  HKD: ['hồng kông', 'hong kong'],
+};
+
+function findCountryIdByCurrency(
+  currency: string,
+  countries: { QuocGiaID: number; TenQuocGia: string }[],
+): number | null {
+  const keywords = CURRENCY_COUNTRY_MAP[currency.toUpperCase()] || [];
+  if (keywords.length === 0) return null;
+  const matched = countries.find(c =>
+    keywords.some(kw => c.TenQuocGia.toLowerCase().includes(kw)),
+  );
+  return matched ? matched.QuocGiaID : null;
+}
+
 interface FormData {
   websiteName: string;
   username: string;
@@ -145,6 +175,15 @@ export default function QLDatHangThemPage() {
     queryFn: getExchangeRatesForEdit,
   });
 
+  // Auto-set Quốc gia theo loaiTien mặc định khi countries load xong (chỉ khi user chưa chọn)
+  useEffect(() => {
+    if (countries.length === 0 || form.quocGiaId !== null) return;
+    const matchedId = findCountryIdByCurrency(form.loaiTien, countries);
+    if (matchedId !== null) {
+      setForm(prev => (prev.quocGiaId === null ? { ...prev, quocGiaId: matchedId } : prev));
+    }
+  }, [countries, form.loaiTien, form.quocGiaId]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const insideInput = usernameDropdownRef.current?.contains(event.target as Node);
@@ -234,27 +273,10 @@ export default function QLDatHangThemPage() {
       if (field === 'loaiTien') {
         const rate = exchangeRates.find((r: any) => r.Name === value);
         updated.loaiTienValue = rate?.TyGiaVND || 1;
-
-        const currencyCountryMap: Record<string, string[]> = {
-          USD: ['mỹ', 'hoa kỳ', 'usa'],
-          EUR: ['tây ban nha', 'spain'],
-          GBP: ['anh', 'uk', 'britain'],
-          JPY: ['nhật', 'japan'],
-          CNY: ['trung', 'china'],
-          KRW: ['hàn', 'korea'],
-          AUD: ['úc', 'australia'],
-          CAD: ['canada'],
-          SGD: ['singapore'],
-          THB: ['thái', 'thailand'],
-          HKD: ['hồng kông', 'hong kong'],
-        };
-        const keywords = currencyCountryMap[String(value).toUpperCase()] || [];
-        const matched = keywords.length > 0
-          ? (countries as { QuocGiaID: number; TenQuocGia: string }[]).find(c =>
-              keywords.some(kw => c.TenQuocGia.toLowerCase().includes(kw))
-            )
-          : undefined;
-        updated.quocGiaId = matched ? matched.QuocGiaID : null;
+        updated.quocGiaId = findCountryIdByCurrency(
+          String(value),
+          countries as { QuocGiaID: number; TenQuocGia: string }[],
+        );
       }
 
       // When form values change, recalculate

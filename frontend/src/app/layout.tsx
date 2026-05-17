@@ -1,9 +1,20 @@
 export const dynamic = 'force-dynamic';
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import {
+  DEFAULT_LOCALE,
+  DEFAULT_OG_IMAGE,
+  LANGUAGE_ALTERNATES,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_TAGLINE,
+  SITE_URL,
+  TWITTER_HANDLE,
+} from "@/lib/seo/site-config";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -12,11 +23,69 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Phuc Long Express",
-  description: "Admin panel for Phuc Long Express",
-  icons: {
-    icon: "/LOGO_ONLY_PHUC_LONG_EXPRESS_WHITE.png",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    template: `%s | ${SITE_NAME}`,
   },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "logistics",
+  formatDetection: { email: false, address: false, telephone: false },
+  alternates: {
+    canonical: SITE_URL,
+    languages: LANGUAGE_ALTERNATES,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    locale: DEFAULT_LOCALE,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: TWITTER_HANDLE,
+    creator: TWITTER_HANDLE,
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE.url],
+  },
+  icons: {
+    icon: [
+      { url: "/LOGO_ONLY_PHUC_LONG_EXPRESS_WHITE.png", type: "image/png" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/LOGO_ONLY_PHUC_LONG_EXPRESS_WHITE.png",
+  },
+  verification: {
+    // Populate once verified via Google Search Console.
+    // google: "xxxxxxxxxxxxxxxxxxx",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
