@@ -25,6 +25,7 @@ import { PurchasedItemsModule } from './purchased-items/purchased-items.module';
 import { ShippersModule } from './shippers/shippers.module';
 import { QnaModule } from './qna/qna.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     }),
     DatabaseModule,
     AuthModule,
+    CommonModule,
     UsersModule,
     RolesModule,
     OrdersModule,

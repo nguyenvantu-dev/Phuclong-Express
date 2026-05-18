@@ -14,10 +14,7 @@ import { ImportOrdersDto } from './dto/import-orders.dto';
 import { QueryQLDatHangDto, QLDatHangResponseDto } from './dto/query-qldathang.dto';
 import { SystemLogsService } from '../system-logs/system-logs.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import * as path from 'path';
-import * as fs from 'fs';
-import sharp from 'sharp';
-import { v4 as uuidv4 } from 'uuid';
+import { ImageUploadService } from '../common/services/image-upload.service';
 
 /**
  * Orders Service
@@ -26,50 +23,13 @@ import { v4 as uuidv4 } from 'uuid';
  */
 @Injectable()
 export class OrdersService {
-  private readonly uploadDir = path.join(process.cwd(), 'public', 'imgLink');
-
-  /**
-   * Upload and resize image to 640x480 for EditOrderDetail
-   * Converted from: EditOrderDetail.cs - fuHinhAnh upload logic
-   *
-   * Saves to: /imgLink/YYYYMM/ directory
-   * Uses UUID for filename like old code
-   */
-  async uploadImage(orderId: number, file: any): Promise<{ linkHinh: string }> {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    const yearMonth = new Date().toISOString().slice(0, 7).replace('-', ''); // YYYYMM
-    const targetDir = path.join(this.uploadDir, yearMonth);
-
-    // Create directory if not exists
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
-
-    // Use UUID for filename like old code (ASP.NET)
-    const ext = path.extname(file.originalname || '.jpg').toLowerCase();
-    const filename = `${uuidv4()}${ext}`;
-    const filepath = path.join(targetDir, filename);
-
-    // Resize to 640x480 using sharp, then save
-    await sharp(file.buffer)
-      .resize(640, 480, {
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .toFile(filepath);
-
-    const linkHinh = `/imgLink/${yearMonth}/${filename}`;
-    return { linkHinh };
-  }
   private orderModel: typeof Order;
 
   constructor(
     @Inject('SEQUELIZE') private sequelize: Sequelize,
     private readonly systemLogsService: SystemLogsService,
     private readonly notificationsService: NotificationsService,
+    private readonly imageUploadService: ImageUploadService,
   ) {
     if (!sequelize.models.Order) {
       OrderModel(sequelize);
@@ -335,12 +295,20 @@ export class OrdersService {
   }
 
   /**
-   * Upload and resize image for QLDatHang_Them (footer form)
-   * Converted from: QLDatHang_Them.cs - fuHinhAnh upload logic
-   * Saves to: /imgLink/YYYYMM/ directory, resizes to 640x480
+   * Upload and resize image to 640x480 for EditOrderDetail.
+   * Converted from EditOrderDetail.cs - fuHinhAnh upload logic.
+   * Delegates to the shared ImageUploadService.
    */
-  async uploadQuickOrderImage(file: any): Promise<{ linkHinh: string }> {
-    return this.uploadImage(0, file);
+  async uploadImage(_orderId: number, file: Express.Multer.File): Promise<{ linkHinh: string }> {
+    return this.imageUploadService.upload(file);
+  }
+
+  /**
+   * Upload and resize image for QLDatHang_Them (footer form).
+   * Converted from QLDatHang_Them.cs - fuHinhAnh upload logic.
+   */
+  async uploadQuickOrderImage(file: Express.Multer.File): Promise<{ linkHinh: string }> {
+    return this.imageUploadService.upload(file);
   }
 
   /**

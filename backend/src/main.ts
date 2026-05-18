@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS for frontend
   app.enableCors({
@@ -21,7 +23,11 @@ async function bootstrap() {
     }),
   );
 
-  // Set global prefix
+  // Serve uploaded images (and any static assets) from public/.
+  // Example: GET /imgLink/YYYYMM/<uuid>.jpg
+  app.useStaticAssets(join(process.cwd(), 'public'));
+
+  // Set global prefix (applies to controllers only, not static assets)
   app.setGlobalPrefix('api');
 
   await app.listen(process.env.PORT ?? 3001);

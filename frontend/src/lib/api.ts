@@ -1646,13 +1646,15 @@ export const updateOrderDetail = async (
 };
 
 /**
- * Upload image for EditOrderDetail (resize to 640x480)
+ * Generic image upload. Backend resizes to 640x480 and stores under
+ * /imgLink/YYYYMM/. Caller passes the returned `linkHinh` in subsequent
+ * create/update payloads (orders, tracking detail, purchased/in-stock items).
  */
-export const uploadOrderImage = async (orderId: number, file: File): Promise<{ linkHinh: string; linkhinh?: string }> => {
+export const uploadImage = async (file: File): Promise<{ linkHinh: string }> => {
   const formData = new FormData();
   formData.append('file', file);
   const response = await apiClient.post<{ linkHinh: string }>(
-    `/orders/${orderId}/upload-image`,
+    '/upload/image',
     formData,
     {
       headers: { 'Content-Type': 'multipart/form-data' },
