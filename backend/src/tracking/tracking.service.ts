@@ -6,6 +6,18 @@ import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { QueryTrackingDto } from './dto/query-tracking.dto';
 import { MassUpdateTrackingDto } from './dto/mass-update-tracking.dto';
+import {
+  ImportTrackingDto,
+  ImportTrackingResult,
+} from './dto/import-tracking.dto';
+import {
+  parseTrackingExcel,
+  parseEditColumns,
+  validateRows,
+  EDIT_COLUMN_COUNT,
+  type ParsedTrackingRow,
+  type RefData,
+} from './tracking-import.helper';
 import { SystemLogsService } from '../system-logs/system-logs.service';
 
 /**
@@ -813,5 +825,414 @@ export class TrackingService {
       console.error('Error reading Excel sheets:', (error as any).message);
       return { sheets: [] };
     }
+  }
+
+  /**
+   * Load ref data needed to validate the imported rows (countries, carriers,
+   * usernames). Each lookup keyed by lower-cased name.
+   */
+  private async loadImportRefData(): Promise<RefData> {
+    const [quocGia, nhaVanChuyen, users] = await Promise.all([
+      this.sequelize.query<{ QuocGiaID: number; TenQuocGia: string }>(
+        `SELECT QuocGiaID, TenQuocGia FROM dbo.tbQuocGia`,
+        { type: QueryTypes.SELECT },
+      ),
+      this.sequelize.query<{ NhaVanChuyenID: number; TenNhaVanChuyen: string }>(
+        `EXEC dbo.SP_Lay_NhaVanChuyen`,
+        { type: QueryTypes.SELECT },
+      ),
+      this.sequelize.query<{ UserName: string }>(
+        `SELECT UserName FROM AspNetUsers`,
+        { type: QueryTypes.SELECT },
+      ),
+    ]);
+
+    const quocGiaByName = new Map<string, number>();
+    for (const row of quocGia) {
+      if (row.TenQuocGia) quocGiaByName.set(row.TenQuocGia.toLowerCase(), row.QuocGiaID);
+    }
+    const nhaVanChuyenByName = new Map<string, number>();
+    for (const row of nhaVanChuyen) {
+      if (row.TenNhaVanChuyen) {
+        nhaVanChuyenByName.set(row.TenNhaVanChuyen.toLowerCase(), row.NhaVanChuyenID);
+      }
+    }
+    const usernames = new Set<string>();
+    for (const row of users) {
+      if (row.UserName) usernames.add(row.UserName.toLowerCase());
+    }
+
+    return { quocGiaByName, nhaVanChuyenByName, usernames };
+  }
+
+  /**
+   * Look up existing TrackingIDs by TrackingNumber for the rows being imported
+   * in edit mode. Returns a Set of TrackingNumber values that exist and a Map
+   * keyed by TrackingNumber -> TrackingID for actual SP calls.
+   */
+  private async loadExistingTrackingNumbers(
+    trackingNumbers: string[],
+  ): Promise<{ existing: Set<string>; idByNumber: Map<string, number> }> {
+    const existing = new Set<string>();
+    const idByNumber = new Map<string, number>();
+    if (trackingNumbers.length === 0) return { existing, idByNumber };
+
+    // Mirror legacy DBConnect.LayTrackingIDByTrackingNumber — invoked once per
+    // unique number. Volume is bounded by the upload size (typically <1k rows).
+    const unique = Array.from(new Set(trackingNumbers.filter(Boolean)));
+    const results = await Promise.all(
+      unique.map(async (tn) => {
+        try {
+          const rows = await this.sequelize.query(
+            `EXEC dbo.SP_Lay_TrackingIDByTrackingNumber @TrackingNumber = :tn`,
+            { replacements: { tn }, type: QueryTypes.SELECT },
+          );
+          const first: any = (rows as any[])[0];
+          // SP uses ExecuteScalar in C# — returns a single scalar/column. Handle
+          // both shapes: { TrackingID: n } or a bare number / { '': n }.
+          const id =
+            typeof first === 'number'
+              ? first
+              : first && typeof first === 'object'
+                ? (first.TrackingID ?? Object.values(first)[0] ?? null)
+                : null;
+          return { tn, id: typeof id === 'number' && id > 0 ? id : null };
+        } catch {
+          return { tn, id: null };
+        }
+      }),
+    );
+
+    for (const { tn, id } of results) {
+      if (id !== null && id !== undefined) {
+        existing.add(tn);
+        idByNumber.set(tn, id);
+      }
+    }
+    return { existing, idByNumber };
+  }
+
+  /**
+   * Import tracking rows from an uploaded Excel file.
+   *
+   * Converted from Tracking_Import.aspx.cs (DocDuLieu + ValidateExcelData +
+   * LuuExcel). Two modes:
+   *  - create (mode != '1'): inserts via SP_Them_Tracking
+   *  - edit (mode == '1'): updates via SP_CapNhat_Tracking, with the user
+   *    selecting which columns to overwrite via editColumns.
+   *
+   * If `commit !== 'true'` we return the validation preview without writing.
+   */
+  async importTracking(
+    file: any,
+    dto: ImportTrackingDto,
+    actorUsername?: string,
+  ): Promise<ImportTrackingResult> {
+    if (!file) {
+      throw new NotFoundException('No file uploaded');
+    }
+    if (!file.originalname?.toLowerCase().endsWith('.xlsx')) {
+      throw new NotFoundException('Only .xlsx files are supported');
+    }
+    if (!dto.sheetName) {
+      throw new NotFoundException('sheetName is required');
+    }
+
+    const editMode = dto.mode === '1';
+    const editColumns = parseEditColumns(dto.editColumns);
+    // In create mode every column applies; build a full set so we always check.
+    const effectiveCols = editMode
+      ? editColumns
+      : new Set(Array.from({ length: EDIT_COLUMN_COUNT }, (_, i) => i));
+
+    const rows = await parseTrackingExcel(file.buffer as Buffer, dto.sheetName);
+    const ref = await this.loadImportRefData();
+
+    // For edit mode we need to know which tracking numbers exist in DB.
+    const trackingNumbers = rows.map((r) => r.trackingNumber).filter(Boolean);
+    const { existing, idByNumber } = editMode
+      ? await this.loadExistingTrackingNumbers(trackingNumbers)
+      : { existing: new Set<string>(), idByNumber: new Map<string, number>() };
+
+    const errorCount = validateRows(rows, ref, editMode, effectiveCols, existing);
+
+    const commit = dto.commit === 'true';
+    let imported = 0;
+    if (commit && errorCount < rows.length) {
+      imported = await this.persistImportRows(
+        rows,
+        ref,
+        idByNumber,
+        editMode,
+        effectiveCols,
+        actorUsername || '',
+      );
+    }
+
+    return {
+      rows: rows.map(({ ngayDatHangIso, ngayDatHangInvalid, ...rest }) => rest),
+      errorCount,
+      imported,
+      committed: commit,
+    };
+  }
+
+  /**
+   * Build the noiDung string for a tracking system log row.
+   *
+   * Mirrors C# BLL.NoiDungTrackingSystemLogs (BLL.cs:1530) — field order and
+   * formatting must match so audit log queries that filter on substring stay
+   * compatible across legacy and new entries.
+   */
+  private buildTrackingLogContent(args: {
+    username: string;
+    trackingNumber: string;
+    orderNumber: string;
+    ngayDatHang: string; // dd/MM/yyyy or empty
+    nhaVanChuyenId: number | null;
+    quocGiaId: number | null;
+    tinhTrang: string;
+    ghiChu: string;
+    nguoiTao: string;
+    kien: string;
+    mawb: string;
+    hawb: string;
+  }): string {
+    const v = (n: number | null) => (n === null || n === undefined ? '' : String(n));
+    return (
+      `UserName: ${args.username};` +
+      `TrackingNumber: ${args.trackingNumber};` +
+      `OrderNumber: ${args.orderNumber};` +
+      `NgayDatHang: ${args.ngayDatHang};` +
+      `NhaVanChuyenID: ${v(args.nhaVanChuyenId)};` +
+      `QuocGiaID: ${v(args.quocGiaId)};` +
+      `TinhTrang: ${args.tinhTrang};` +
+      `GhiChu: ${args.ghiChu};` +
+      `NguoiTao: ${args.nguoiTao};` +
+      `Kien: ${args.kien};` +
+      `Mawb: ${args.mawb};` +
+      `Hawb: ${args.hawb};`
+    );
+  }
+
+  /**
+   * Persist validated rows: insert (create mode) or update (edit mode).
+   * Skips rows that have errors. Logs each successful row to system logs.
+   */
+  private async persistImportRows(
+    rows: ParsedTrackingRow[],
+    ref: RefData,
+    idByNumber: Map<string, number>,
+    editMode: boolean,
+    editColumns: Set<number>,
+    actor: string,
+  ): Promise<number> {
+    let imported = 0;
+    for (const row of rows) {
+      if (row.errors.length > 0) continue;
+
+      const quocGiaId = row.tenQuocGia
+        ? ref.quocGiaByName.get(row.tenQuocGia.toLowerCase()) ?? null
+        : null;
+      const nhaVanChuyenId = row.tenNhaVanChuyen
+        ? ref.nhaVanChuyenByName.get(row.tenNhaVanChuyen.toLowerCase()) ?? null
+        : null;
+      const tinhTrang = row.tinhTrang || 'Received';
+      const ngayDatHang = row.ngayDatHangIso; // may be null
+      const ghiChuLoHang = row.ghiChuLoHang || '';
+      const coTaoLoHang = ghiChuLoHang ? 1 : 0;
+      const noiDung = this.buildTrackingLogContent({
+        username: row.username,
+        trackingNumber: row.trackingNumber,
+        orderNumber: row.orderNumber,
+        ngayDatHang: row.ngayDatHang, // dd/MM/yyyy display string (matches C# DateTime.ToString("dd/MM/yyyy"))
+        nhaVanChuyenId,
+        quocGiaId,
+        tinhTrang,
+        ghiChu: row.ghiChu,
+        nguoiTao: actor,
+        kien: row.kien,
+        mawb: row.mawb,
+        hawb: row.hawb,
+      });
+
+      try {
+        if (editMode) {
+          const trackingId = idByNumber.get(row.trackingNumber);
+          if (!trackingId) continue;
+          await this.execCapNhatTracking({
+            trackingId,
+            row,
+            quocGiaId,
+            nhaVanChuyenId,
+            tinhTrang,
+            ngayDatHang,
+            coTaoLoHang,
+            ghiChuLoHang,
+            actor,
+            editColumns,
+          });
+          // Mirror C#: nguon = "Tracking_Import:CapNhatTrackingKhongMoDB",
+          // hanhDong = HanhDong.ChinhSua, doiTuong = TrackingID
+          await this.systemLogsService.create({
+            nguoiTao: actor,
+            nguon: 'Tracking_Import:CapNhatTrackingKhongMoDB',
+            hanhDong: 'Chinh sua',
+            doiTuong: String(trackingId),
+            noiDung,
+          });
+        } else {
+          await this.sequelize.query(
+            `EXEC dbo.SP_Them_Tracking
+                @UserName = :username,
+                @TrackingNumber = :trackingNumber,
+                @OrderNumber = :orderNumber,
+                @NgayDatHang = :ngayDatHang,
+                @NhaVanChuyenID = :nhaVanChuyenId,
+                @QuocGiaID = :quocGiaId,
+                @TinhTrang = :tinhTrang,
+                @GhiChu = :ghiChu,
+                @NguoiTao = :nguoiTao,
+                @Kien = :kien,
+                @Mawb = :mawb,
+                @Hawb = :hawb,
+                @CoTaoLoHang = :coTaoLoHang,
+                @GhiChuLoHang = :ghiChuLoHang`,
+            {
+              replacements: {
+                username: row.username,
+                trackingNumber: row.trackingNumber,
+                orderNumber: row.orderNumber,
+                // Pass null when date is empty, mirroring DBConnect.ThemTrackingKhongMoDB:
+                // `if NgayDatHang.HasValue { @NgayDatHang = value } else { DBNull.Value }`
+                ngayDatHang,
+                nhaVanChuyenId,
+                quocGiaId,
+                tinhTrang,
+                ghiChu: row.ghiChu,
+                nguoiTao: actor,
+                kien: row.kien,
+                mawb: row.mawb,
+                hawb: row.hawb,
+                coTaoLoHang,
+                ghiChuLoHang,
+              },
+              type: QueryTypes.RAW,
+            },
+          );
+          // Mirror C#: nguon = "Tracking_Import:ThemTrackingKhongMoDB",
+          // hanhDong = HanhDong.ThemMoi, doiTuong = ""
+          await this.systemLogsService.create({
+            nguoiTao: actor,
+            nguon: 'Tracking_Import:ThemTrackingKhongMoDB',
+            hanhDong: 'Them moi',
+            doiTuong: '',
+            noiDung,
+          });
+        }
+        imported++;
+      } catch (error) {
+        console.error(
+          `Error persisting tracking row ${row.excelRowIndex}:`,
+          (error as any).message,
+        );
+        row.errors.push(`Lưu thất bại: ${(error as any).message}`);
+      }
+    }
+    return imported;
+  }
+
+  /**
+   * Call SP_CapNhat_Tracking with only the columns the user opted to update.
+   * Matches the udXxx flag convention from CapNhatTrackingKhongMoDB.
+   */
+  private async execCapNhatTracking(args: {
+    trackingId: number;
+    row: ParsedTrackingRow;
+    quocGiaId: number | null;
+    nhaVanChuyenId: number | null;
+    tinhTrang: string;
+    ngayDatHang: string | null;
+    coTaoLoHang: number;
+    ghiChuLoHang: string;
+    actor: string;
+    editColumns: Set<number>;
+  }): Promise<void> {
+    const { trackingId, row, quocGiaId, nhaVanChuyenId, tinhTrang, ngayDatHang, coTaoLoHang, ghiChuLoHang, actor, editColumns } = args;
+    const has = (i: number) => (editColumns.has(i) ? 1 : 0);
+
+    const allValues = {
+      id: trackingId,
+      username: row.username,
+      trackingNumber: row.trackingNumber,
+      orderNumber: row.orderNumber,
+      // Pass null when empty, mirroring DBConnect.CapNhatTrackingKhongMoDB's
+      // DBNull.Value branch.
+      ngayDatHang,
+      nhaVanChuyenId,
+      quocGiaId,
+      tinhTrang,
+      ghiChu: row.ghiChu,
+      nguoiTao: actor,
+      kien: row.kien,
+      mawb: row.mawb,
+      hawb: row.hawb,
+      coTaoLoHang,
+      ghiChuLoHang,
+      udUserName: has(1),
+      udTrackingNumber: 0, // TrackingNumber is the lookup key, never overwritten
+      udOrderNumber: has(2),
+      udNgayDatHang: has(3),
+      udNhaVanChuyenID: has(4),
+      udQuocGiaID: has(0),
+      udTinhTrang: has(5),
+      udGhiChu: has(6),
+      udKien: has(7),
+      udMawb: has(8),
+      udHawb: has(9),
+      udGhiChuLoHang: has(10),
+    };
+
+    const paramMap: Array<{ spParam: string; replacementKey: string }> = [
+      { spParam: 'TrackingID', replacementKey: 'id' },
+      { spParam: 'UserName', replacementKey: 'username' },
+      { spParam: 'TrackingNumber', replacementKey: 'trackingNumber' },
+      { spParam: 'OrderNumber', replacementKey: 'orderNumber' },
+      { spParam: 'NgayDatHang', replacementKey: 'ngayDatHang' },
+      { spParam: 'NhaVanChuyenID', replacementKey: 'nhaVanChuyenId' },
+      { spParam: 'QuocGiaID', replacementKey: 'quocGiaId' },
+      { spParam: 'TinhTrang', replacementKey: 'tinhTrang' },
+      { spParam: 'GhiChu', replacementKey: 'ghiChu' },
+      { spParam: 'NguoiTao', replacementKey: 'nguoiTao' },
+      { spParam: 'Kien', replacementKey: 'kien' },
+      { spParam: 'Mawb', replacementKey: 'mawb' },
+      { spParam: 'Hawb', replacementKey: 'hawb' },
+      { spParam: 'CoTaoLoHang', replacementKey: 'coTaoLoHang' },
+      { spParam: 'GhiChuLoHang', replacementKey: 'ghiChuLoHang' },
+      { spParam: 'udUserName', replacementKey: 'udUserName' },
+      { spParam: 'udTrackingNumber', replacementKey: 'udTrackingNumber' },
+      { spParam: 'udOrderNumber', replacementKey: 'udOrderNumber' },
+      { spParam: 'udNgayDatHang', replacementKey: 'udNgayDatHang' },
+      { spParam: 'udNhaVanChuyenID', replacementKey: 'udNhaVanChuyenID' },
+      { spParam: 'udQuocGiaID', replacementKey: 'udQuocGiaID' },
+      { spParam: 'udTinhTrang', replacementKey: 'udTinhTrang' },
+      { spParam: 'udGhiChu', replacementKey: 'udGhiChu' },
+      { spParam: 'udKien', replacementKey: 'udKien' },
+      { spParam: 'udMawb', replacementKey: 'udMawb' },
+      { spParam: 'udHawb', replacementKey: 'udHawb' },
+      { spParam: 'udGhiChuLoHang', replacementKey: 'udGhiChuLoHang' },
+    ];
+
+    const spParams = await this.getProcedureParams('dbo.SP_CapNhat_Tracking');
+    const selected = paramMap.filter((p) => spParams.has(p.spParam.toLowerCase()));
+    const execSql = `EXEC dbo.SP_CapNhat_Tracking\n${selected
+      .map((p) => `  @${p.spParam} = :${p.replacementKey}`)
+      .join(',\n')}`;
+    const replacements = selected.reduce((acc, p) => {
+      acc[p.replacementKey] = (allValues as Record<string, any>)[p.replacementKey];
+      return acc;
+    }, {} as Record<string, any>);
+
+    await this.sequelize.query(execSql, { replacements, type: QueryTypes.RAW });
   }
 }

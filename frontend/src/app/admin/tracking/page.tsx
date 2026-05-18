@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/use-auth-context';
 import {
   FiPlus, FiCalendar, FiUser, FiPackage,
   FiTrash2, FiCheck, FiX, FiChevronLeft, FiChevronRight,
-  FiEye, FiEdit2,
+  FiEye, FiEdit2, FiUpload,
 } from 'react-icons/fi';
 
 interface Tracking {
@@ -190,13 +190,29 @@ export default function TrackingPage() {
           <h1 className="text-xl font-bold text-slate-900">Danh sách Tracking</h1>
           <p className="text-sm text-slate-500 mt-0.5">Quản lý toàn bộ mã tracking vận chuyển</p>
         </div>
-        <Link
-          href="/admin/tracking/new"
-          className="flex items-center gap-2 bg-[#14264b] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer shadow-sm shadow-cyan-300/40"
-        >
-          <FiPlus className="h-4 w-4" />
-          Thêm mới tracking
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/tracking/import"
+            className="flex items-center gap-2 border border-[#14264b]/20 bg-white text-[#14264b] px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#14264b]/5 transition-colors cursor-pointer"
+          >
+            <FiUpload className="h-4 w-4" />
+            Thêm bằng Excel
+          </Link>
+          <Link
+            href="/admin/tracking/import?m=1"
+            className="flex items-center gap-2 border border-rose-200 bg-white text-rose-700 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-rose-50 transition-colors cursor-pointer"
+          >
+            <FiUpload className="h-4 w-4" />
+            Sửa bằng Excel
+          </Link>
+          <Link
+            href="/admin/tracking/new"
+            className="flex items-center gap-2 bg-[#14264b] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-cyan-400 transition-colors cursor-pointer shadow-sm shadow-cyan-300/40"
+          >
+            <FiPlus className="h-4 w-4" />
+            Thêm mới tracking
+          </Link>
+        </div>
       </div>
 
       {/* Status count cards */}

@@ -20,6 +20,10 @@ import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { QueryTrackingDto } from './dto/query-tracking.dto';
 import { MassUpdateTrackingDto } from './dto/mass-update-tracking.dto';
+import {
+  ImportTrackingDto,
+  ImportTrackingResult,
+} from './dto/import-tracking.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -334,5 +338,29 @@ export class TrackingController {
   @UseInterceptors(FileInterceptor('file'))
   async getSheets(@UploadedFile() file: any) {
     return this.trackingService.getExcelSheets(file);
+  }
+
+  /**
+   * POST /tracking/import
+   * Validate + optionally persist tracking rows from an Excel file.
+   * Converted from Tracking_Import.aspx Steps 2-4 (sheet pick, validation, save).
+   *
+   * Multipart body fields:
+   *   file        — .xlsx upload
+   *   sheetName   — sheet to read
+   *   mode        — '1' for edit, anything else creates new rows
+   *   editColumns — CSV of column indices to overwrite (edit mode only)
+   *   commit      — 'true' to persist; otherwise returns dry-run preview
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('import')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  async importTracking(
+    @UploadedFile() file: any,
+    @Body() dto: ImportTrackingDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ImportTrackingResult> {
+    return this.trackingService.importTracking(file, dto, req.user?.username);
   }
 }
