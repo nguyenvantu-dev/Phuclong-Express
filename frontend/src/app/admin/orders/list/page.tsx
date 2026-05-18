@@ -10,6 +10,7 @@ import { getOrders, getStatusCounts, massDelete, massComplete, massReceived, mas
 import { useAuthStore } from '@/hooks/use-auth';
 import { Order, QueryParams } from '@/types/order';
 import { OrderStatus, OrderStatusConfig } from '@/types/order-status';
+import EditOrderDetailModal from './edit-order-detail-modal';
 
 // Note Modal Component
 function NoteModal({
@@ -330,6 +331,9 @@ export default function EditOrderListPage() {
 
   // Note modal state
   const [noteModalOpen, setNoteModalOpen] = useState(false);
+
+  // Edit order detail modal state — null when closed, orderId when open
+  const [editOrderId, setEditOrderId] = useState<number | null>(null);
 
   // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState<{
@@ -1143,12 +1147,13 @@ export default function EditOrderListPage() {
                       {order.hangKhoan ? (
                         <span className="text-gray-500">Trọn gói</span>
                       ) : (
-                        <Link
-                          href={`/admin/orders/edit?id=${order.id}`}
-                          className="text-[#14264b] hover:text-[#14264b]"
+                        <button
+                          type="button"
+                          onClick={() => setEditOrderId(order.id)}
+                          className="text-[#14264b] hover:text-[#14264b] hover:underline cursor-pointer"
                         >
                           Detail
-                        </Link>
+                        </button>
                       )}
                     </td>
 
@@ -1360,6 +1365,12 @@ export default function EditOrderListPage() {
         open={noteModalOpen}
         orderIds={selectedIds}
         onClose={() => setNoteModalOpen(false)}
+      />
+
+      {/* Edit Order Detail Modal */}
+      <EditOrderDetailModal
+        orderId={editOrderId}
+        onClose={() => setEditOrderId(null)}
       />
     </div>
   );
