@@ -167,6 +167,28 @@ export class OrdersService {
   }
 
   /**
+   * Parse "dd/mm/yyyy" hoặc ISO date string -> "YYYY-MM-DD" (MSSQL DATE format).
+   * Trả về null nếu input rỗng/không hợp lệ — để SP dùng default GETDATE().
+   */
+  private parseToIsoDate(input?: string | null): string | null {
+    if (!input) return null;
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+
+    // dd/mm/yyyy
+    const ddmmyyyy = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(trimmed);
+    if (ddmmyyyy) {
+      const [, dd, mm, yyyy] = ddmmyyyy;
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // ISO or other parseable
+    const d = new Date(trimmed);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  }
+
+  /**
    * Calculate order totals
    */
   private calculateTotals(orderData: Partial<Order>): Partial<Order> {
@@ -599,6 +621,7 @@ export class OrdersService {
         ngayVeVn: row.ngayveVN,
         ngaySaveLink: row.ngaysaveLink || null,
         ngayMuaHang: row.ngaymuahang || null,
+        ngayHoanThanh: row.NgayHoanThanh || null,
         namTaiChinh: row.nam_taichinh,
         websiteName: row.WebsiteName,
         tenDotHang: row.TenDotHang,
@@ -782,6 +805,7 @@ export class OrdersService {
         ngayVeVn: row.ngayveVN,
         ngaySaveLink: row.ngaysaveLink,
         ngayMuaHang: row.ngaymuahang,
+        ngayHoanThanh: row.NgayHoanThanh || null,
         namTaiChinh: row.nam_taichinh,
         websiteName: row.WebsiteName,
         tenDotHang: row.TenDotHang,
@@ -1060,13 +1084,23 @@ export class OrdersService {
   /**
    * Mass complete orders using stored procedure (giống EditOrder logic)
    */
-  async massComplete(ids: string, nguoiTao = 'system', nguon = 'EditOrder'): Promise<{ completed: number }> {
-    // SP_CapNhat_MassComplete: @id (comma-separated IDs)
+  async massComplete(
+    ids: string,
+    nguoiTao = 'system',
+    nguon = 'EditOrder',
+    ngayHoanThanh?: string,
+  ): Promise<{ completed: number }> {
+    // SP_CapNhat_MassComplete: @id (comma-separated IDs), @NgayHoanThanh (DATE, optional)
+    // Accept dd/mm/yyyy hoặc ISO; normalize -> YYYY-MM-DD cho MSSQL
+    const parsedNgay = this.parseToIsoDate(ngayHoanThanh);
     try {
-      await this.sequelize.query(`EXEC dbo.SP_CapNhat_MassComplete @id = :ids`, {
-        replacements: { ids },
-        type: QueryTypes.RAW,
-      });
+      await this.sequelize.query(
+        `EXEC dbo.SP_CapNhat_MassComplete @id = :ids, @NgayHoanThanh = :ngayHoanThanh`,
+        {
+          replacements: { ids, ngayHoanThanh: parsedNgay },
+          type: QueryTypes.RAW,
+        },
+      );
     } catch (error) {
       console.error('MassComplete error:', error);
       throw new BadRequestException('Failed to mass complete orders');
@@ -1467,6 +1501,7 @@ export class OrdersService {
         ngayVeVn: row.ngayveVN,
         ngaySaveLink: row.ngaysaveLink || null,
         ngayMuaHang: row.ngaymuahang || null,
+        ngayHoanThanh: row.NgayHoanThanh || null,
         namTaiChinh: row.nam_taichinh,
         websiteName: row.WebsiteName,
         tenDotHang: row.TenDotHang,

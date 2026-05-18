@@ -384,10 +384,12 @@ export const massCancel = async (
 export const massComplete = async (
   ids: number[],
   username?: string,
+  ngayHoanThanh?: string,
 ): Promise<{ completed: number }> => {
   const response = await apiClient.post<{ completed: number }>('/orders/mass-complete', {
     ids,
     username,
+    ngayHoanThanh,
   } as MassCompleteRequest);
   return response.data;
 };

@@ -215,6 +215,104 @@ function ReturnDateModal({
   );
 }
 
+// Complete Date Modal — chọn ngày complete khi mass complete
+function CompleteDateModal({
+  open,
+  orderIds,
+  username,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  orderIds: number[];
+  username: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [ngayHoanThanh, setNgayHoanThanh] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open || !dateInputRef.current) return;
+    const today = new Date();
+    const defaultStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+    setNgayHoanThanh(defaultStr);
+    const fp = flatpickr(dateInputRef.current, {
+      dateFormat: 'd/m/Y',
+      defaultDate: today,
+      onChange: (dates) => {
+        if (dates[0]) {
+          const d = dates[0];
+          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+          setNgayHoanThanh(formatted);
+          setError('');
+        }
+      },
+    });
+    return () => { fp.destroy(); };
+  }, [open]);
+
+  if (!open) return null;
+
+  const handleSubmit = async () => {
+    if (!ngayHoanThanh) {
+      setError('Vui lòng chọn ngày complete');
+      return;
+    }
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await massComplete(orderIds, username, ngayHoanThanh);
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi complete');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-200">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl transition-transform duration-200">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">
+          Mass complete {orderIds.length > 1 && `(${orderIds.length} đơn)`}
+        </h3>
+        {error && <div className="mb-4 rounded bg-red-50 p-2 text-sm text-red-600">{error}</div>}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            Ngày complete <span className="text-red-500">*</span>
+          </label>
+          <input
+            ref={dateInputRef}
+            type="text"
+            placeholder="dd/mm/yyyy"
+            className="w-full rounded-lg border border-gray-400 bg-white px-3 py-2 text-gray-900 focus:border-[#14264b] focus:outline-none"
+          />
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="rounded-lg border border-gray-400 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Đang complete...' : 'Complete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Confirmation Modal Component
 function ConfirmModal({
   open,
@@ -328,6 +426,9 @@ export default function EditOrderListPage() {
 
   // Return date modal state
   const [returnDateModalOpen, setReturnDateModalOpen] = useState(false);
+
+  // Complete date modal state
+  const [completeDateModalOpen, setCompleteDateModalOpen] = useState(false);
 
   // Note modal state
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -460,25 +561,6 @@ export default function EditOrderListPage() {
     },
   });
 
-  // Mass complete mutation (dùng stored procedure giống EditOrder)
-  const massCompleteMutation = useMutation({
-    mutationFn: (params: { id: number; username: string }[]) =>
-      massComplete(
-        params.map((p) => p.id),
-        params[0]?.username
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order-status-counts'] });
-      setSelectedIds([]);
-      setConfirmModal(prev => ({ ...prev, open: false }));
-    },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra khi complete';
-      setConfirmModal(prev => ({ ...prev, error: message }));
-    },
-  });
-
   // Handle status checkbox change
   const handleStatusChange = (status: string, checked: boolean) => {
     const newStatuses = checked
@@ -597,29 +679,17 @@ export default function EditOrderListPage() {
     );
   };
 
-  // Handle mass complete (dùng stored procedure giống EditOrder)
+  // Handle mass complete — validate status rồi mở modal chọn ngày complete
   const handleMassComplete = () => {
-    showConfirm(
-      'Xác nhận complete',
-      'Bạn có chắc muốn complete các đơn đã chọn?',
-      'default',
-      () => {
-        const selectedOrders = data?.data.filter((o) => selectedIds.includes(o.id));
-        const invalidOrders = selectedOrders?.filter(
-          (o) => !['Ordered', 'Shipped'].includes(o.trangThaiOrder)
-        );
-        if (invalidOrders && invalidOrders.length > 0) {
-          alert('Có đơn hàng không thể complete - chỉ có thể complete đơn hàng đã Ordered hoặc Shipped');
-          return;
-        }
-        const validOrders = selectedOrders?.filter((o) =>
-          ['Ordered', 'Shipped'].includes(o.trangThaiOrder)
-        );
-        if (validOrders && validOrders.length > 0) {
-          massCompleteMutation.mutate(validOrders.map((o) => ({ id: o.id, username: currentUsername })));
-        }
-      }
+    const selectedOrders = data?.data.filter((o) => selectedIds.includes(o.id));
+    const invalidOrders = selectedOrders?.filter(
+      (o) => !['Ordered', 'Shipped'].includes(o.trangThaiOrder)
     );
+    if (invalidOrders && invalidOrders.length > 0) {
+      alert('Có đơn hàng không thể complete - chỉ có thể complete đơn hàng đã Ordered hoặc Shipped');
+      return;
+    }
+    setCompleteDateModalOpen(true);
   };
 
   // Handle mass received (dùng stored procedure giống EditOrder)
@@ -680,7 +750,7 @@ export default function EditOrderListPage() {
       'Quốc gia', 'Link', 'Màu', 'Size', 'Số lượng',
       'Giá web', '%Công', '%SaleOff', 'Phụ thu', 'ShipUS', 'Tax',
       'Công VNĐ', 'Tổng VNĐ', 'Tỷ giá', 'Loại tiền',
-      'Vùng miền', 'Ghi chú', 'Trạng thái', 'Đợt hàng'
+      'Vùng miền', 'Ghi chú', 'Trạng thái', 'Đợt hàng', 'Ngày complete'
     ];
     lines.push(headers.join(','));
 
@@ -710,7 +780,8 @@ export default function EditOrderListPage() {
         order.vungMien || '',
         (order.ghiChu || '').replace(/,/g, ';'),
         order.trangThaiOrder || '',
-        order.tenDotHang || ''
+        order.tenDotHang || '',
+        order.ngayHoanThanh ? formatDate(order.ngayHoanThanh as any) : ''
       ];
       lines.push(values.join(','));
     }
@@ -1005,10 +1076,10 @@ export default function EditOrderListPage() {
           {canMassComplete && (
             <button
               onClick={handleMassComplete}
-              disabled={selectedIds.length === 0 || massCompleteMutation.isPending}
+              disabled={selectedIds.length === 0}
               className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
             >
-              {massCompleteMutation.isPending ? 'Đang xử lý...' : 'Mass complete'}
+              Mass complete
             </button>
           )}
           {canMassReceived && (
@@ -1117,6 +1188,9 @@ export default function EditOrderListPage() {
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
                     VN STATUS
+                  </th>
+                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
+                    NGÀY COMPLETE
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
                     ĐỢT HÀNG
@@ -1287,6 +1361,11 @@ export default function EditOrderListPage() {
                       {order.ngayVeVn ? `Đợt hàng ${formatDate(order.ngayVeVn)}` : '-'}
                     </td>
 
+                    {/* NGÀY COMPLETE */}
+                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
+                      {order.ngayHoanThanh ? formatDate(order.ngayHoanThanh as any) : '-'}
+                    </td>
+
                     {/* ĐỢT HÀNG */}
                     <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
                       {order.tenDotHang || '-'}
@@ -1358,6 +1437,19 @@ export default function EditOrderListPage() {
         open={returnDateModalOpen}
         orderIds={selectedIds}
         onClose={() => setReturnDateModalOpen(false)}
+      />
+
+      {/* Complete Date Modal */}
+      <CompleteDateModal
+        open={completeDateModalOpen}
+        orderIds={selectedIds}
+        username={currentUsername}
+        onClose={() => setCompleteDateModalOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+          queryClient.invalidateQueries({ queryKey: ['order-status-counts'] });
+          setSelectedIds([]);
+        }}
       />
 
       {/* Note Modal */}

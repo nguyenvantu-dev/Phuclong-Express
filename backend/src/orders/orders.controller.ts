@@ -347,7 +347,12 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   async massComplete(@Body() massCompleteDto: MassCompleteDto, @Request() req: any): Promise<{ completed: number }> {
     const ids = massCompleteDto.ids.join(',');
-    return this.ordersService.massComplete(ids, req.user?.username || 'system', massCompleteDto.nguon);
+    return this.ordersService.massComplete(
+      ids,
+      req.user?.username || 'system',
+      massCompleteDto.nguon,
+      massCompleteDto.ngayHoanThanh,
+    );
   }
 
   /**

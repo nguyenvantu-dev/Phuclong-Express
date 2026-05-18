@@ -120,6 +120,11 @@ export class MassCompleteDto {
   @IsString()
   @IsOptional()
   nguon?: string;
+
+  // dd/mm/yyyy hoặc ISO date. Nếu không truyền, SP sẽ dùng GETDATE().
+  @IsString()
+  @IsOptional()
+  ngayHoanThanh?: string;
 }
 
 /**
