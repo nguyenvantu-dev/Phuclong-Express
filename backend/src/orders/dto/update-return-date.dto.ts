@@ -22,6 +22,15 @@ export class UpdateReturnDateDto {
   @IsOptional()
   chuyenVeCompleted?: boolean;
 
+  /**
+   * Ngày hoàn thành (DD/MM/YYYY hoặc YYYY-MM-DD).
+   * Chỉ dùng khi chuyenVeCompleted=true để ghi vào DON_HANG.NgayHoanThanh.
+   * Nếu không truyền => mặc định hôm nay (giống SP_CapNhat_MassComplete).
+   */
+  @IsString()
+  @IsOptional()
+  ngayHoanThanh?: string;
+
   @IsString()
   @IsOptional()
   username?: string;

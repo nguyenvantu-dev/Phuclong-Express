@@ -43,6 +43,7 @@ export interface Order {
   ngayVeVn: Date | null;
   ngaySaveLink: Date;
   ngayMuaHang: Date | null;
+  ngayHoanThanh: Date | string | null;
   namTaiChinh: number | null;
   websiteName: string | null;
   tenDotHang: string | null;
@@ -157,4 +158,6 @@ export interface OrderSummary {
 export interface MassCompleteRequest {
   ids: number[];
   username?: string;
+  // dd/mm/yyyy. Nếu không truyền, server dùng ngày hiện tại
+  ngayHoanThanh?: string;
 }

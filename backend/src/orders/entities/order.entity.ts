@@ -45,6 +45,7 @@ export class Order extends Model {
   ngayVeVn: Date;
   ngaySaveLink: Date;
   ngayMuaHang: Date;
+  ngayHoanThanh: Date;
   namTaiChinh: number;
   websiteName: string;
   tenDotHang: string;
@@ -187,6 +188,10 @@ export const OrderModel = (sequelize: Sequelize) => {
       ngayMuaHang: {
         type: DataTypes.DATE,
         field: 'ngaymuahang',
+      },
+      ngayHoanThanh: {
+        type: DataTypes.DATEONLY,
+        field: 'NgayHoanThanh',
       },
       namTaiChinh: {
         type: DataTypes.INTEGER,

@@ -384,10 +384,12 @@ export const massCancel = async (
 export const massComplete = async (
   ids: number[],
   username?: string,
+  ngayHoanThanh?: string,
 ): Promise<{ completed: number }> => {
   const response = await apiClient.post<{ completed: number }>('/orders/mass-complete', {
     ids,
     username,
+    ngayHoanThanh,
   } as MassCompleteRequest);
   return response.data;
 };
@@ -577,6 +579,8 @@ export const updateOrderReturnDate = async (
     ngayVeVn: string;
     boSungGhiChu?: string;
     chuyenVeCompleted?: boolean;
+    /** Ngày hoàn thành (dd/MM/yyyy or yyyy-MM-dd) — chỉ dùng khi chuyenVeCompleted=true */
+    ngayHoanThanh?: string;
     username?: string;
   },
 ): Promise<Order> => {
@@ -1627,6 +1631,8 @@ export const updateOrderDetail = async (
     trangthaiOrder?: string;
     ngaymuahang?: string;
     ngayveVN?: string;
+    /** Ngày hoàn thành (DD/MM/YYYY hoặc YYYY-MM-DD) — chỉ dùng khi trangthaiOrder = 'Completed' */
+    ngayHoanThanh?: string;
     adminNote?: string;
     LoaiHangID?: number;
     QuocGiaID?: number;
