@@ -222,12 +222,12 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
     num += (shipUSA || 0) * sl;
     num += (phuthu || 0) * sl;
 
+    // Mirror C# TinhTienOrder: giasauoffUSD = num (after tax + ship + phuthu, total for soluong)
     const tongTienUSD = num + tienCongUSD;
     const tongTienVND = Math.ceil(num * tygiaNum + tienCongVND);
-    const giaSauOffPerUnit = dongiaweb * (1 - (saleoff || 0) / 100);
 
-    setValue('giasauoffUSD', Math.round(giaSauOffPerUnit * 100) / 100);
-    setValue('giasauoffVND', Math.round(giaSauOffPerUnit * tygiaNum));
+    setValue('giasauoffUSD', Math.round(num * 100) / 100);
+    setValue('giasauoffVND', Math.round(num * tygiaNum));
     setValue('tiencongUSD', Math.round(tienCongUSD * 100) / 100);
     setValue('tiencongVND', Math.round(tienCongVND));
     setValue('tongtienUSD', Math.round(tongTienUSD * 100) / 100);
@@ -619,8 +619,8 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
                     <div>
                       <label className={STYLES.label}>Loại tiền</label>
                       <select {...register('loaitien')} className={STYLES.select}>
-                        {exchangeRates.map((er: { name: string; rate: number }, idx: number) => (
-                          <option key={`${er.name}-${idx}`} value={er.name}>{er.name}</option>
+                        {exchangeRates.map((er: { Name: string; TyGiaVND: number }, idx: number) => (
+                          <option key={`${er.Name}-${idx}`} value={er.Name}>{er.Name}</option>
                         ))}
                       </select>
                     </div>
@@ -629,7 +629,7 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
                       <input {...register('tygia', { valueAsNumber: true })} type="number" step="0.01" min="0" className={STYLES.input} />
                     </div>
                     <div>
-                      <label className={STYLES.label}>Giá sau off (USD)</label>
+                      <label className={STYLES.label}>Giá sau off (Ngoại tệ)</label>
                       <input {...register('giasauoffUSD', { valueAsNumber: true })} type="number" step="0.01" readOnly className={STYLES.readonly} />
                     </div>
                     <div>
@@ -637,7 +637,7 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
                       <input {...register('giasauoffVND', { valueAsNumber: true })} type="number" readOnly className={STYLES.readonly} />
                     </div>
                     <div>
-                      <label className={STYLES.label}>Tiền công (USD)</label>
+                      <label className={STYLES.label}>Tiền công (Ngoại tệ)</label>
                       <input {...register('tiencongUSD', { valueAsNumber: true })} type="number" step="0.01" readOnly className={STYLES.readonly} />
                     </div>
                     <div>
@@ -645,7 +645,7 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
                       <input {...register('tiencongVND', { valueAsNumber: true })} type="number" readOnly className={STYLES.readonly} />
                     </div>
                     <div>
-                      <label className={STYLES.label}>Tổng tiền (USD)</label>
+                      <label className={STYLES.label}>Tổng tiền (Ngoại tệ)</label>
                       <input {...register('tongtienUSD', { valueAsNumber: true })} type="number" step="0.01" readOnly className={STYLES.readonly} />
                     </div>
                     <div>
