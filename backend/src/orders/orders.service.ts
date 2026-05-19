@@ -1627,7 +1627,7 @@ export class OrdersService {
     updateReturnDateDto: UpdateReturnDateDto,
     username?: string,
   ): Promise<Order> {
-    const { ngayVeVn, boSungGhiChu, chuyenVeCompleted } = updateReturnDateDto;
+    const { ngayVeVn, boSungGhiChu, chuyenVeCompleted, ngayHoanThanh } = updateReturnDateDto;
 
     // Reuse helper port của DateTimeUtil.getSqlDatetime:
     // parseVietnameseDate accept DD/MM/YYYY (legacy datepicker) + ISO YYYY-MM-DD (FE mới).
@@ -1648,6 +1648,26 @@ export class OrdersService {
         @BoSungGhiChu = '${(boSungGhiChu || '').replace(/'/g, "''")}',
         @ChuyenSangComplete = ${chuyenVeCompleted ? 1 : 0}`,
     );
+
+    // Khi chuyển sang Completed → ghi DON_HANG.NgayHoanThanh.
+    // SP_CapNhat_NgayVeVN không nhận @NgayHoanThanh, nên update riêng ở đây
+    // để giữ migration đơn giản, cùng convention với SP_CapNhat_MassComplete.
+    if (chuyenVeCompleted) {
+      let ngayHoanThanhSql: string;
+      if (ngayHoanThanh) {
+        const parsedHoanThanh = parseVietnameseDate(ngayHoanThanh);
+        if (!parsedHoanThanh) {
+          throw new BadRequestException(`ngayHoanThanh invalid format: ${ngayHoanThanh}`);
+        }
+        ngayHoanThanhSql = formatSqlDate(parsedHoanThanh);
+      } else {
+        ngayHoanThanhSql = formatSqlDate(new Date()); // mặc định hôm nay
+      }
+      await this.sequelize.query(
+        `UPDATE DON_HANG SET NgayHoanThanh = :ngay WHERE ID = :id`,
+        { replacements: { ngay: ngayHoanThanhSql, id } },
+      );
+    }
 
     // Fetch updated order
     const updatedOrder = await this.findOne(id);
@@ -1978,6 +1998,8 @@ export class OrdersService {
       ngayMuaHang?: string;
       ngayveVN?: string;
       ngayVeVn?: string;
+      /** Ngày hoàn thành — chỉ ghi vào DON_HANG.NgayHoanThanh khi trangthaiOrder='Completed' */
+      ngayHoanThanh?: string;
       adminNote?: string;
       LoaiHangID?: number;
       loaiHangId?: number;
@@ -2015,6 +2037,7 @@ export class OrdersService {
       trangthaiOrder: trangThaiOrder,
       ngaymuahang: ngayMuaHang,
       ngayveVN: ngayVeVn,
+      ngayHoanThanh,
       adminNote,
       LoaiHangID: loaiHangId,
       QuocGiaID: quocGiaId,
@@ -2147,6 +2170,27 @@ export class OrdersService {
     } catch (error) {
       console.error('updateOrderDetail error:', error);
       return { success: false, error: 'failed' };
+    }
+
+    // Step 3.5: Khi status = Completed → ghi DON_HANG.NgayHoanThanh.
+    // SP_CapNhatDonHang không nhận @NgayHoanThanh, nên update riêng (cùng convention
+    // với updateReturnDate). Không clear khi đổi sang status khác (giữ history).
+    if ((trangThaiOrder || '') === 'Completed') {
+      try {
+        const parsed = ngayHoanThanh
+          ? parseVietnameseDate(ngayHoanThanh)
+          : new Date();
+        if (!parsed) {
+          return { success: false, error: 'invalid_ngay_hoan_thanh' };
+        }
+        await this.sequelize.query(
+          `UPDATE DON_HANG SET NgayHoanThanh = :ngay WHERE ID = :id`,
+          { replacements: { ngay: formatSqlDate(parsed), id } },
+        );
+      } catch (error) {
+        console.error('updateOrderDetail NgayHoanThanh error:', error);
+        // Không block flow chính — Detail update đã thành công ở Step 3
+      }
     }
 
     // Step 4: Log to SystemLogs

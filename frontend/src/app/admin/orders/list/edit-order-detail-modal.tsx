@@ -69,6 +69,8 @@ const orderEditFormSchema = z.object({
   adminNote: z.string().optional(),
   ngaymuahang: z.string().optional(),
   ngayveVN: z.string().optional(),
+  // Chỉ dùng khi trangthaiOrder = 'Completed' → ghi vào DON_HANG.NgayHoanThanh
+  ngayHoanThanh: z.string().optional(),
   LoaiHangID: z.number().optional(),
   QuocGiaID: z.number().optional(),
 });
@@ -173,6 +175,7 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
   const watchedFields = watch(['dongiaweb', 'saleoff', 'phuthu', 'shipUSA', 'tax', 'cong', 'tygia', 'soluong']);
   const watchedUsername = watch('username');
   const watchedLoaiTien = watch('loaitien');
+  const watchedTrangThai = watch('trangthaiOrder');
 
   // Mirror C# EditOrderDetail changetygia/changeloaihang
   useEffect(() => {
@@ -280,6 +283,7 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
       adminNote: o.adminNote || o.AdminNote || '',
       ngaymuahang: parseDate(o.ngaymuahang || o.NgayMuaHang),
       ngayveVN: parseDate(o.ngayveVN || o.NgayVeVN),
+      ngayHoanThanh: parseDate(o.ngayHoanThanh || o.NgayHoanThanh),
       LoaiHangID: (() => {
         const v = o.LoaiHangID ?? o.loaiHangId;
         return v ? toNum(v, 0) || undefined : undefined;
@@ -354,6 +358,9 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
           trangthaiOrder: data.trangthaiOrder || '',
           ngaymuahang: data.ngaymuahang || '',
           ngayveVN: data.ngayveVN || '',
+          // Chỉ gửi khi status = Completed; BE default về today nếu rỗng
+          ngayHoanThanh:
+            data.trangthaiOrder === 'Completed' ? data.ngayHoanThanh || '' : undefined,
           adminNote: data.adminNote || '',
           LoaiHangID: data.LoaiHangID,
           QuocGiaID: data.QuocGiaID,
@@ -480,6 +487,12 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
                       <label className={STYLES.label}>Ngày về VN</label>
                       <input {...register('ngayveVN')} type="date" className={STYLES.input} />
                     </div>
+                    {watchedTrangThai === 'Completed' && (
+                      <div>
+                        <label className={STYLES.label}>Ngày hoàn thành</label>
+                        <input {...register('ngayHoanThanh')} type="date" className={STYLES.input} />
+                      </div>
+                    )}
                     <div>
                       <label className={STYLES.label}>Loại hàng</label>
                       <select
@@ -496,7 +509,9 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
                         ))}
                       </select>
                     </div>
-                    <div className="md:col-span-2">
+                    {/* Khi Completed có thêm field Ngày hoàn thành → 6 single + Quốc gia.
+                        Bỏ col-span-2 để cân hàng (Loại hàng | Quốc gia). */}
+                    <div className={watchedTrangThai === 'Completed' ? '' : 'md:col-span-2'}>
                       <label className={STYLES.label}>Quốc gia</label>
                       <select
                         {...register('QuocGiaID', {

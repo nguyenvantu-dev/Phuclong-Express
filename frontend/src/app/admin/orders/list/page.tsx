@@ -98,13 +98,19 @@ function ReturnDateModal({
 }) {
   const queryClient = useQueryClient();
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const completeDateInputRef = useRef<HTMLInputElement>(null);
   const [ngayVeVn, setNgayVeVn] = useState('');
   const [boSungGhiChu, setBoSungGhiChu] = useState('');
   const [chuyenVeCompleted, setChuyenVeCompleted] = useState(false);
+  const [ngayHoanThanh, setNgayHoanThanh] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Initialize flatpickr when modal opens
+  // Helper: format Date → dd/mm/yyyy
+  const formatDmy = (d: Date) =>
+    `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+  // Initialize flatpickr for "Ngày về VN" when modal opens
   useEffect(() => {
     if (!open || !dateInputRef.current) return;
     const fp = flatpickr(dateInputRef.current, {
@@ -112,9 +118,7 @@ function ReturnDateModal({
       defaultDate: ngayVeVn ? new Date(ngayVeVn) : undefined,
       onChange: (dates) => {
         if (dates[0]) {
-          const d = dates[0];
-          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-          setNgayVeVn(formatted);
+          setNgayVeVn(formatDmy(dates[0]));
           setError('');
         }
       },
@@ -122,11 +126,34 @@ function ReturnDateModal({
     return () => { fp.destroy(); };
   }, [open]);
 
+  // Initialize flatpickr for "Ngày hoàn thành" — chỉ khi tick "Chuyển sang Completed"
+  // Default = hôm nay (giống SP_CapNhat_MassComplete: ISNULL(@NgayHoanThanh, GETDATE()))
+  useEffect(() => {
+    if (!open || !chuyenVeCompleted || !completeDateInputRef.current) return;
+    const today = new Date();
+    if (!ngayHoanThanh) setNgayHoanThanh(formatDmy(today));
+    const fp = flatpickr(completeDateInputRef.current, {
+      dateFormat: 'd/m/Y',
+      defaultDate: ngayHoanThanh ? undefined : today,
+      onChange: (dates) => {
+        if (dates[0]) {
+          setNgayHoanThanh(formatDmy(dates[0]));
+          setError('');
+        }
+      },
+    });
+    return () => { fp.destroy(); };
+  }, [open, chuyenVeCompleted]);
+
   if (!open) return null;
 
   const handleSubmit = async () => {
     if (!ngayVeVn) {
       setError('Vui lòng chọn ngày về VN');
+      return;
+    }
+    if (chuyenVeCompleted && !ngayHoanThanh) {
+      setError('Vui lòng chọn ngày hoàn thành');
       return;
     }
     setIsSubmitting(true);
@@ -138,6 +165,7 @@ function ReturnDateModal({
           ngayVeVn,
           boSungGhiChu,
           chuyenVeCompleted,
+          ngayHoanThanh: chuyenVeCompleted ? ngayHoanThanh : undefined,
           username: '',
         })
       ));
@@ -194,6 +222,19 @@ function ReturnDateModal({
               Chuyển sang trạng thái Completed
             </label>
           </div>
+          {chuyenVeCompleted && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Ngày hoàn thành <span className="text-red-500">*</span>
+              </label>
+              <input
+                ref={completeDateInputRef}
+                type="text"
+                placeholder="dd/mm/yyyy"
+                className="w-full rounded-lg border border-gray-400 bg-white px-3 py-2 text-gray-900 focus:border-[#14264b] focus:outline-none"
+              />
+            </div>
+          )}
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <button
