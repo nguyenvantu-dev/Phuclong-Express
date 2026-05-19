@@ -612,7 +612,7 @@ export class OrdersController {
    * Checks: SP_KiemTra_DuocCapNhatDonHang (kỳ đóng)
    * Updates: SP_CapNhatDonHang
    * Logs: SystemLogs
-   * Updates: ngayVeVN via SP_CapNhatNgayVeVN
+   * Updates: ngayVeVN via SP_CapNhat_NgayVeVN
    */
   @Put(':id/detail')
   async updateOrderDetail(

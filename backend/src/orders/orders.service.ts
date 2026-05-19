@@ -1944,7 +1944,7 @@ export class OrdersService {
    * 1. Check permission using SP_KiemTra_DuocCapNhatDonHang
    * 2. Update order using SP_CapNhatDonHang
    * 3. Log action to SystemLogs
-   * 4. Update ngayVeVN using SP_CapNhatNgayVeVN (if provided)
+   * 4. Update ngayVeVN using SP_CapNhat_NgayVeVN (if provided)
    *
    * Returns:
    *   { success: true } - Update success
@@ -2202,31 +2202,32 @@ export class OrdersService {
       noiDung: `ID: ${id}; ${noiDung}`,
     });
 
-    // Step 5: Update ngayVeVN using SP_CapNhatNgayVeVN if provided
+    // Step 5: Update ngayVeVN using SP_CapNhat_NgayVeVN if provided.
+    // Port từ EditOrderDetail.cs:360-364 — chỉ chạy khi parse được ngày
+    // (tương đương `DateTime?.HasValue` ở C#). Dùng parseVietnameseDate để
+    // chấp nhận cả DD/MM/YYYY (legacy datepicker) lẫn ISO YYYY-MM-DD.
     if (ngayVeVn) {
-      try {
-        const ngayVeDate = new Date(ngayVeVn);
-        const tenDotHang = ngayVeDate.toISOString().slice(0, 10).replace(/-/g, '');
-
-        await this.sequelize.query(
-          `EXEC dbo.SP_CapNhatNgayVeVN
-            @id = :id,
-            @NgayVeVN = :ngayVeVN,
-            @TenDotHang = :tenDotHang,
-            @BoSungGhiChu = '',
-            @ChuyenSangComplete = 0`,
-          {
-            replacements: {
-              id,
-              ngayVeVN: ngayVeDate.toISOString().slice(0, 10),
-              tenDotHang,
+      const parsedNgayVe = parseVietnameseDate(ngayVeVn);
+      if (parsedNgayVe) {
+        const sqlDate = formatSqlDate(parsedNgayVe);
+        const tenDotHang = sqlDate.replace(/-/g, '');
+        try {
+          await this.sequelize.query(
+            `EXEC dbo.SP_CapNhat_NgayVeVN
+              @id = :id,
+              @NgayVeVN = :ngayVeVN,
+              @TenDotHang = :tenDotHang,
+              @BoSungGhiChu = '',
+              @ChuyenSangComplete = 0`,
+            {
+              replacements: { id, ngayVeVN: sqlDate, tenDotHang },
+              type: QueryTypes.RAW,
             },
-            type: QueryTypes.RAW,
-          },
-        );
-      } catch (error) {
-        console.error('updateOrderDetail ngayVeVN error:', error);
-        // Continue even if ngayVeVN update fails
+          );
+        } catch (error) {
+          console.error('updateOrderDetail ngayVeVN error:', error);
+          // Continue even if ngayVeVN update fails
+        }
       }
     }
 
