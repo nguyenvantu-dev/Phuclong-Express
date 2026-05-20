@@ -20,7 +20,7 @@ import {
   getProductTypesForEdit,
   getCountries,
   getUsernames,
-  uploadOrderImage,
+  uploadImage,
   calculateServiceFee,
 } from '@/lib/api';
 
@@ -326,8 +326,8 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
 
       let linkhinh = data.linkhinh || '';
       if (imageFile) {
-        const uploadResult = await uploadOrderImage(orderId, imageFile);
-        linkhinh = uploadResult.linkHinh || uploadResult.linkhinh || '';
+        const uploadResult = await uploadImage(imageFile);
+        linkhinh = uploadResult.linkHinh || '';
       }
 
       await updateOrderDetailMutation.mutateAsync({

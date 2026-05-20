@@ -25,6 +25,13 @@ const mkCachedRealpath = (fn: (p: string) => string) => {
   };
 };
 
+// Backend origin for proxying uploaded image assets.
+// In prod, set NEXT_PUBLIC_BACKEND_ORIGIN to the BE host (no trailing slash).
+// Otherwise we derive it by stripping the trailing /api from NEXT_PUBLIC_API_URL.
+const backendOrigin =
+  process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
+  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api").replace(/\/api\/?$/, "");
+
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
@@ -32,6 +39,15 @@ const nextConfig: NextConfig = {
   },
 
   compress: true,
+
+  // Proxy uploaded images served by the NestJS backend (public/imgLink/).
+  // Lets <img src="/imgLink/YYYYMM/xxx.jpg"> work when FE and BE run on
+  // different origins (e.g. localhost:3000 vs localhost:3001 in dev).
+  async rewrites() {
+    return [
+      { source: "/imgLink/:path*", destination: `${backendOrigin}/imgLink/:path*` },
+    ];
+  },
 
   // Skip ESLint/TypeScript errors during build — run separately in CI
   eslint: { ignoreDuringBuilds: true },
