@@ -5,6 +5,19 @@ import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
+ * Walk up from __dirname until package.json found → that is the app root.
+ * Works regardless of how Plesk/Passenger sets process.cwd().
+ */
+function findAppRoot(): string {
+  let dir = __dirname;
+  while (dir !== path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) return dir;
+    dir = path.dirname(dir);
+  }
+  return process.cwd();
+}
+
+/**
  * Shared Image Upload Service.
  *
  * Ports the v1 (ASP.NET) upload pattern used across:
@@ -18,7 +31,8 @@ import { v4 as uuidv4 } from 'uuid';
  */
 @Injectable()
 export class ImageUploadService {
-  private readonly uploadDir = path.join(process.cwd(), 'public', 'imgLink');
+  private readonly uploadDir =
+    process.env.UPLOAD_DIR || path.join(findAppRoot(), 'imgLink');
 
   async upload(file: Express.Multer.File): Promise<{ linkHinh: string }> {
     if (!file) {

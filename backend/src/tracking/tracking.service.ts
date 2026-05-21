@@ -29,10 +29,37 @@ import { SystemLogsService } from '../system-logs/system-logs.service';
 export class TrackingService {
   private readonly procedureParamsCache = new Map<string, Set<string>>();
 
+  /**
+   * Concurrency for the Excel-import hot loops. Default Sequelize pool max is
+   * 5; staying at or below that prevents pool starvation while letting us
+   * fan out enough to avoid the 200ms-per-row serialization that was timing
+   * out 1000-row imports.
+   */
+  private static readonly IMPORT_CONCURRENCY = 5;
+
   constructor(
     @Inject('SEQUELIZE') private sequelize: Sequelize,
     private readonly systemLogsService: SystemLogsService,
   ) {}
+
+  /**
+   * Run `fn` over `items` in fixed-size chunks, awaiting Promise.all per chunk.
+   * Keeps in-flight work bounded by `size` so we don't queue thousands of
+   * queries on a tiny pool.
+   */
+  private async runInChunks<T, R>(
+    items: T[],
+    size: number,
+    fn: (item: T) => Promise<R>,
+  ): Promise<R[]> {
+    const out: R[] = [];
+    for (let i = 0; i < items.length; i += size) {
+      const chunk = items.slice(i, i + size);
+      const results = await Promise.all(chunk.map(fn));
+      out.push(...results);
+    }
+    return out;
+  }
 
   /**
    * Find all tracking with filters and pagination
@@ -879,9 +906,14 @@ export class TrackingService {
 
     // Mirror legacy DBConnect.LayTrackingIDByTrackingNumber — invoked once per
     // unique number. Volume is bounded by the upload size (typically <1k rows).
+    // Bounded concurrency: legacy code ran serially; we keep SP semantics
+    // identical but fan out IMPORT_CONCURRENCY at a time so 1000-row uploads
+    // don't queue 1000 calls on a 5-conn pool.
     const unique = Array.from(new Set(trackingNumbers.filter(Boolean)));
-    const results = await Promise.all(
-      unique.map(async (tn) => {
+    const results = await this.runInChunks(
+      unique,
+      TrackingService.IMPORT_CONCURRENCY,
+      async (tn) => {
         try {
           const rows = await this.sequelize.query(
             `EXEC dbo.SP_Lay_TrackingIDByTrackingNumber @TrackingNumber = :tn`,
@@ -900,7 +932,7 @@ export class TrackingService {
         } catch {
           return { tn, id: null };
         }
-      }),
+      },
     );
 
     for (const { tn, id } of results) {
@@ -1027,10 +1059,17 @@ export class TrackingService {
     editColumns: Set<number>,
     actor: string,
   ): Promise<number> {
-    let imported = 0;
-    for (const row of rows) {
-      if (row.errors.length > 0) continue;
+    // Filter once so the chunked runner only sees rows that legacy would
+    // actually persist (legacy `if (Error) continue;` short-circuit).
+    const targets = rows.filter((r) => r.errors.length === 0);
 
+    // Per-row work — body is byte-identical to legacy (same SP calls, same
+    // log payload, same row.errors.push on failure). Runs IMPORT_CONCURRENCY
+    // at a time via runInChunks: matches the default Sequelize pool so we
+    // don't queue thousands of calls, while still cutting wall-clock by ~5x
+    // vs strict serial. No explicit transaction — legacy LuuExcel didn't use
+    // one either, so partial-on-error semantics stay identical.
+    const persistOne = async (row: ParsedTrackingRow): Promise<boolean> => {
       const quocGiaId = row.tenQuocGia
         ? ref.quocGiaByName.get(row.tenQuocGia.toLowerCase()) ?? null
         : null;
@@ -1059,7 +1098,7 @@ export class TrackingService {
       try {
         if (editMode) {
           const trackingId = idByNumber.get(row.trackingNumber);
-          if (!trackingId) continue;
+          if (!trackingId) return false;
           await this.execCapNhatTracking({
             trackingId,
             row,
@@ -1130,16 +1169,23 @@ export class TrackingService {
             noiDung,
           });
         }
-        imported++;
+        return true;
       } catch (error) {
         console.error(
           `Error persisting tracking row ${row.excelRowIndex}:`,
           (error as any).message,
         );
         row.errors.push(`Lưu thất bại: ${(error as any).message}`);
+        return false;
       }
-    }
-    return imported;
+    };
+
+    const results = await this.runInChunks(
+      targets,
+      TrackingService.IMPORT_CONCURRENCY,
+      persistOne,
+    );
+    return results.reduce((n, ok) => n + (ok ? 1 : 0), 0);
   }
 
   /**

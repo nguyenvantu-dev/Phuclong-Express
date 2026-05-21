@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
+import { QueryTypes, Transaction } from 'sequelize';
 const tedious = require('tedious');
 
 export interface QuerySystemLogsDto {
@@ -31,7 +32,7 @@ export interface SystemLog {
  */
 @Injectable()
 export class SystemLogsService {
-  constructor() {}
+  constructor(@Inject('SEQUELIZE') private readonly sequelize: Sequelize) {}
 
   /**
    * Find all system logs with filters and pagination
@@ -114,39 +115,43 @@ export class SystemLogsService {
   }
 
   /**
-   * Create a new system log entry
+   * Create a new system log entry.
+   *
+   * Uses injected Sequelize pool (no per-call connection) and parameterized
+   * values so multi-row import loops don't open one TCP/auth handshake per row
+   * and don't crash on quotes in NoiDung.
+   *
+   * @param transaction optional caller-owned transaction (e.g. bulk import)
    */
-  async create(logData: {
-    nguoiTao: string;
-    nguon: string;
-    hanhDong: string;
-    doiTuong: string;
-    noiDung: string;
-  }): Promise<SystemLog> {
-    const sequelize = new Sequelize({
-      dialect: 'mssql',
-      host: process.env.DB_HOST || 'localhost',
-      username: process.env.DB_USERNAME || 'sa',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_DATABASE || 'PhucLong',
-      logging: false,
-      dialectOptions: {
-        encrypt: true,
-        trustServerCertificate: true,
+  async create(
+    logData: {
+      nguoiTao: string;
+      nguon: string;
+      hanhDong: string;
+      doiTuong: string;
+      noiDung: string;
+    },
+    transaction?: Transaction,
+  ): Promise<SystemLog> {
+    const rows = await this.sequelize.query<{ ID: number }>(
+      `INSERT INTO dbo.tbSystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
+       VALUES (:nguoiTao, GETDATE(), :nguon, :hanhDong, :doiTuong, :noiDung);
+       SELECT SCOPE_IDENTITY() as ID;`,
+      {
+        replacements: {
+          nguoiTao: logData.nguoiTao,
+          nguon: logData.nguon,
+          hanhDong: logData.hanhDong,
+          doiTuong: logData.doiTuong,
+          noiDung: logData.noiDung,
+        },
+        type: QueryTypes.SELECT,
+        transaction,
       },
-      dialectModule: tedious
-    });
-
-    const [result]: any[] = await sequelize.query(`
-      INSERT INTO dbo.tbSystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)
-      VALUES ('${logData.nguoiTao}', GETDATE(), '${logData.nguon}', '${logData.hanhDong}', '${logData.doiTuong}', '${logData.noiDung}');
-      SELECT SCOPE_IDENTITY() as ID;
-    `);
-
-    await sequelize.close();
+    );
 
     return {
-      SystemLogsID: Number(result[0]?.ID),
+      SystemLogsID: Number(rows[0]?.ID),
       NguoiTao: logData.nguoiTao,
       NgayTao: new Date(),
       Nguon: logData.nguon,

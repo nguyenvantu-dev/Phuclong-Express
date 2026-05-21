@@ -1,8 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
+import * as fs from 'fs';
+import { dirname, join } from 'path';
 import { AppModule } from './app.module';
+
+// Walk up from compiled file location until package.json found → app root.
+function findAppRoot(): string {
+  let dir = __dirname;
+  while (dir !== dirname(dir)) {
+    if (fs.existsSync(join(dir, 'package.json'))) return dir;
+    dir = dirname(dir);
+  }
+  return process.cwd();
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -23,9 +34,14 @@ async function bootstrap() {
     }),
   );
 
-  // Serve uploaded images (and any static assets) from public/.
+  // Serve uploaded images from imgLink/ (sibling of dist/, persistent across deploys).
   // Example: GET /imgLink/YYYYMM/<uuid>.jpg
-  app.useStaticAssets(join(process.cwd(), 'public'));
+  const appRoot = findAppRoot();
+  const uploadDir = process.env.UPLOAD_DIR || join(appRoot, 'imgLink');
+  app.useStaticAssets(uploadDir, { prefix: '/imgLink' });
+
+  // Serve other static assets from public/ if needed
+  app.useStaticAssets(join(appRoot, 'public'));
 
   // Set global prefix (applies to controllers only, not static assets)
   app.setGlobalPrefix('api');
