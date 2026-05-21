@@ -37,6 +37,13 @@ export class TrackingService {
    */
   private static readonly IMPORT_CONCURRENCY = 5;
 
+  /**
+   * Rows packed into one TDS batch by persistCreateBatch. Each row contributes
+   * 14 SP params + 5 log params = 19 → 50 rows = 950 params, well under the
+   * SQL Server 2100-per-batch limit.
+   */
+  private static readonly IMPORT_BATCH_SIZE = 50;
+
   constructor(
     @Inject('SEQUELIZE') private sequelize: Sequelize,
     private readonly systemLogsService: SystemLogsService,
@@ -1050,6 +1057,13 @@ export class TrackingService {
   /**
    * Persist validated rows: insert (create mode) or update (edit mode).
    * Skips rows that have errors. Logs each successful row to system logs.
+   *
+   * Routing:
+   *  - create mode → persistCreateBatch (gom N SP_Them_Tracking + N log
+   *    INSERT vào 1 TDS batch, atomic per chunk; fallback per-row khi batch
+   *    fail để gán lỗi đúng row).
+   *  - edit mode  → chunked-parallel single calls (SP_CapNhat_Tracking có
+   *    chữ ký động theo editColumns nên batching SQL phức tạp, không đáng).
    */
   private async persistImportRows(
     rows: ParsedTrackingRow[],
@@ -1059,17 +1073,200 @@ export class TrackingService {
     editColumns: Set<number>,
     actor: string,
   ): Promise<number> {
-    // Filter once so the chunked runner only sees rows that legacy would
-    // actually persist (legacy `if (Error) continue;` short-circuit).
+    // Filter once so neither path sees rows legacy would skip
+    // (legacy `if (Error) continue;` short-circuit).
     const targets = rows.filter((r) => r.errors.length === 0);
 
-    // Per-row work — body is byte-identical to legacy (same SP calls, same
-    // log payload, same row.errors.push on failure). Runs IMPORT_CONCURRENCY
-    // at a time via runInChunks: matches the default Sequelize pool so we
-    // don't queue thousands of calls, while still cutting wall-clock by ~5x
-    // vs strict serial. No explicit transaction — legacy LuuExcel didn't use
-    // one either, so partial-on-error semantics stay identical.
-    const persistOne = async (row: ParsedTrackingRow): Promise<boolean> => {
+    if (editMode) {
+      const results = await this.runInChunks(
+        targets,
+        TrackingService.IMPORT_CONCURRENCY,
+        (row) =>
+          this.persistOneRow(row, ref, idByNumber, true, editColumns, actor),
+      );
+      return results.reduce((n, ok) => n + (ok ? 1 : 0), 0);
+    }
+
+    // Create mode: bulk per chunk, fall back to per-row on chunk failure so
+    // we can attribute the error to the offending row (matches legacy's
+    // "skip bad row, keep going" semantic).
+    let imported = 0;
+    for (let i = 0; i < targets.length; i += TrackingService.IMPORT_BATCH_SIZE) {
+      const chunk = targets.slice(i, i + TrackingService.IMPORT_BATCH_SIZE);
+      try {
+        await this.persistCreateBatch(chunk, ref, actor);
+        // Batch succeeded → ROLLBACK never fired → all chunk rows committed.
+        imported += chunk.length;
+      } catch (error) {
+        // Server-side TRY/CATCH rolled the whole chunk back atomically.
+        // Re-run per-row to attribute the failing row.
+        console.error(
+          `Bulk batch [${i}-${i + chunk.length - 1}] failed, falling back to per-row:`,
+          (error as any).message,
+        );
+        const fb = await this.runInChunks(
+          chunk,
+          TrackingService.IMPORT_CONCURRENCY,
+          (row) =>
+            this.persistOneRow(row, ref, idByNumber, false, editColumns, actor),
+        );
+        imported += fb.reduce((n, ok) => n + (ok ? 1 : 0), 0);
+      }
+    }
+    return imported;
+  }
+
+  /**
+   * Per-row persistence — byte-identical to legacy LuuExcel inner loop:
+   * same SP calls, same log payload, same `row.errors.push` on failure.
+   * Used by edit mode (always) and as the fallback when persistCreateBatch
+   * rolls back a batch.
+   */
+  private async persistOneRow(
+    row: ParsedTrackingRow,
+    ref: RefData,
+    idByNumber: Map<string, number>,
+    editMode: boolean,
+    editColumns: Set<number>,
+    actor: string,
+  ): Promise<boolean> {
+    const quocGiaId = row.tenQuocGia
+      ? ref.quocGiaByName.get(row.tenQuocGia.toLowerCase()) ?? null
+      : null;
+    const nhaVanChuyenId = row.tenNhaVanChuyen
+      ? ref.nhaVanChuyenByName.get(row.tenNhaVanChuyen.toLowerCase()) ?? null
+      : null;
+    const tinhTrang = row.tinhTrang || 'Received';
+    const ngayDatHang = row.ngayDatHangIso; // may be null
+    const ghiChuLoHang = row.ghiChuLoHang || '';
+    const coTaoLoHang = ghiChuLoHang ? 1 : 0;
+    const noiDung = this.buildTrackingLogContent({
+      username: row.username,
+      trackingNumber: row.trackingNumber,
+      orderNumber: row.orderNumber,
+      ngayDatHang: row.ngayDatHang, // dd/MM/yyyy display string (matches C# DateTime.ToString("dd/MM/yyyy"))
+      nhaVanChuyenId,
+      quocGiaId,
+      tinhTrang,
+      ghiChu: row.ghiChu,
+      nguoiTao: actor,
+      kien: row.kien,
+      mawb: row.mawb,
+      hawb: row.hawb,
+    });
+
+    try {
+      if (editMode) {
+        const trackingId = idByNumber.get(row.trackingNumber);
+        if (!trackingId) return false;
+        await this.execCapNhatTracking({
+          trackingId,
+          row,
+          quocGiaId,
+          nhaVanChuyenId,
+          tinhTrang,
+          ngayDatHang,
+          coTaoLoHang,
+          ghiChuLoHang,
+          actor,
+          editColumns,
+        });
+        // Mirror C#: nguon = "Tracking_Import:CapNhatTrackingKhongMoDB",
+        // hanhDong = HanhDong.ChinhSua, doiTuong = TrackingID
+        await this.systemLogsService.create({
+          nguoiTao: actor,
+          nguon: 'Tracking_Import:CapNhatTrackingKhongMoDB',
+          hanhDong: 'Chinh sua',
+          doiTuong: String(trackingId),
+          noiDung,
+        });
+      } else {
+        await this.sequelize.query(
+          `EXEC dbo.SP_Them_Tracking
+              @UserName = :username,
+              @TrackingNumber = :trackingNumber,
+              @OrderNumber = :orderNumber,
+              @NgayDatHang = :ngayDatHang,
+              @NhaVanChuyenID = :nhaVanChuyenId,
+              @QuocGiaID = :quocGiaId,
+              @TinhTrang = :tinhTrang,
+              @GhiChu = :ghiChu,
+              @NguoiTao = :nguoiTao,
+              @Kien = :kien,
+              @Mawb = :mawb,
+              @Hawb = :hawb,
+              @CoTaoLoHang = :coTaoLoHang,
+              @GhiChuLoHang = :ghiChuLoHang`,
+          {
+            replacements: {
+              username: row.username,
+              trackingNumber: row.trackingNumber,
+              orderNumber: row.orderNumber,
+              // Pass null when date is empty, mirroring DBConnect.ThemTrackingKhongMoDB:
+              // `if NgayDatHang.HasValue { @NgayDatHang = value } else { DBNull.Value }`
+              ngayDatHang,
+              nhaVanChuyenId,
+              quocGiaId,
+              tinhTrang,
+              ghiChu: row.ghiChu,
+              nguoiTao: actor,
+              kien: row.kien,
+              mawb: row.mawb,
+              hawb: row.hawb,
+              coTaoLoHang,
+              ghiChuLoHang,
+            },
+            type: QueryTypes.RAW,
+          },
+        );
+        // Mirror C#: nguon = "Tracking_Import:ThemTrackingKhongMoDB",
+        // hanhDong = HanhDong.ThemMoi, doiTuong = ""
+        await this.systemLogsService.create({
+          nguoiTao: actor,
+          nguon: 'Tracking_Import:ThemTrackingKhongMoDB',
+          hanhDong: 'Them moi',
+          doiTuong: '',
+          noiDung,
+        });
+      }
+      return true;
+    } catch (error) {
+      console.error(
+        `Error persisting tracking row ${row.excelRowIndex}:`,
+        (error as any).message,
+      );
+      row.errors.push(`Lưu thất bại: ${(error as any).message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Bulk path for create mode: gom toàn bộ chunk vào 1 TDS batch
+   *   SET XACT_ABORT ON; BEGIN TRAN;
+   *   EXEC SP_Them_Tracking @... (× N);
+   *   INSERT INTO tbSystemLogs ... VALUES (...), (...) ... (× N);
+   *   COMMIT;
+   *
+   * - Vẫn dùng SP_Them_Tracking (KHÔNG đụng business logic trong SP).
+   * - XACT_ABORT ON → bất kỳ lỗi nào trong batch sẽ rollback toàn bộ chunk,
+   *   caller chuyển sang per-row fallback. Tránh duplicate insert.
+   * - Param count: 14 + 5 = 19 per row × IMPORT_BATCH_SIZE (50) = 950, dưới
+   *   ngưỡng 2100 của SQL Server.
+   *
+   * Throws on any T-SQL error — caller catches and falls back to per-row.
+   */
+  private async persistCreateBatch(
+    rows: ParsedTrackingRow[],
+    ref: RefData,
+    actor: string,
+  ): Promise<void> {
+    if (rows.length === 0) return;
+
+    const spStmts: string[] = [];
+    const logValues: string[] = [];
+    const replacements: Record<string, any> = {};
+
+    rows.forEach((row, idx) => {
       const quocGiaId = row.tenQuocGia
         ? ref.quocGiaByName.get(row.tenQuocGia.toLowerCase()) ?? null
         : null;
@@ -1077,14 +1274,14 @@ export class TrackingService {
         ? ref.nhaVanChuyenByName.get(row.tenNhaVanChuyen.toLowerCase()) ?? null
         : null;
       const tinhTrang = row.tinhTrang || 'Received';
-      const ngayDatHang = row.ngayDatHangIso; // may be null
+      const ngayDatHang = row.ngayDatHangIso; // null when date empty
       const ghiChuLoHang = row.ghiChuLoHang || '';
       const coTaoLoHang = ghiChuLoHang ? 1 : 0;
       const noiDung = this.buildTrackingLogContent({
         username: row.username,
         trackingNumber: row.trackingNumber,
         orderNumber: row.orderNumber,
-        ngayDatHang: row.ngayDatHang, // dd/MM/yyyy display string (matches C# DateTime.ToString("dd/MM/yyyy"))
+        ngayDatHang: row.ngayDatHang,
         nhaVanChuyenId,
         quocGiaId,
         tinhTrang,
@@ -1095,97 +1292,75 @@ export class TrackingService {
         hawb: row.hawb,
       });
 
-      try {
-        if (editMode) {
-          const trackingId = idByNumber.get(row.trackingNumber);
-          if (!trackingId) return false;
-          await this.execCapNhatTracking({
-            trackingId,
-            row,
-            quocGiaId,
-            nhaVanChuyenId,
-            tinhTrang,
-            ngayDatHang,
-            coTaoLoHang,
-            ghiChuLoHang,
-            actor,
-            editColumns,
-          });
-          // Mirror C#: nguon = "Tracking_Import:CapNhatTrackingKhongMoDB",
-          // hanhDong = HanhDong.ChinhSua, doiTuong = TrackingID
-          await this.systemLogsService.create({
-            nguoiTao: actor,
-            nguon: 'Tracking_Import:CapNhatTrackingKhongMoDB',
-            hanhDong: 'Chinh sua',
-            doiTuong: String(trackingId),
-            noiDung,
-          });
-        } else {
-          await this.sequelize.query(
-            `EXEC dbo.SP_Them_Tracking
-                @UserName = :username,
-                @TrackingNumber = :trackingNumber,
-                @OrderNumber = :orderNumber,
-                @NgayDatHang = :ngayDatHang,
-                @NhaVanChuyenID = :nhaVanChuyenId,
-                @QuocGiaID = :quocGiaId,
-                @TinhTrang = :tinhTrang,
-                @GhiChu = :ghiChu,
-                @NguoiTao = :nguoiTao,
-                @Kien = :kien,
-                @Mawb = :mawb,
-                @Hawb = :hawb,
-                @CoTaoLoHang = :coTaoLoHang,
-                @GhiChuLoHang = :ghiChuLoHang`,
-            {
-              replacements: {
-                username: row.username,
-                trackingNumber: row.trackingNumber,
-                orderNumber: row.orderNumber,
-                // Pass null when date is empty, mirroring DBConnect.ThemTrackingKhongMoDB:
-                // `if NgayDatHang.HasValue { @NgayDatHang = value } else { DBNull.Value }`
-                ngayDatHang,
-                nhaVanChuyenId,
-                quocGiaId,
-                tinhTrang,
-                ghiChu: row.ghiChu,
-                nguoiTao: actor,
-                kien: row.kien,
-                mawb: row.mawb,
-                hawb: row.hawb,
-                coTaoLoHang,
-                ghiChuLoHang,
-              },
-              type: QueryTypes.RAW,
-            },
-          );
-          // Mirror C#: nguon = "Tracking_Import:ThemTrackingKhongMoDB",
-          // hanhDong = HanhDong.ThemMoi, doiTuong = ""
-          await this.systemLogsService.create({
-            nguoiTao: actor,
-            nguon: 'Tracking_Import:ThemTrackingKhongMoDB',
-            hanhDong: 'Them moi',
-            doiTuong: '',
-            noiDung,
-          });
-        }
-        return true;
-      } catch (error) {
-        console.error(
-          `Error persisting tracking row ${row.excelRowIndex}:`,
-          (error as any).message,
-        );
-        row.errors.push(`Lưu thất bại: ${(error as any).message}`);
-        return false;
-      }
-    };
+      // Unique replacement keys per row index — sequelize substitutes by name
+      // so each :u_0, :u_1 ... maps to its own parameter.
+      const p = idx;
+      spStmts.push(
+        `EXEC dbo.SP_Them_Tracking
+            @UserName = :u_${p},
+            @TrackingNumber = :tn_${p},
+            @OrderNumber = :on_${p},
+            @NgayDatHang = :nd_${p},
+            @NhaVanChuyenID = :nv_${p},
+            @QuocGiaID = :qg_${p},
+            @TinhTrang = :tt_${p},
+            @GhiChu = :gc_${p},
+            @NguoiTao = :ng_${p},
+            @Kien = :k_${p},
+            @Mawb = :mw_${p},
+            @Hawb = :hw_${p},
+            @CoTaoLoHang = :ct_${p},
+            @GhiChuLoHang = :gcl_${p}`,
+      );
+      replacements[`u_${p}`] = row.username;
+      replacements[`tn_${p}`] = row.trackingNumber;
+      replacements[`on_${p}`] = row.orderNumber;
+      replacements[`nd_${p}`] = ngayDatHang;
+      replacements[`nv_${p}`] = nhaVanChuyenId;
+      replacements[`qg_${p}`] = quocGiaId;
+      replacements[`tt_${p}`] = tinhTrang;
+      replacements[`gc_${p}`] = row.ghiChu;
+      replacements[`ng_${p}`] = actor;
+      replacements[`k_${p}`] = row.kien;
+      replacements[`mw_${p}`] = row.mawb;
+      replacements[`hw_${p}`] = row.hawb;
+      replacements[`ct_${p}`] = coTaoLoHang;
+      replacements[`gcl_${p}`] = ghiChuLoHang;
 
-    const results = await this.runInChunks(
-      targets,
-      TrackingService.IMPORT_CONCURRENCY,
-      persistOne,
-    );
-    return results.reduce((n, ok) => n + (ok ? 1 : 0), 0);
+      // Log row — mirrors legacy ThemSystemLogsKhongMoDB nguon/hanhDong/doiTuong
+      logValues.push(
+        `(:lng_${p}, GETDATE(), :lnguon_${p}, :lhd_${p}, :ldt_${p}, :lnd_${p})`,
+      );
+      replacements[`lng_${p}`] = actor;
+      replacements[`lnguon_${p}`] = 'Tracking_Import:ThemTrackingKhongMoDB';
+      replacements[`lhd_${p}`] = 'Them moi';
+      replacements[`ldt_${p}`] = '';
+      replacements[`lnd_${p}`] = noiDung;
+    });
+
+    // TRY/CATCH thay cho SET XACT_ABORT ON để KHÔNG leak session state vào
+    // connection pool. Atomic giống y XACT_ABORT: bất kỳ lỗi nào trong TRY
+    // → ROLLBACK + THROW → caller chuyển sang fallback per-row.
+    const sql =
+      `SET NOCOUNT ON;\n` +
+      `BEGIN TRY\n` +
+      `  BEGIN TRANSACTION;\n` +
+      `  ${spStmts.join(';\n  ')};\n` +
+      `  INSERT INTO dbo.tbSystemLogs (NguoiTao, NgayTao, Nguon, HanhDong, DoiTuong, NoiDung)\n` +
+      `  VALUES ${logValues.join(',\n    ')};\n` +
+      `  COMMIT TRANSACTION;\n` +
+      `END TRY\n` +
+      `BEGIN CATCH\n` +
+      `  IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;\n` +
+      `  THROW;\n` +
+      `END CATCH;`;
+
+    // Let any T-SQL error propagate — server-side TRY/CATCH already rolled
+    // the chunk back atomically. Caller's try/catch routes to per-row fallback.
+    await this.sequelize.query(sql, {
+      replacements,
+      type: QueryTypes.RAW,
+    });
   }
 
   /**
