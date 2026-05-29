@@ -21,6 +21,11 @@ import {
   UpdateDebtParams,
 } from '@/lib/api';
 import { useCurrentUser } from '@/hooks/use-auth';
+import { useLocalStorageHistory } from '@/hooks/use-localstorage-history';
+
+const NOI_DUNG_HISTORY_KEY = 'debt-management:noi-dung-history';
+const NOI_DUNG_HISTORY_MAX = 50;
+const NOI_DUNG_SUGGESTIONS_WHEN_EMPTY = 10;
 import {
   FiUpload,
   FiDownload,
@@ -96,6 +101,13 @@ export default function DebtManagementPage() {
   const [filterUsernameInput, setFilterUsernameInput] = useState('');
   const [showFilterUsernameDropdown, setShowFilterUsernameDropdown] = useState(false);
   const [activeFilterUsernameIndex, setActiveFilterUsernameIndex] = useState(0);
+  const [showNoiDungDropdown, setShowNoiDungDropdown] = useState(false);
+  const [activeNoiDungIndex, setActiveNoiDungIndex] = useState(0);
+
+  const { history: noiDungHistory, addEntry: addNoiDungHistory } = useLocalStorageHistory(
+    NOI_DUNG_HISTORY_KEY,
+    NOI_DUNG_HISTORY_MAX,
+  );
 
   // Date input refs for flatpickr
   const fromDateRef = useRef<HTMLInputElement>(null);
@@ -207,6 +219,12 @@ export default function DebtManagementPage() {
       .slice(0, 50);
   }, [users, usernameInput]);
 
+  const filteredNoiDungSuggestions = useMemo(() => {
+    const search = newDebt.noiDung.trim().toLowerCase();
+    if (!search) return noiDungHistory.slice(0, NOI_DUNG_SUGGESTIONS_WHEN_EMPTY);
+    return noiDungHistory.filter((v) => v.toLowerCase().includes(search));
+  }, [noiDungHistory, newDebt.noiDung]);
+
   const filteredFilterUsernames = useMemo(() => {
     const search = filterUsernameInput.trim().toLowerCase();
     return (users || [])
@@ -258,6 +276,44 @@ export default function DebtManagementPage() {
     } else if (!usernameInput.trim()) {
       handleUsernameSelect('');
     }
+  };
+
+  const handleNoiDungInputChange = (value: string) => {
+    setNewDebt((prev) => ({ ...prev, noiDung: value }));
+    setShowNoiDungDropdown(true);
+    setActiveNoiDungIndex(0);
+  };
+
+  const handleNoiDungSelect = (value: string) => {
+    setNewDebt((prev) => ({ ...prev, noiDung: value }));
+    setShowNoiDungDropdown(false);
+    setActiveNoiDungIndex(0);
+  };
+
+  const handleNoiDungKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showNoiDungDropdown || filteredNoiDungSuggestions.length === 0) return;
+    if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(event.key)) return;
+
+    if (event.key === 'Escape') {
+      setShowNoiDungDropdown(false);
+      return;
+    }
+
+    event.preventDefault();
+    if (event.key === 'ArrowDown') {
+      setActiveNoiDungIndex((prev) => (prev + 1) % filteredNoiDungSuggestions.length);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      setActiveNoiDungIndex(
+        (prev) => (prev - 1 + filteredNoiDungSuggestions.length) % filteredNoiDungSuggestions.length,
+      );
+      return;
+    }
+
+    const active = filteredNoiDungSuggestions[activeNoiDungIndex];
+    if (active) handleNoiDungSelect(active);
   };
 
   const handleFilterUsernameInputChange = (value: string) => {
@@ -321,10 +377,11 @@ export default function DebtManagementPage() {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: createDebt,
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['debt-management'] });
         setErrorMessage(null);
+        addNoiDungHistory(variables.noiDung);
       } else {
         setErrorMessage(result.message || 'Thêm mới thất bại');
       }
@@ -337,9 +394,10 @@ export default function DebtManagementPage() {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateDebtParams }) => updateDebt(id, data),
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['debt-management'] });
+        if (variables.data.noiDung) addNoiDungHistory(variables.data.noiDung);
         resetDebtForm();
       } else {
         setErrorMessage(result.message || 'Cập nhật thất bại');
@@ -563,14 +621,37 @@ export default function DebtManagementPage() {
                   <FiFileText className="w-3.5 h-3.5 text-[#14264b]" />
                   Nội dung <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={newDebt.noiDung}
-                  onChange={(e) => setNewDebt({ ...newDebt, noiDung: e.target.value })}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
-                  required
-                  placeholder="Nhập nội dung công nợ"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={newDebt.noiDung}
+                    onChange={(e) => handleNoiDungInputChange(e.target.value)}
+                    onKeyDown={handleNoiDungKeyDown}
+                    onFocus={() => setShowNoiDungDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowNoiDungDropdown(false), 150)}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
+                    required
+                    autoComplete="off"
+                    placeholder="Nhập nội dung công nợ"
+                  />
+                  {showNoiDungDropdown && filteredNoiDungSuggestions.length > 0 && (
+                    <div
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="absolute left-0 top-full z-[100] mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 text-xs shadow-lg"
+                    >
+                      {filteredNoiDungSuggestions.map((suggestion, index) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          className={`w-full px-3 py-1.5 text-left hover:bg-[#14264b]/5 ${index === activeNoiDungIndex ? 'bg-[#14264b]/10 font-medium text-[#14264b]' : 'text-slate-700'}`}
+                          onClick={() => handleNoiDungSelect(suggestion)}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-1">

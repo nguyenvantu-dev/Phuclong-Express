@@ -71,13 +71,10 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [DEFAULT_OG_IMAGE.url],
   },
-  icons: {
-    icon: [
-      { url: "/LOGO_ONLY_PHUC_LONG_EXPRESS_WHITE.png", type: "image/png" },
-      { url: "/icon.png", type: "image/png" },
-    ],
-    apple: "/LOGO_ONLY_PHUC_LONG_EXPRESS_WHITE.png",
-  },
+  // Favicons come from the App Router file convention
+  // (src/app/icon.png + src/app/apple-icon.png — colored PLE monogram).
+  // Do NOT re-declare `icons` here, or the white (invisible-on-white) logo
+  // would be referenced again and Google would show a blank favicon.
   verification: {
     // Populate once verified via Google Search Console.
     // google: "xxxxxxxxxxxxxxxxxxx",

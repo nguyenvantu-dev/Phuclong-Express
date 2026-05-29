@@ -110,6 +110,16 @@ function ReturnDateModal({
   const formatDmy = (d: Date) =>
     `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
+  // Reset form state mỗi khi modal mở để tránh giữ lại dữ liệu lần trước
+  useEffect(() => {
+    if (!open) return;
+    setNgayVeVn('');
+    setBoSungGhiChu('');
+    setChuyenVeCompleted(false);
+    setNgayHoanThanh('');
+    setError('');
+  }, [open]);
+
   // Initialize flatpickr for "Ngày về VN" when modal opens
   useEffect(() => {
     if (!open || !dateInputRef.current) return;
@@ -1195,52 +1205,25 @@ export default function EditOrderListPage() {
                     QUỐC GIA
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    LINK
+                    SẢN PHẨM
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    HÌNH
-                  </th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    THUẾ/ PHÍ
+                    THUẾ / PHÍ
                   </th>
                   <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">
-                    GIÁ WEB
+                    GIÁ / SL / %
                   </th>
                   <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">
-                    SL
-                  </th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">
-                    % CÔNG
-                  </th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">
-                    CÔNG NGOẠI TỆ
-                  </th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">
-                    TỔNG NGOẠI TỆ
-                  </th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    LOẠI TIỀN
-                  </th>
-                  <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">
-                    TỶ GIÁ
+                    NGOẠI TỆ
                   </th>
                   <th className="px-1 py-2 text-right text-xs font-medium uppercase text-gray-500">
                     TỔNG VNĐ
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    VN STATUS
+                    NGÀY / ĐỢT
                   </th>
                   <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    NGÀY COMPLETE
-                  </th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    ĐỢT HÀNG
-                  </th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    GHI CHÚ
-                  </th>
-                  <th className="px-1 py-2 text-left text-xs font-medium uppercase text-gray-500">
-                    ADDED BY
+                    GHI CHÚ / BY
                   </th>
                 </tr>
               </thead>
@@ -1265,21 +1248,27 @@ export default function EditOrderListPage() {
                         <button
                           type="button"
                           onClick={() => setEditOrderId(order.id)}
-                          className="text-[#14264b] hover:text-[#14264b] hover:underline cursor-pointer"
+                          aria-label="Sửa đơn hàng"
+                          title="Sửa"
+                          className="inline-flex items-center justify-center rounded border border-gray-300 p-1 text-[#14264b] hover:border-[#14264b] hover:bg-[#14264b]/10 cursor-pointer"
                         >
-                          Detail
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                          </svg>
                         </button>
                       )}
                     </td>
 
                     {/* THÔNG TIN ĐH - matching ID, ngaymuahang, ordernumber, trangthaiOrder in C# */}
-                    <td className="px-1 py-1 text-left whitespace-nowrap max-w-[200px] text-gray-900">
+                    <td className="px-1 py-1 text-left w-[200px] max-w-[200px] text-gray-900">
                       <div className="text-left">
                         <span className="font-bold">Mã ĐH: </span>{order.id}
                         <br />
                         <span className="font-bold">Ngày ĐH: </span>{formatDate(order.ngayMuaHang)}
                         <br />
-                        <span className="font-bold">OrderNumber: </span>{order.orderNumber}
+                        <span className="font-bold">OrderNumber: </span>
+                        <br />
+                        <span className="break-all">{order.orderNumber}</span>
                         <br />
                         <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${OrderStatusConfig[order.trangThaiOrder as OrderStatus]?.color || 'bg-gray-100 text-gray-800'}`}>
                           {order.trangThaiOrder}
@@ -1310,38 +1299,39 @@ export default function EditOrderListPage() {
                       {order.tenQuocGia || '-'}
                     </td>
 
-                    {/* LINK - matching linkweb, corlor, size in C# */}
-                    <td className="px-1 py-1 text-left max-w-[220px] min-w-[180px] text-gray-900">
-                      {order.linkWeb ? (
-                        <a
-                          href={order.linkWeb}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#14264b] hover:text-[#14264b] block truncate font-medium"
-                        >
-                          {order.linkWeb}
-                        </a>
-                      ) : (
-                        '-'
-                      )}
-                      <div className="text-left">
-                        <span className="font-medium">Màu: </span>{order.color || '-'}
-                        <br />
-                        <span className="font-medium">Size: </span>{order.size || '-'}
+                    {/* SẢN PHẨM - gộp HÌNH + LINK + Màu + Size */}
+                    <td className="px-1 py-1 text-left w-[240px] max-w-[240px] text-gray-900">
+                      <div className="flex gap-2">
+                        {order.linkHinh ? (
+                          <img
+                            src={order.linkHinh}
+                            alt="Product"
+                            className="h-[50px] w-[50px] flex-shrink-0 object-cover"
+                          />
+                        ) : (
+                          <div className="h-[50px] w-[50px] flex-shrink-0 bg-gray-100" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          {order.linkWeb ? (
+                            <a
+                              href={order.linkWeb}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block truncate font-medium text-[#14264b] hover:underline"
+                            >
+                              {order.linkWeb}
+                            </a>
+                          ) : (
+                            '-'
+                          )}
+                          <div>
+                            <span className="font-medium">Màu: </span>{order.color || '-'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Size: </span>{order.size || '-'}
+                          </div>
+                        </div>
                       </div>
-                    </td>
-
-                    {/* HÌNH */}
-                    <td className="px-1 py-1 text-gray-900">
-                      {order.linkHinh ? (
-                        <img
-                          src={order.linkHinh}
-                          alt="Product"
-                          className="h-[50px] w-auto"
-                        />
-                      ) : (
-                        '-'
-                      )}
                     </td>
 
                     {/* THUẾ/PHÍ - matching phuthu, saleoff, shipUSA, tax in C# */}
@@ -1357,39 +1347,30 @@ export default function EditOrderListPage() {
                       </div>
                     </td>
 
-                    {/* GIÁ WEB */}
+                    {/* GIÁ / SL / % - gộp GIÁ WEB + SL + % CÔNG */}
                     <td className="px-1 py-1 text-right whitespace-nowrap text-gray-900">
-                      {formatNumber(order.donGiaWeb)}
+                      <div>
+                        <span className="font-medium">Giá: </span>{formatNumber(order.donGiaWeb)}
+                      </div>
+                      <div>
+                        <span className="font-medium">SL: </span>{order.soLuong}
+                      </div>
+                      <div>
+                        <span className="font-medium">%Công: </span>{formatNumber(order.cong)}
+                      </div>
                     </td>
 
-                    {/* SL */}
+                    {/* NGOẠI TỆ - gộp CÔNG NGOẠI TỆ + TỔNG NGOẠI TỆ + LOẠI TIỀN + TỶ GIÁ */}
                     <td className="px-1 py-1 text-right whitespace-nowrap text-gray-900">
-                      {order.soLuong}
-                    </td>
-
-                    {/* % CÔNG */}
-                    <td className="px-1 py-1 text-right whitespace-nowrap text-gray-900">
-                      {formatNumber(order.cong)}
-                    </td>
-
-                    {/* CÔNG NGOẠI TỆ */}
-                    <td className="px-1 py-1 text-right whitespace-nowrap text-gray-900">
-                      {formatNumber(order.tienCongUsd)}
-                    </td>
-
-                    {/* TỔNG NGOẠI TỆ */}
-                    <td className="px-1 py-1 text-right whitespace-nowrap text-gray-900">
-                      {formatNumber(order.tongTienUsd)}
-                    </td>
-
-                    {/* LOẠI TIỀN */}
-                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
-                      {order.loaiTien || 'USD'}
-                    </td>
-
-                    {/* TỶ GIÁ */}
-                    <td className="px-1 py-1 text-right whitespace-nowrap text-gray-900">
-                      {formatNumber(order.tyGia)}
+                      <div>
+                        <span className="font-medium">Công: </span>{formatNumber(order.tienCongUsd)}
+                      </div>
+                      <div>
+                        <span className="font-medium">Tổng: </span>{formatNumber(order.tongTienUsd)} {order.loaiTien || 'USD'}
+                      </div>
+                      <div>
+                        <span className="font-medium">Tỷ giá: </span>{formatNumber(order.tyGia)}
+                      </div>
                     </td>
 
                     {/* TỔNG VNĐ */}
@@ -1397,29 +1378,27 @@ export default function EditOrderListPage() {
                       {formatNumber(order.tongTienVnd)}
                     </td>
 
-                    {/* VN STATUS - matching "Đợt hàng {0:dd/MM/yyyy}" format in C# */}
+                    {/* NGÀY / ĐỢT - gộp VN STATUS + NGÀY COMPLETE + ĐỢT HÀNG */}
                     <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
-                      {order.ngayVeVn ? `Đợt hàng ${formatDate(order.ngayVeVn)}` : '-'}
+                      <div>
+                        <span className="font-medium">VN: </span>
+                        {order.ngayVeVn ? `Đợt ${formatDate(order.ngayVeVn)}` : '-'}
+                      </div>
+                      <div>
+                        <span className="font-medium">Complete: </span>
+                        {order.ngayHoanThanh ? formatDate(order.ngayHoanThanh as any) : '-'}
+                      </div>
+                      <div>
+                        <span className="font-medium">Đợt: </span>{order.tenDotHang || '-'}
+                      </div>
                     </td>
 
-                    {/* NGÀY COMPLETE */}
-                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
-                      {order.ngayHoanThanh ? formatDate(order.ngayHoanThanh as any) : '-'}
-                    </td>
-
-                    {/* ĐỢT HÀNG */}
-                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
-                      {order.tenDotHang || '-'}
-                    </td>
-
-                    {/* GHI CHÚ */}
-                    <td className="px-1 py-1 text-left max-w-[150px] truncate text-gray-900">
-                      {order.ghiChu || order.adminNote || '-'}
-                    </td>
-
-                    {/* ADDED BY */}
-                    <td className="px-1 py-1 text-left whitespace-nowrap text-gray-900">
-                      {order.usernameSave || '-'}
+                    {/* GHI CHÚ / BY - gộp GHI CHÚ + ADDED BY */}
+                    <td className="px-1 py-1 text-left max-w-[160px] text-gray-900">
+                      <div className="line-clamp-2">{order.ghiChu || order.adminNote || '-'}</div>
+                      <div className="mt-1 text-[11px] text-gray-500">
+                        by {order.usernameSave || '-'}
+                      </div>
                     </td>
                   </tr>
                 ))}
