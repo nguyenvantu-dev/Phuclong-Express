@@ -24,7 +24,13 @@ function formatNumber(value: number) {
 }
 
 function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+  // API trả về wall-clock giờ VN (gắn hậu tố Z). Format theo UTC để giữ nguyên
+  // chữ số giờ VN, không bị dịch +7h, và độc lập với múi giờ trình duyệt.
+  return new Date(iso).toLocaleString('vi-VN', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  });
 }
 
 export function ExchangeRateHistoryModal({ name, history, loading, onClose }: Props) {
@@ -80,8 +86,11 @@ export function ExchangeRateHistoryModal({ name, history, loading, onClose }: Pr
                     className={i === 0 ? 'bg-[#14264b]/5' : 'border-t border-slate-50 hover:bg-slate-50'}
                   >
                     <td className="px-5 py-2.5">
-                      <p className="text-xs text-slate-600">{formatDateTime(h.NgayCapNhat)}</p>
-                      </td>
+                      <p className="text-xs text-slate-600">
+                        {formatDateTime(h.NgayCapNhat)}
+                        <span className="ml-1 text-[10px] font-medium text-slate-400">VN</span>
+                      </p>
+                    </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       <span className="font-medium text-slate-800">{formatNumber(h.TyGiaVND)}</span>
                       <span className="ml-0.5 text-xs text-slate-400">₫</span>

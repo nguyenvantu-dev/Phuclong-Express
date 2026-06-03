@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDebtReports,
@@ -33,12 +34,17 @@ const DEFAULT_PAGE_SIZE = 100;
 
 export default function DebtReportsPage() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
 
   // Filter state - matching BaoCao_ChiTietCongNo.aspx filters
   const [filters, setFilters] = useState<DebtReportQueryParams>({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
   });
+
+  // Prefill from URL (?u=<username>&kid=<kyId>) and auto-load — matches
+  // BaoCao_ChiTietCongNo.cs Page_Load: sets username + Từ kỳ + Đến kỳ to kid.
+  const initializedFromUrl = useRef(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
   const [activeUsernameIndex, setActiveUsernameIndex] = useState(0);
@@ -84,6 +90,27 @@ export default function DebtReportsPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Read ?u=&kid= once on mount, prefill filters, and let the query auto-run.
+  useEffect(() => {
+    if (initializedFromUrl.current) return;
+    const u = searchParams?.get('u');
+    const kid = searchParams?.get('kid');
+    if (!u || !kid) return;
+
+    const kyId = Number(kid);
+    if (Number.isNaN(kyId)) return;
+
+    initializedFromUrl.current = true;
+    setUsernameInput(u);
+    setFilters((prev) => ({
+      ...prev,
+      username: u,
+      fromKyId: kyId,
+      toKyId: kyId,
+      page: 1,
+    }));
+  }, [searchParams]);
 
   // Fetch debt reports
   const { data, isLoading, error, isFetching, refetch } = useQuery({

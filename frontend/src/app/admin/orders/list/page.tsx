@@ -123,9 +123,10 @@ function ReturnDateModal({
   // Initialize flatpickr for "Ngày về VN" when modal opens
   useEffect(() => {
     if (!open || !dateInputRef.current) return;
+    // Luôn mở popup với ô trống: xóa giá trị cũ và không set defaultDate.
+    dateInputRef.current.value = '';
     const fp = flatpickr(dateInputRef.current, {
       dateFormat: 'd/m/Y',
-      defaultDate: ngayVeVn ? new Date(ngayVeVn) : undefined,
       onChange: (dates) => {
         if (dates[0]) {
           setNgayVeVn(formatDmy(dates[0]));

@@ -205,8 +205,10 @@ export default function ExchangeRatesPage() {
   };
 
   const formatDateTime = (iso: string) => {
+    // API trả về wall-clock giờ VN (gắn hậu tố Z). Format theo UTC để giữ nguyên
+    // chữ số giờ VN, không bị dịch theo múi giờ trình duyệt.
     const d = new Date(iso);
-    return d.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+    return d.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'UTC' });
   };
 
   return (

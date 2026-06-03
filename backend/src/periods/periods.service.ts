@@ -14,7 +14,7 @@ export interface PeriodDetail {
   KyID: number;
   Nam: number;
   Thang: number;
-  username: string;
+  UserName: string;
   DauKy: number;
   PhatSinhThuDR: number;
   PhatSinhChiCR: number;

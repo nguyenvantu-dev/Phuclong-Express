@@ -21,8 +21,8 @@ import { getShippingSlip, ShippingSlipData } from '@/lib/api';
 
 function ShippingSlipPageContent() {
   const searchParams = useSearchParams();
-  const user = searchParams.get('u') || '';
-  const orderId = searchParams.get('dh') || '';
+  const user = searchParams?.get('u') || '';
+  const orderId = searchParams?.get('dh') || '';
 
   // Fetch shipping slip data
   const { data, isLoading, error } = useQuery<ShippingSlipData>({
