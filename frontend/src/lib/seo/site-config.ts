@@ -10,13 +10,13 @@ export const SITE_URL = rawSiteUrl.replace(/\/+$/, '');
 
 export const SITE_NAME = 'Phuc Long Express';
 
-export const SITE_TAGLINE = 'Dịch vụ mua hộ và vận chuyển hàng quốc tế về Việt Nam';
+export const SITE_TAGLINE = 'Dịch vụ vận chuyển hàng quốc tế về Việt Nam';
 
 export const SITE_DESCRIPTION =
-  'Phuc Long Express — Dịch vụ mua hộ, đặt hàng và vận chuyển hàng hóa quốc tế (Mỹ, Nhật, Hàn, Trung, Châu Âu) về Việt Nam an toàn, nhanh chóng, giá tốt. Tra cứu tracking, tỷ giá, đặt hàng online 24/7.';
+  'Phuc Long Express — Dịch vụ đặt hàng và vận chuyển hàng hóa quốc tế (Mỹ, Nhật, Hàn, Trung, Châu Âu) về Việt Nam an toàn, nhanh chóng, giá tốt. Tra cứu tracking, tỷ giá, đặt hàng online 24/7.';
 
 export const SITE_KEYWORDS = [
-  'mua hộ hàng Mỹ',
+  'vận chuyển hàng Mỹ',
   'order hàng quốc tế',
   'vận chuyển hàng về Việt Nam',
   'ship hàng từ Mỹ',

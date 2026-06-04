@@ -4,12 +4,12 @@ import { buildMetadata } from '@/lib/seo/build-metadata';
 export const metadata = buildMetadata({
   title: 'Tỷ giá ngoại tệ hôm nay',
   description:
-    'Cập nhật tỷ giá ngoại tệ (USD, JPY, KRW, CNY, EUR...) áp dụng cho dịch vụ mua hộ và vận chuyển hàng quốc tế của Phuc Long Express. Tra cứu lịch sử tỷ giá theo ngày.',
+    'Cập nhật tỷ giá ngoại tệ (USD, JPY, KRW, CNY, EUR...) áp dụng cho dịch vụ vận chuyển hàng quốc tế của Phuc Long Express. Tra cứu lịch sử tỷ giá theo ngày.',
   path: '/ty-gia',
   keywords: [
     'tỷ giá ngoại tệ',
     'tỷ giá USD JPY KRW',
-    'tỷ giá mua hộ',
+    'tỷ giá vận chuyển',
     'lịch sử tỷ giá',
   ],
 });

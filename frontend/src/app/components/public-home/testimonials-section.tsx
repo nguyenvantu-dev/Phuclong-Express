@@ -44,7 +44,7 @@ export default function TestimonialsSection() {
             Niềm tin từ <span style={{ color: '#eb7325' }}>khách hàng</span> của chúng tôi
           </h2>
           <p className="max-w-xl mx-auto text-sm" style={{ color: '#64748b' }}>
-            Ý kiến thực tế từ những khách hàng đã trải nghiệm dịch vụ mua hộ và vận chuyển cùng PLE
+            Ý kiến thực tế từ những khách hàng đã trải nghiệm dịch vụ vận chuyển cùng PLE
           </p>
         </div>
 

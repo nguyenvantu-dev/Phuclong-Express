@@ -147,7 +147,7 @@ export default function HeroSection() {
               className="text-4xl md:text-6xl lg:text-4xl xl:text-5xl 2xl:text-7xl font-black leading-tight mb-4"
               style={{ color: '#ffffff', textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
             >
-              Mua hộ &amp; Vận chuyển
+              Vận chuyển
               <br />
               <span className="text-3xl md:text-4xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold" style={{ color: 'rgba(255,255,255,0.75)' }}>
                 từ nước ngoài về{' '}

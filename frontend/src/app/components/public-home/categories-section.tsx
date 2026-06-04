@@ -39,11 +39,11 @@ export default function CategoriesSection() {
             <div className="w-8 h-0.5 rounded-full" style={{ backgroundColor: '#eb7325' }} />
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-            Nhận Mua hộ &amp; Vận chuyển từ nhiều{' '}
+            Vận chuyển hàng từ nhiều{' '}
             <span style={{ color: '#eb7325' }}>quốc gia về Việt Nam</span>
           </h2>
           <p className="text-white/60 max-w-xl mx-auto">
-            Phuc Long Express hỗ trợ các tuyến mua hộ và vận chuyển từ nhiều thị trường lớn, phù hợp cho nhu cầu tiêu dùng cá nhân lẫn nhập hàng kinh doanh.
+            Phuc Long Express hỗ trợ các tuyến vận chuyển từ nhiều thị trường lớn, phù hợp cho nhu cầu tiêu dùng cá nhân lẫn nhập hàng kinh doanh.
           </p>
         </div>
 

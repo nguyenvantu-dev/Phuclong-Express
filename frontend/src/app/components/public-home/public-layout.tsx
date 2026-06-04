@@ -359,7 +359,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 <Image src="/image1/LOGO_PHUC_LONG_EXPRESS_FULL_WHITE.png" alt="Phuc Long Express" width={160} height={80} className="h-20 w-auto object-contain" />
               </div>
               <p className="text-sm leading-relaxed mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Dịch vụ logistics uy tín — chuyên mua hộ &amp; vận chuyển hàng hóa toàn quốc từ năm 2018.
+                Dịch vụ logistics uy tín — chuyên vận chuyển hàng hóa toàn quốc từ năm 2018.
               </p>
               <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 Thương hiệu thuộc <span style={{ color: 'rgba(255,255,255,0.55)' }}>Công ty TNHH Minh Khải Logistic</span>

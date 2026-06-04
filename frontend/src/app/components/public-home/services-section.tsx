@@ -132,8 +132,8 @@ export default function ServicesSection() {
                 </h3>
                 <p className="leading-relaxed mb-4 text-[15px]" style={{ color: 'rgba(255,255,255,0.72)' }}>
                   Đơn vị chuyên cung cấp dịch vụ{' '}
-                  <strong className="text-white font-semibold">mua hộ quốc tế</strong>{' '}
-                  và vận chuyển hàng từ nước ngoài về Việt Nam dành cho cá nhân, hộ kinh doanh và doanh nghiệp.
+                  <strong className="text-white font-semibold">vận chuyển hàng quốc tế</strong>{' '}
+                  từ nước ngoài về Việt Nam dành cho cá nhân, hộ kinh doanh và doanh nghiệp.
                 </p>
                 <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.72)' }}>
                   Từ tư vấn nguồn hàng, nhận link sản phẩm, đặt mua, thanh toán, gom hàng cho đến vận chuyển và giao tận tay — chi phí minh bạch, quy trình rõ ràng.

@@ -618,7 +618,7 @@ export default function EditOrderDetailModal({ orderId, onClose }: Props) {
                     </div>
                     <div>
                       <label className={STYLES.label}>Thuế (%)</label>
-                      <input {...register('tax', { valueAsNumber: true })} type="number" step="0.01" min="0" className={STYLES.input} />
+                      <input {...register('tax', { valueAsNumber: true })} type="number" step="0.01" min="0" disabled className={STYLES.readonly} />
                     </div>
                     <div>
                       <label className={STYLES.label}>% Công</label>

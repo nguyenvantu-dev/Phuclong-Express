@@ -10,9 +10,9 @@ export const metadata = buildMetadata({
   keywords: [
     'đặt hàng quốc tế',
     'order hàng Mỹ',
-    'mua hộ hàng Nhật',
+    'vận chuyển hàng Nhật',
     'đặt hàng online',
-    'gửi link mua hộ',
+    'gửi link vận chuyển',
   ],
 });
 

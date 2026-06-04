@@ -98,7 +98,7 @@ export default function ClientsSection() {
           Order từ các thương hiệu <span style={{ color: '#eb7325' }}>hàng đầu thế giới</span>
         </h2>
         <p className="mt-3 text-sm" style={{ color: '#64748b' }}>
-          Mua hộ từ hàng nghìn website và thương hiệu uy tín tại Mỹ, Anh, Nhật, Ba Lan, Tây Ban Nha...
+          Vận chuyển hàng từ hàng nghìn website và thương hiệu uy tín tại Mỹ, Anh, Nhật, Ba Lan, Tây Ban Nha...
         </p>
       </div>
 
