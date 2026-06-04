@@ -1,11 +1,15 @@
-import { Controller, Get, Put, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ExchangeRatesService } from './exchange-rates.service';
 import type { UpdateExchangeRateDto } from './exchange-rates.service';
+import { ExchangeRateSchedulerService } from './exchange-rate-scheduler.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('exchange-rates')
 export class ExchangeRatesController {
-  constructor(private readonly exchangeRatesService: ExchangeRatesService) {}
+  constructor(
+    private readonly exchangeRatesService: ExchangeRatesService,
+    private readonly schedulerService: ExchangeRateSchedulerService,
+  ) {}
 
   @Get()
   async findAll() {
@@ -30,6 +34,12 @@ export class ExchangeRatesController {
   async findOne(@Param('name') name: string) {
     const data = await this.exchangeRatesService.findOne(name);
     return { data };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('sync')
+  async sync() {
+    return this.schedulerService.syncFromVietcombank();
   }
 
   @UseGuards(JwtAuthGuard)
