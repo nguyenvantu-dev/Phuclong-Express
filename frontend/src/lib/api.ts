@@ -1086,6 +1086,9 @@ export interface DebtManagementItem {
   NguoiCapNhatCuoi?: string;
   NgayCapNhatCuoi?: string;
   SanLuong?: number; // Sản lượng (kg) — chỉ có giá trị khi loại "Cân Kg" (LoaiPhatSinh = 8)
+  DonHang_ID?: number | null; // FK đơn hàng; null với công nợ thủ công
+  OrderNumber?: string | null; // Mã đơn hàng (DonHang.ordernumber) — để kế toán đối chiếu
+  Tuyen?: string | null; // Tuyến = Quốc gia (tbQuocGia.TenQuocGia)
 }
 
 export interface DebtManagementResponse {
@@ -1937,6 +1940,79 @@ export const deleteTracking = async (id: number): Promise<void> => {
  */
 export const getTrackingHistory = async (id: number): Promise<any[]> => {
   const response = await apiClient.get(`/tracking/${id}/history`);
+  return response.data;
+};
+
+// ========== Dashboard (thống kê admin) ==========
+
+/**
+ * API Methods cho Dashboard admin.
+ * Tham số ngày dạng dd/MM/yyyy (khớp flatpickr 'd/m/Y'); bỏ trống -> BE mặc định tháng hiện tại.
+ */
+
+export interface DashboardNewCustomer {
+  ngay: string;
+  soKHMoi: number;
+}
+
+export interface DashboardRevenue {
+  ngay: string;
+  doanhThu: number;
+  soDon: number;
+}
+
+export interface DashboardOutputDaily {
+  ngay: string;
+  sanLuongKg: number;
+}
+
+export interface DashboardStaffOutput {
+  nhanVien: string;
+  thang: string;
+  soDon: number;
+  sanLuongKg: number;
+}
+
+const buildDateParams = (fromDate?: string, toDate?: string): string => {
+  const params = new URLSearchParams();
+  if (fromDate) params.append('fromDate', fromDate);
+  if (toDate) params.append('toDate', toDate);
+  return params.toString();
+};
+
+/** KH mới theo ngày. */
+export const getDashboardNewCustomers = async (
+  fromDate?: string,
+  toDate?: string,
+): Promise<DashboardNewCustomer[]> => {
+  const response = await apiClient.get(`/dashboard/new-customers?${buildDateParams(fromDate, toDate)}`);
+  return response.data;
+};
+
+/** Doanh thu theo ngày (đơn đã hoàn tất). */
+export const getDashboardRevenue = async (
+  fromDate?: string,
+  toDate?: string,
+): Promise<DashboardRevenue[]> => {
+  const response = await apiClient.get(`/dashboard/revenue?${buildDateParams(fromDate, toDate)}`);
+  return response.data;
+};
+
+/** Sản lượng (kg) theo ngày. */
+export const getDashboardOutputDaily = async (
+  fromDate?: string,
+  toDate?: string,
+): Promise<DashboardOutputDaily[]> => {
+  const response = await apiClient.get(`/dashboard/output-daily?${buildDateParams(fromDate, toDate)}`);
+  return response.data;
+};
+
+/** Sản lượng mỗi nhân viên theo tháng (số đơn + kg). */
+export const getDashboardOutputByStaff = async (
+  fromDate?: string,
+  toDate?: string,
+): Promise<DashboardStaffOutput[]> => {
+  const response = await apiClient.get(`/dashboard/output-by-staff?${buildDateParams(fromDate, toDate)}`);
   return response.data;
 };
 

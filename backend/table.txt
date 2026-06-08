@@ -76,6 +76,7 @@ CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.AspNetUsers (
 	KhachBuon bit DEFAULT 0 NOT NULL,
 	LinkTaiKhoanMang nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	VungMien nvarchar(MAX) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	NgayTao datetime DEFAULT getdate() NULL,
 	CONSTRAINT PK_AspNetUsers PRIMARY KEY (Id)
 );
 

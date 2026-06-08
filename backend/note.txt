@@ -3839,10 +3839,12 @@ BEGIN
 	CLOSE RS
 	DEALLOCATE RS
 	
-	SELECT CN.*, LH.TenLoHang
+	SELECT CN.*, LH.TenLoHang, DH.ordernumber AS OrderNumber, QG.TenQuocGia AS Tuyen
 	FROM CONGNO CN
 	INNER JOIN #MyPage ON CN.CongNo_ID = #MyPage.CongNo_ID
 	LEFT JOIN tbLoHang LH ON CN.LoHangID = LH.LoHangID
+	LEFT JOIN Don_Hang DH ON CN.DonHang_ID = DH.ID
+	LEFT JOIN tbQuocGia QG ON DH.QuocGiaID = QG.QuocGiaID
 	ORDER BY CN.CongNo_ID desc
 END;
 

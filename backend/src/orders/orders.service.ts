@@ -506,7 +506,7 @@ export class OrdersService {
     const { website, username, status, statuses, search, startDate, endDate, page = 1, limit = 20, includeDeleted = false, quocGiaId, ids } = query;
 
     // Cap limit to 500 max to match @Max(500) validation
-    const safeLimit = Math.min(limit, 500);
+    const safeLimit = Math.min(limit, 10000);
 
     try {
       // Build status string for SP (e.g., "'Received','Confirmed'")

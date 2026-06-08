@@ -27,6 +27,7 @@ import { ShippersModule } from './shippers/shippers.module';
 import { QnaModule } from './qna/qna.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CommonModule } from './common/common.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { CommonModule } from './common/common.module';
     ShippersModule,
     QnaModule,
     NotificationsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

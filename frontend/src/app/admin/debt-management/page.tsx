@@ -131,6 +131,21 @@ export default function DebtManagementPage() {
   const toDateRef = useRef<HTMLInputElement>(null);
   const formDateRef = useRef<HTMLInputElement>(null);
 
+  // Refs/state cho thanh scroll ngang TỰ VẼ ghim ở đáy (không dùng scrollbar OS vì hay bị ép mỏng).
+  // Vị trí thumb cập nhật trực tiếp qua DOM ref (không setState) để tránh re-render cả bảng -> không lag.
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const dragStateRef = useRef<{ startX: number; startScroll: number } | null>(null);
+  const [tableScrollSize, setTableScrollSize] = useState({ scroll: 0, client: 0 });
+
+  // Đặt vị trí thumb theo scrollLeft hiện tại (ghi thẳng style, không qua React)
+  const updateThumbPosition = useCallback(() => {
+    const el = tableScrollRef.current;
+    const thumb = thumbRef.current;
+    if (!el || !thumb || el.scrollWidth <= 0) return;
+    thumb.style.left = `${(el.scrollLeft / el.scrollWidth) * 100}%`;
+  }, []);
+
   const resetDebtForm = () => {
     setNewDebt({
       username: '',
@@ -223,6 +238,54 @@ export default function DebtManagementPage() {
     queryKey: ['debt-management', filters],
     queryFn: () => getDebtManagementList(filters),
   });
+
+  // Đo bề rộng nội dung/khung của bảng để biết khi nào cần thanh scroll ngang ghim.
+  // Theo dõi cả thay đổi dữ liệu lẫn resize cửa sổ/khung bảng.
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const measure = () => {
+      setTableScrollSize({ scroll: el.scrollWidth, client: el.clientWidth });
+      updateThumbPosition();
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [data]);
+
+  // Bảng cuộn (bằng trackpad/shift+wheel) -> chỉ ghi lại vị trí thumb qua DOM (không setState)
+  const handleTableScroll = () => updateThumbPosition();
+
+  // Kéo thumb -> đổi scrollLeft của bảng. Dùng pointer events + listener trên window để kéo mượt ra ngoài thumb.
+  const handleThumbPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!tableScrollRef.current) return;
+    dragStateRef.current = { startX: e.clientX, startScroll: tableScrollRef.current.scrollLeft };
+
+    const trackWidth = tableScrollSize.client;
+    const maxScroll = tableScrollSize.scroll - tableScrollSize.client;
+    if (trackWidth <= 0 || maxScroll <= 0) return;
+    const scrollPerPx = tableScrollSize.scroll / trackWidth; // px chuột -> px nội dung
+
+    const onMove = (ev: PointerEvent) => {
+      if (!dragStateRef.current || !tableScrollRef.current) return;
+      const dx = ev.clientX - dragStateRef.current.startX;
+      const next = Math.min(maxScroll, Math.max(0, dragStateRef.current.startScroll + dx * scrollPerPx));
+      tableScrollRef.current.scrollLeft = next; // 'scroll' event sẽ tự gọi updateThumbPosition
+    };
+    const onUp = () => {
+      dragStateRef.current = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
 
   // Fetch users for dropdown
   const { data: users } = useQuery({
@@ -458,13 +521,15 @@ export default function DebtManagementPage() {
 
   const buildExcelRows = (items: DebtManagementItem[]) => {
     const headers = [
-      'CongNo_ID', 'User Name', 'Lô hàng', 'Nội Dung', 'Ngày phát sinh',
+      'CongNo_ID', 'User Name', 'Order number', 'Tuyến', 'Lô hàng', 'Nội Dung', 'Ngày phát sinh',
       'Phát sinh nợ', 'Phát sinh có', 'Ghi Chú', 'Loại phát sinh', 'Sản lượng (kg)',
       'Trạng thái', 'Người tạo', 'Người cập nhật cuối', 'Ngày cập nhật cuối',
     ];
     const rows = items.map((item) => [
       item.CongNo_ID,
       item.UserName || '',
+      item.OrderNumber || '',
+      item.Tuyen || '',
       item.TenLoHang || '',
       item.NoiDung || '',
       item.NgayGhiNo ? new Date(item.NgayGhiNo).toLocaleDateString('vi-VN') : '',
@@ -985,7 +1050,7 @@ export default function DebtManagementPage() {
       </div>
 
       {/* Data Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <FiLoader className="w-8 h-8 text-[#14264b] animate-spin" />
@@ -1001,22 +1066,19 @@ export default function DebtManagementPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div ref={tableScrollRef} onScroll={handleTableScroll} className="overflow-x-auto rounded-t-2xl">
               <table className="min-w-full divide-y divide-slate-100">
                 <thead className="bg-slate-50/50">
                   <tr>
                     <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ID</th>
                     <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">User</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nội dung</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Order / Tuyến</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nội dung / Ghi chú</th>
                     <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày</th>
                     <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Nợ (DR)</th>
                     <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Có (CR)</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ghi chú</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Loại phát sinh</th>
-                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Sản lượng (kg)</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Người cập nhật</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày cập nhật</th>
-                    <th className="px-4 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Loại phát sinh / SL (kg)</th>
+                    <th className="px-4 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng thái / Cập nhật</th>
                     <th className="px-4 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -1025,8 +1087,19 @@ export default function DebtManagementPage() {
                     <tr key={item.CongNo_ID} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-4 py-3.5 text-sm text-slate-600 font-mono">{item.CongNo_ID}</td>
                       <td className="px-4 py-3.5 text-sm font-medium text-slate-800">{item.UserName}</td>
-                      <td className="px-4 py-3.5 text-sm text-slate-600 max-w-[200px] truncate" title={item.NoiDung}>
-                        {item.NoiDung}
+                      <td className="px-4 py-3.5 text-sm text-slate-600 whitespace-nowrap">
+                        <div className="flex flex-col leading-tight">
+                          <span className="font-mono">{item.OrderNumber || '-'}</span>
+                          {item.Tuyen && <span className="text-xs text-slate-400">{item.Tuyen}</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-slate-600 max-w-[250px]">
+                        <div className="flex flex-col leading-tight">
+                          <span className="break-words whitespace-normal">{item.NoiDung}</span>
+                          {item.GhiChu && (
+                            <span className="text-xs text-slate-400 break-words whitespace-normal">{item.GhiChu}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3.5 text-sm text-slate-600">
                         {item.NgayGhiNo ? new Date(item.NgayGhiNo).toLocaleDateString('vi-VN') : '-'}
@@ -1037,35 +1110,37 @@ export default function DebtManagementPage() {
                       <td className="px-4 py-3.5 text-sm text-right font-mono text-[#14264b]">
                         {item.CR ? item.CR.toLocaleString('vi-VN') : '0'}
                       </td>
-                      <td className="px-4 py-3.5 text-sm text-slate-500 max-w-[250px] truncate" title={item.GhiChu}>
-                        {item.GhiChu || '-'}
-                      </td>
                       <td className="px-4 py-3.5 text-sm text-slate-600">
-                        {getLoaiPhatSinhLabel(item) || '-'}
-                      </td>
-                      <td className="px-4 py-3.5 text-sm text-right font-mono text-slate-600">
-                        {item.LoaiPhatSinh === 8 && item.SanLuong != null
-                          ? item.SanLuong.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-3.5 text-sm text-slate-500">
-                        {item.NguoiCapNhatCuoi || '-'}
-                      </td>
-                      <td className="px-4 py-3.5 text-sm text-slate-500 whitespace-nowrap">
-                        {item.NgayCapNhatCuoi ? new Date(item.NgayCapNhatCuoi).toLocaleDateString('vi-VN') : '-'}
+                        <div className="flex flex-col leading-tight">
+                          <span>{getLoaiPhatSinhLabel(item) || '-'}</span>
+                          {item.LoaiPhatSinh === 8 && item.SanLuong != null && (
+                            <span className="text-xs text-slate-400 font-mono">
+                              {item.SanLuong.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} kg
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        {item.Status ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                            Approved
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 text-xs font-medium rounded-full">
-                            <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                            Pending
-                          </span>
-                        )}
+                        <div className="flex flex-col items-center gap-1 leading-tight">
+                          {item.Status ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
+                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                              Approved
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 text-xs font-medium rounded-full">
+                              <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                              Pending
+                            </span>
+                          )}
+                          {(item.NguoiCapNhatCuoi || item.NgayCapNhatCuoi) && (
+                            <span className="text-xs text-slate-400 whitespace-nowrap">
+                              {item.NguoiCapNhatCuoi || ''}
+                              {item.NguoiCapNhatCuoi && item.NgayCapNhatCuoi ? ' · ' : ''}
+                              {item.NgayCapNhatCuoi ? new Date(item.NgayCapNhatCuoi).toLocaleDateString('vi-VN') : ''}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         <div className="flex items-center justify-center gap-1.5">
@@ -1121,6 +1196,23 @@ export default function DebtManagementPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Thanh scroll ngang TỰ VẼ, ghim ở đáy — chỉ hiện khi bảng tràn chiều ngang.
+                Kéo thumb để cuộn bảng mà không cần kéo xuống cuối trang. */}
+            {tableScrollSize.scroll > tableScrollSize.client && (
+              <div className="sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur-sm">
+                <div className="relative h-3.5 w-full rounded-full bg-slate-200">
+                  <div
+                    ref={thumbRef}
+                    onPointerDown={handleThumbPointerDown}
+                    className="absolute top-0 left-0 h-3.5 rounded-full bg-slate-400 hover:bg-slate-500 active:bg-slate-600 cursor-grab active:cursor-grabbing"
+                    style={{
+                      width: `${Math.max(8, (tableScrollSize.client / tableScrollSize.scroll) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Empty State */}
             {(!data?.data || data.data.length === 0) && (

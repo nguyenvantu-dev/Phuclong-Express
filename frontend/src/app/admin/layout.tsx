@@ -18,6 +18,7 @@ import {
   FiUsers,
   FiSettings,
   FiChevronRight,
+  FiGrid,
 } from 'react-icons/fi';
 import { NotificationBell } from '@/app/components/notifications/notification-bell';
 import { useQnaBadgeCount } from '@/hooks/use-qna-badge-count';
@@ -56,6 +57,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Navigation items with submenus
   const navItems: NavItem[] = [
+    {
+      label: 'TỔNG QUAN',
+      icon: FiGrid,
+      submenu: [
+        { href: '/admin/dashboard', label: 'Dashboard thống kê' },
+      ],
+    },
     {
       label: 'MUA HÀNG GIÚP',
       icon: FiShoppingCart,
