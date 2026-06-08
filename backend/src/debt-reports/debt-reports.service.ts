@@ -1296,6 +1296,7 @@ export class DebtReportsService {
       bankAccount?: string;
       status?: number;
       allowEmptyNoiDung?: boolean;
+      sanLuong?: number;
     },
     username?: string,
   ): Promise<{ success: boolean; message?: string }> {
@@ -1330,7 +1331,8 @@ export class DebtReportsService {
       if (dto.loHangId && dto.loHangText) {
         ghiChu = ghiChu + ' - Lô hàng: ' + dto.loHangText;
       }
-      console.log("ghiChu");
+      // Sản lượng (kg): chỉ lưu khi loại phát sinh là "Cân Kg" (8), ngược lại NULL
+      const sanLuong = dto.loaiPhatSinh === 8 ? (dto.sanLuong ?? null) : null;
 
       await this.sequelize.query(
         `EXEC CongNo_Insert
@@ -1343,7 +1345,8 @@ export class DebtReportsService {
           @Status = :status,
           @LoHangID = :loHangID,
           @NguoiTao = :nguoiTao,
-          @LoaiPhatSinh = :loaiPhatSinh`,
+          @LoaiPhatSinh = :loaiPhatSinh,
+          @SanLuong = :sanLuong`,
         {
           replacements: {
             username: dto.username,
@@ -1356,6 +1359,7 @@ export class DebtReportsService {
             loHangID: dto.loHangId || null,
             nguoiTao: username || 'system',
             loaiPhatSinh: dto.loaiPhatSinh || 2,
+            sanLuong,
           },
           type: 'SELECT' as const,
         },
@@ -1424,6 +1428,8 @@ export class DebtReportsService {
       status?: number;
       loHangId?: number;
       updatedBy?: string;
+      loaiPhatSinh?: number;
+      sanLuong?: number;
     },
     username?: string,
   ): Promise<{ success: boolean; message?: string }> {
@@ -1451,6 +1457,8 @@ export class DebtReportsService {
       const dr = dto.dr ?? 0;
       const cr = dto.cr ?? 0;
       const status = dto.status ?? 1;
+      // Sản lượng (kg): chỉ lưu khi loại phát sinh là "Cân Kg" (8), ngược lại NULL
+      const sanLuong = dto.loaiPhatSinh === 8 ? (dto.sanLuong ?? null) : null;
 
       await this.sequelize.query(
         `EXEC SP_CapNhat_CongNo
@@ -1463,13 +1471,15 @@ export class DebtReportsService {
           @Status = :status,
           @LoHangID = :loHangID,
           @NguoiTao = :nguoiCapNhat,
+          @SanLuong = :sanLuong,
           @udUserName = 1,
           @udNoiDung = 1,
           @udDR = 1,
           @udCR = 1,
           @udGhiChu = 1,
           @udStatus = 1,
-          @udLoHangID = 1`,
+          @udLoHangID = 1,
+          @udSanLuong = 1`,
         {
           replacements: {
             id,
@@ -1481,6 +1491,7 @@ export class DebtReportsService {
             status,
             loHangID: dto.loHangId || null,
             nguoiCapNhat: dto.updatedBy || username || 'system',
+            sanLuong,
           },
           type: 'SELECT' as const,
         },

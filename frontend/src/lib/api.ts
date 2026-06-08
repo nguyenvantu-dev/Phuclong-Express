@@ -1085,6 +1085,7 @@ export interface DebtManagementItem {
   LoaiPhatSinhText?: string;
   NguoiCapNhatCuoi?: string;
   NgayCapNhatCuoi?: string;
+  SanLuong?: number; // Sản lượng (kg) — chỉ có giá trị khi loại "Cân Kg" (LoaiPhatSinh = 8)
 }
 
 export interface DebtManagementResponse {
@@ -1113,6 +1114,7 @@ export interface CreateDebtParams {
   bankAccount?: string;
   status?: number;
   allowEmptyNoiDung?: boolean;
+  sanLuong?: number; // Sản lượng (kg) — gửi khi loaiPhatSinh === 8
 }
 
 export const createDebt = async (data: CreateDebtParams): Promise<{ success: boolean; message?: string }> => {
@@ -1129,6 +1131,8 @@ export interface UpdateDebtParams {
   status?: number;
   loHangId?: number;
   updatedBy?: string;
+  loaiPhatSinh?: number; // dùng để backend quyết định lưu/null sản lượng khi sửa
+  sanLuong?: number; // Sản lượng (kg) — gửi khi loaiPhatSinh === 8
 }
 
 export const updateDebt = async (

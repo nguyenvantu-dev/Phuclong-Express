@@ -27,7 +27,8 @@ function applySheetStyles(ws: ExcelJS.Worksheet): void {
         cell.numFmt = 'DD/MM/YYYY';
         cell.alignment = { ...cell.alignment, horizontal: 'left' };
       } else if (typeof cell.value === 'number') {
-        cell.numFmt = '#,##0';
+        // Số nguyên: không hiện thập phân; số lẻ: hiện tối đa 2 chữ số thập phân (vd 19.7)
+        cell.numFmt = Number.isInteger(cell.value) ? '#,##0' : '#,##0.##';
         cell.alignment = { ...cell.alignment, horizontal: 'right' };
       } else if (typeof cell.value === 'string' && /^-?\d{1,3}([.,]\d{3})+$/.test(cell.value.trim())) {
         // Formatted number string with thousands separators (e.g. "1.000.000" or "1,000,000") — right-align only

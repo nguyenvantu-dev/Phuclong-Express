@@ -99,6 +99,13 @@ export class CreateDebtDto {
   @IsBoolean()
   @Type(() => Boolean)
   allowEmptyNoiDung?: boolean;
+
+  // Sản lượng (kg) — chỉ áp dụng cho loại phát sinh "Cân Kg" (loaiPhatSinh = 8)
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0)
+  sanLuong?: number;
 }
 
 /**
@@ -141,6 +148,19 @@ export class UpdateDebtManagementDto {
   @IsOptional()
   @IsString()
   updatedBy?: string;
+
+  // Loại phát sinh ([style]) — service dùng để quyết định lưu/null sản lượng khi sửa
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  loaiPhatSinh?: number;
+
+  // Sản lượng (kg) — chỉ áp dụng cho loại phát sinh "Cân Kg" (loaiPhatSinh = 8)
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0)
+  sanLuong?: number;
 }
 
 /**

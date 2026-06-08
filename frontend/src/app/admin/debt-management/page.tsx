@@ -45,6 +45,22 @@ import {
 import { downloadDataAsExcel } from '@/lib/excel-download';
 
 /**
+ * Tính tổng sản lượng (kg) từ chuỗi nhiều số cách nhau bằng dấu cách.
+ * Chỉ chấp nhận chữ số, dấu cách và dấu chấm (thập phân).
+ * Ví dụ: "12.5 3 4.2" -> 19.7. Token không hợp lệ bị bỏ qua. Làm tròn 2 chữ số thập phân.
+ */
+const parseSanLuongTotal = (raw: string): number => {
+  if (!raw) return 0;
+  const total = raw
+    .trim()
+    .split(/\s+/)
+    .map((t) => parseFloat(t))
+    .filter((n) => !isNaN(n))
+    .reduce((sum, n) => sum + n, 0);
+  return Math.round(total * 100) / 100;
+};
+
+/**
  * Debt Management Page
  *
  * Converted from admin/ManageCongNo.aspx
@@ -91,6 +107,7 @@ export default function DebtManagementPage() {
     loHangText: '' as string,
     loaiPhatSinh: 2,
     bankAccount: '' as string,
+    sanLuongInput: '', // Chuỗi nhập sản lượng (kg), nhiều số cách nhau bằng dấu cách. Chỉ dùng khi loaiPhatSinh === 8
   });
 
   // UI State
@@ -126,6 +143,7 @@ export default function DebtManagementPage() {
       loHangText: '',
       loaiPhatSinh: 2,
       bankAccount: '',
+      sanLuongInput: '',
     });
     setUsernameInput('');
     setEditingId(null);
@@ -441,7 +459,7 @@ export default function DebtManagementPage() {
   const buildExcelRows = (items: DebtManagementItem[]) => {
     const headers = [
       'CongNo_ID', 'User Name', 'Lô hàng', 'Nội Dung', 'Ngày phát sinh',
-      'Phát sinh nợ', 'Phát sinh có', 'Ghi Chú', 'Loại phát sinh',
+      'Phát sinh nợ', 'Phát sinh có', 'Ghi Chú', 'Loại phát sinh', 'Sản lượng (kg)',
       'Trạng thái', 'Người tạo', 'Người cập nhật cuối', 'Ngày cập nhật cuối',
     ];
     const rows = items.map((item) => [
@@ -454,6 +472,8 @@ export default function DebtManagementPage() {
       item.CR ?? 0,
       item.GhiChu || '',
       getLoaiPhatSinhLabel(item),
+      // Số thô (không format) để Excel SUM được; rỗng nếu không phải Cân Kg
+      item.LoaiPhatSinh === 8 && item.SanLuong != null ? item.SanLuong : '',
       item.Status ? 'Approved' : 'Pending',
       item.NguoiTao || '',
       item.NguoiCapNhatCuoi || '',
@@ -555,6 +575,10 @@ export default function DebtManagementPage() {
                 return;
               }
 
+              // Tổng sản lượng (kg) từ chuỗi nhập nhiều số, chỉ áp dụng cho loại "Cân Kg"
+              const sanLuongTotal =
+                newDebt.loaiPhatSinh === 8 ? parseSanLuongTotal(newDebt.sanLuongInput) : undefined;
+
               if (editingId) {
                 updateMutation.mutate({
                   id: editingId,
@@ -564,11 +588,16 @@ export default function DebtManagementPage() {
                     dr: newDebt.dr,
                     cr: newDebt.cr,
                     ghiChu: newDebt.ghiChu,
+                    loaiPhatSinh: newDebt.loaiPhatSinh,
+                    sanLuong: sanLuongTotal,
                     updatedBy: currentUser?.username || 'admin',
                   },
                 });
               } else {
-                createMutation.mutate(newDebt);
+                createMutation.mutate({
+                  ...newDebt,
+                  sanLuong: sanLuongTotal,
+                });
               }
             }}
             className="p-4 space-y-3"
@@ -684,6 +713,33 @@ export default function DebtManagementPage() {
                   <FiChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 </div>
               </div>
+
+              {/* Sản lượng (kg) — chỉ hiện khi loại phát sinh là "Cân Kg" (8).
+                  Nhập nhiều số cách nhau bằng dấu cách (vd: 12.5 3 4.2) → tự cộng ra tổng. */}
+              {newDebt.loaiPhatSinh === 8 && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-700">
+                    Sản lượng (kg) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={newDebt.sanLuongInput}
+                    onChange={(e) =>
+                      // Chỉ cho phép chữ số, dấu cách và dấu chấm — loại bỏ ký tự khác ngay khi gõ
+                      setNewDebt({ ...newDebt, sanLuongInput: e.target.value.replace(/[^\d.\s]/g, '') })
+                    }
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
+                    placeholder="Nhập nhiều số cách nhau bằng dấu cách, vd: 12.5 3 4.2"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Tổng:{' '}
+                    <span className="font-semibold text-[#14264b]">
+                      {parseSanLuongTotal(newDebt.sanLuongInput).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} kg
+                    </span>
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">Tài khoản</label>
@@ -957,6 +1013,7 @@ export default function DebtManagementPage() {
                     <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Có (CR)</th>
                     <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ghi chú</th>
                     <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Loại phát sinh</th>
+                    <th className="px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Sản lượng (kg)</th>
                     <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Người cập nhật</th>
                     <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày cập nhật</th>
                     <th className="px-4 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
@@ -985,6 +1042,11 @@ export default function DebtManagementPage() {
                       </td>
                       <td className="px-4 py-3.5 text-sm text-slate-600">
                         {getLoaiPhatSinhLabel(item) || '-'}
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-right font-mono text-slate-600">
+                        {item.LoaiPhatSinh === 8 && item.SanLuong != null
+                          ? item.SanLuong.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+                          : '-'}
                       </td>
                       <td className="px-4 py-3.5 text-sm text-slate-500">
                         {item.NguoiCapNhatCuoi || '-'}
@@ -1029,8 +1091,9 @@ export default function DebtManagementPage() {
                                 ghiChu: item.GhiChu || '',
                                 loHangId: item.LoHangID,
                                 loHangText: '',
-                                loaiPhatSinh: 2,
+                                loaiPhatSinh: item.LoaiPhatSinh ?? 2,
                                 bankAccount: '',
+                                sanLuongInput: item.SanLuong != null ? String(item.SanLuong) : '',
                               });
                               setUsernameInput(item.UserName || '');
                               setErrorMessage(null);

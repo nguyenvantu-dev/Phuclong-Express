@@ -105,6 +105,7 @@ CREATE TABLE PLELOGISTICS_OrderMan_1ST_01Jun2023.dbo.CONGNO (
 	NguoiTao nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	NgayCapNhatCuoi datetime NULL,
 	NguoiCapNhatCuoi nvarchar(250) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	SanLuong float NULL,
 	CONSTRAINT PK_CONGNO PRIMARY KEY (CongNo_ID)
 );
 
