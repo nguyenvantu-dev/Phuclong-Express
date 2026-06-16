@@ -32,6 +32,11 @@ const backendOrigin =
   process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api").replace(/\/api\/?$/, "");
 
+// Chat-suite (chatbot/livechat) backend origin. Requests to /chat-suite/* are
+// proxied server-side to this host so the widget + its API stay same-origin
+// with the PLE site (no CORS / origin-check issues). Override via CHAT_SUITE_ORIGIN.
+const chatSuiteOrigin = process.env.CHAT_SUITE_ORIGIN || "http://27.71.229.12";
+
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
@@ -46,6 +51,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       { source: "/imgLink/:path*", destination: `${backendOrigin}/imgLink/:path*` },
+      { source: "/chat-suite/:path*", destination: `${chatSuiteOrigin}/:path*` },
     ];
   },
 
