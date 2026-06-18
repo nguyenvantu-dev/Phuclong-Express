@@ -234,7 +234,12 @@ export default function QLDatHangThemPage() {
         cong: row.cong,
       });
     },
-    onSuccess: (_data, row) => {
+    onSuccess: (data, row) => {
+      if (!data.success) {
+        setRows(prev => prev.map(r => r.id === row.id ? { ...r, status: 'error' } : r));
+        setFormError(data.error || 'Thêm đơn hàng thất bại');
+        return;
+      }
       setFormError(null);
       setRows(prev => prev.map(r => r.id === row.id ? { ...r, status: 'success' } : r));
       // Reset item-specific fields after insert to prevent double-submit

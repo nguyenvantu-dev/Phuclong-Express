@@ -1973,6 +1973,14 @@ export interface DashboardStaffOutput {
   sanLuongKg: number;
 }
 
+export interface DashboardStaffOutputDetail {
+  ngayGhiNo: string;
+  khachHang: string;
+  noiDung: string;
+  sanLuongKg: number;
+  ghiChu: string;
+}
+
 const buildDateParams = (fromDate?: string, toDate?: string): string => {
   const params = new URLSearchParams();
   if (fromDate) params.append('fromDate', fromDate);
@@ -2013,6 +2021,16 @@ export const getDashboardOutputByStaff = async (
   toDate?: string,
 ): Promise<DashboardStaffOutput[]> => {
   const response = await apiClient.get(`/dashboard/output-by-staff?${buildDateParams(fromDate, toDate)}`);
+  return response.data;
+};
+
+/** Chi tiết từng bản ghi CONGNO của 1 nhân viên trong 1 tháng. */
+export const getDashboardOutputDetail = async (
+  nhanVien: string,
+  thang: string,
+): Promise<DashboardStaffOutputDetail[]> => {
+  const params = new URLSearchParams({ nhanVien, thang });
+  const response = await apiClient.get(`/dashboard/output-detail?${params}`);
   return response.data;
 };
 

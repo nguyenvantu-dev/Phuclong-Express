@@ -312,7 +312,7 @@ export class OrdersService {
       return { success: true };
     } catch (error) {
       console.error('createQuickOrderCoTamTinh error:', error);
-      return { success: false, error: error.message };
+      throw new BadRequestException((error as any).message || 'Thêm đơn hàng thất bại');
     }
   }
 

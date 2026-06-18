@@ -92,4 +92,30 @@ export class DashboardService {
       return [];
     }
   }
+
+  /** Chi tiết sản lượng từng bản ghi CONGNO của 1 nhân viên trong 1 tháng. */
+  async getOutputDetailByStaff(
+    nhanVien: string,
+    thang: string,
+  ): Promise<{ ngayGhiNo: string; khachHang: string; noiDung: string; sanLuongKg: number; ghiChu: string }[]> {
+    try {
+      const results = await this.sequelize.query(
+        `EXEC SP_Dashboard_SanLuongChiTiet @NhanVien = :nhanVien, @Thang = :thang`,
+        { replacements: { nhanVien, thang }, type: 'SELECT' as const },
+      );
+      const rows: any[] = Array.isArray(results)
+        ? Array.isArray(results[0]) ? (results[0] as any[]) : (results as any[])
+        : [];
+      return rows.map((r) => ({
+        ngayGhiNo: r.NgayGhiNo ? String(r.NgayGhiNo).slice(0, 10) : '',
+        khachHang: r.KhachHang || '',
+        noiDung: r.NoiDung || '',
+        sanLuongKg: Number(r.SanLuongKg) || 0,
+        ghiChu: r.GhiChu || '',
+      }));
+    } catch (error) {
+      console.error('Error in getOutputDetailByStaff:', error.message);
+      return [];
+    }
+  }
 }

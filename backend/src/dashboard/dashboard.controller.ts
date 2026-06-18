@@ -37,4 +37,13 @@ export class DashboardController {
   async getOutputByStaff(@Query() query: DashboardQueryDto) {
     return this.dashboardService.getOutputByStaff(query.fromDate, query.toDate);
   }
+
+  /** Chi tiết từng bản ghi CONGNO của 1 nhân viên trong 1 tháng. */
+  @Get('output-detail')
+  async getOutputDetail(
+    @Query('nhanVien') nhanVien: string,
+    @Query('thang') thang: string,
+  ) {
+    return this.dashboardService.getOutputDetailByStaff(nhanVien || '', thang || '');
+  }
 }
