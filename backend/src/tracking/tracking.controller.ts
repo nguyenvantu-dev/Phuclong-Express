@@ -157,23 +157,28 @@ export class TrackingController {
    * POST /tracking/mass-delete
    * Mass delete tracking
    */
+  @UseGuards(JwtAuthGuard)
   @Post('mass-delete')
   @HttpCode(HttpStatus.OK)
   async massDelete(
     @Body() body: { ids: number[]; nguoiTao?: string },
+    @Req() req: AuthenticatedRequest,
   ): Promise<{ deleted: number }> {
-    return this.trackingService.massDelete(body.ids, body.nguoiTao);
+    return this.trackingService.massDelete(body.ids, req.user?.username || body.nguoiTao || 'system');
   }
 
   /**
    * POST /tracking/mass-status
    * Mass update status
    */
+  @UseGuards(JwtAuthGuard)
   @Post('mass-status')
   @HttpCode(HttpStatus.OK)
   async massStatus(
     @Body() massUpdateDto: MassUpdateTrackingDto,
+    @Req() req: AuthenticatedRequest,
   ): Promise<{ updated: number }> {
+    massUpdateDto.nguoiTao = req.user?.username || massUpdateDto.nguoiTao || 'system';
     return this.trackingService.massStatus(massUpdateDto);
   }
 
@@ -181,24 +186,28 @@ export class TrackingController {
    * POST /tracking/mass-complete
    * Mass complete tracking
    */
+  @UseGuards(JwtAuthGuard)
   @Post('mass-complete')
   @HttpCode(HttpStatus.OK)
   async massComplete(
     @Body() body: { ids: number[]; nguoiTao?: string },
+    @Req() req: AuthenticatedRequest,
   ): Promise<{ updated: number }> {
-    return this.trackingService.massComplete(body.ids, body.nguoiTao);
+    return this.trackingService.massComplete(body.ids, req.user?.username || body.nguoiTao || 'system');
   }
 
   /**
    * POST /tracking/mass-complete-all
    * Mass complete tracking with filters
    */
+  @UseGuards(JwtAuthGuard)
   @Post('mass-complete-all')
   @HttpCode(HttpStatus.OK)
   async massCompleteAll(
     @Body() body: { query: QueryTrackingDto; nguoiTao?: string },
+    @Req() req: AuthenticatedRequest,
   ): Promise<{ updated: number }> {
-    return this.trackingService.massCompleteAll(body.query, body.nguoiTao);
+    return this.trackingService.massCompleteAll(body.query, req.user?.username || body.nguoiTao || 'system');
   }
 
   /**
@@ -223,12 +232,14 @@ export class TrackingController {
    * POST /tracking/:id/history
    * Add tracking status
    */
+  @UseGuards(JwtAuthGuard)
   @Post(':id/history')
   async addHistory(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { ghiChu: string },
+    @Req() req: AuthenticatedRequest,
   ): Promise<any> {
-    return this.trackingService.addHistory(id, body.ghiChu);
+    return this.trackingService.addHistory(id, body.ghiChu, req.user?.username || 'system');
   }
 
   /**
@@ -267,6 +278,7 @@ export class TrackingController {
    * POST /tracking/:id/chi-tiet
    * Add chi tiet tracking
    */
+  @UseGuards(JwtAuthGuard)
   @Post(':id/chi-tiet')
   async addChiTiet(
     @Param('id', ParseIntPipe) id: number,
@@ -278,6 +290,7 @@ export class TrackingController {
       ghiChu: string;
       nguoiTao?: string;
     },
+    @Req() req: AuthenticatedRequest,
   ): Promise<any> {
     return this.trackingService.addChiTiet(
       id,
@@ -285,7 +298,7 @@ export class TrackingController {
       body.soLuong,
       body.gia,
       body.ghiChu,
-      body.nguoiTao,
+      req.user?.username || body.nguoiTao || 'system',
     );
   }
 
@@ -293,6 +306,7 @@ export class TrackingController {
    * PUT /tracking/:id/chi-tiet/:chiTietId
    * Update chi tiet tracking
    */
+  @UseGuards(JwtAuthGuard)
   @Put(':id/chi-tiet/:chiTietId')
   async updateChiTiet(
     @Param('id', ParseIntPipe) id: number,
@@ -305,6 +319,7 @@ export class TrackingController {
       ghiChu: string;
       nguoiTao?: string;
     },
+    @Req() req: AuthenticatedRequest,
   ): Promise<any> {
     return this.trackingService.updateChiTiet(
       chiTietId,
@@ -313,7 +328,7 @@ export class TrackingController {
       body.gia,
       body.ghiChu,
       id,
-      body.nguoiTao,
+      req.user?.username || body.nguoiTao || 'system',
     );
   }
 
@@ -321,13 +336,15 @@ export class TrackingController {
    * DELETE /tracking/:id/chi-tiet/:chiTietId
    * Delete chi tiet tracking
    */
+  @UseGuards(JwtAuthGuard)
   @Delete(':id/chi-tiet/:chiTietId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteChiTiet(
     @Param('id', ParseIntPipe) id: number,
     @Param('chiTietId', ParseIntPipe) chiTietId: number,
+    @Req() req: AuthenticatedRequest,
   ): Promise<void> {
-    await this.trackingService.deleteChiTiet(chiTietId, id);
+    await this.trackingService.deleteChiTiet(chiTietId, id, req.user?.username || 'system');
   }
 
   /**

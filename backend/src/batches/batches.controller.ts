@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
 import { BatchesService } from './batches.service';
 import { CreateBatchDto } from './dto/create-batch.dto';
@@ -84,8 +85,9 @@ export class BatchesController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBatchDto: UpdateBatchDto,
+    @Request() req: any,
   ): Promise<any> {
-    return this.batchesService.update(id, updateBatchDto);
+    return this.batchesService.update(id, updateBatchDto, req.user?.username || 'system');
   }
 
   /**
@@ -94,8 +96,8 @@ export class BatchesController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.batchesService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number, @Request() req: any): Promise<void> {
+    return this.batchesService.remove(id, req.user?.username || 'system');
   }
 
   /**
@@ -124,8 +126,9 @@ export class BatchesController {
   async addCost(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { loaiChiPhiLoHangId: number; tienVnd: number },
+    @Request() req: any,
   ): Promise<any> {
-    return this.batchesService.addCost(id, body.loaiChiPhiLoHangId, body.tienVnd);
+    return this.batchesService.addCost(id, body.loaiChiPhiLoHangId, body.tienVnd, req.user?.username || 'system');
   }
 
   /**
@@ -137,8 +140,9 @@ export class BatchesController {
     @Param('id', ParseIntPipe) id: number,
     @Param('costId', ParseIntPipe) costId: number,
     @Body() body: { loaiChiPhiLoHangId: number; tienVnd: number },
+    @Request() req: any,
   ): Promise<any> {
-    return this.batchesService.updateCost(costId, body.loaiChiPhiLoHangId, body.tienVnd);
+    return this.batchesService.updateCost(costId, body.loaiChiPhiLoHangId, body.tienVnd, req.user?.username || 'system');
   }
 
   /**
@@ -150,8 +154,9 @@ export class BatchesController {
   async deleteCost(
     @Param('id', ParseIntPipe) id: number,
     @Param('costId', ParseIntPipe) costId: number,
+    @Request() req: any,
   ): Promise<void> {
-    return this.batchesService.deleteCost(costId);
+    return this.batchesService.deleteCost(costId, req.user?.username || 'system');
   }
 
   /**
@@ -171,14 +176,9 @@ export class BatchesController {
   async addShipCost(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { loaiHangShipId: number; canNang: number; donGia: number; tongTienShipVnd: number },
+    @Request() req: any,
   ): Promise<any> {
-    return this.batchesService.addShipCost(
-      id,
-      body.loaiHangShipId,
-      body.canNang,
-      body.donGia,
-      body.tongTienShipVnd,
-    );
+    return this.batchesService.addShipCost(id, body.loaiHangShipId, body.canNang, body.donGia, body.tongTienShipVnd, req.user?.username || 'system');
   }
 
   /**
@@ -190,14 +190,9 @@ export class BatchesController {
     @Param('id', ParseIntPipe) id: number,
     @Param('shipCostId', ParseIntPipe) shipCostId: number,
     @Body() body: { loaiHangShipId: number; canNang: number; donGia: number; tongTienShipVnd: number },
+    @Request() req: any,
   ): Promise<any> {
-    return this.batchesService.updateShipCost(
-      shipCostId,
-      body.loaiHangShipId,
-      body.canNang,
-      body.donGia,
-      body.tongTienShipVnd,
-    );
+    return this.batchesService.updateShipCost(shipCostId, body.loaiHangShipId, body.canNang, body.donGia, body.tongTienShipVnd, req.user?.username || 'system');
   }
 
   /**
@@ -209,8 +204,9 @@ export class BatchesController {
   async deleteShipCost(
     @Param('id', ParseIntPipe) id: number,
     @Param('shipCostId', ParseIntPipe) shipCostId: number,
+    @Request() req: any,
   ): Promise<void> {
-    return this.batchesService.deleteShipCost(shipCostId);
+    return this.batchesService.deleteShipCost(shipCostId, req.user?.username || 'system');
   }
 
   /**
@@ -230,14 +226,9 @@ export class BatchesController {
   async addCustoms(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { loaiHangThueHaiQuanId: number; canNangSoLuongGiaTri: number; donGia: number; tongTienThueHaiQuanVnd: number },
+    @Request() req: any,
   ): Promise<any> {
-    return this.batchesService.addCustoms(
-      id,
-      body.loaiHangThueHaiQuanId,
-      body.canNangSoLuongGiaTri,
-      body.donGia,
-      body.tongTienThueHaiQuanVnd,
-    );
+    return this.batchesService.addCustoms(id, body.loaiHangThueHaiQuanId, body.canNangSoLuongGiaTri, body.donGia, body.tongTienThueHaiQuanVnd, req.user?.username || 'system');
   }
 
   /**
@@ -249,14 +240,9 @@ export class BatchesController {
     @Param('id', ParseIntPipe) id: number,
     @Param('customsId', ParseIntPipe) customsId: number,
     @Body() body: { loaiHangThueHaiQuanId: number; canNangSoLuongGiaTri: number; donGia: number; tongTienThueHaiQuanVnd: number },
+    @Request() req: any,
   ): Promise<any> {
-    return this.batchesService.updateCustoms(
-      customsId,
-      body.loaiHangThueHaiQuanId,
-      body.canNangSoLuongGiaTri,
-      body.donGia,
-      body.tongTienThueHaiQuanVnd,
-    );
+    return this.batchesService.updateCustoms(customsId, body.loaiHangThueHaiQuanId, body.canNangSoLuongGiaTri, body.donGia, body.tongTienThueHaiQuanVnd, req.user?.username || 'system');
   }
 
   /**
@@ -268,7 +254,8 @@ export class BatchesController {
   async deleteCustoms(
     @Param('id', ParseIntPipe) id: number,
     @Param('customsId', ParseIntPipe) customsId: number,
+    @Request() req: any,
   ): Promise<void> {
-    return this.batchesService.deleteCustoms(customsId);
+    return this.batchesService.deleteCustoms(customsId, req.user?.username || 'system');
   }
 }

@@ -405,8 +405,9 @@ export class OrdersController {
   @Put('tracking-number')
   async updateTrackingNumber(
     @Body() body: { orderNumber: string; trackingNumber: string; ngayNhanTaiNuocNgoai: string; trackingLink: string },
+    @Request() req: any,
   ): Promise<{ success: boolean; message: string }> {
-    return this.ordersService.updateTrackingNumber(body.orderNumber, body.trackingNumber, body.ngayNhanTaiNuocNgoai, body.trackingLink);
+    return this.ordersService.updateTrackingNumber(body.orderNumber, body.trackingNumber, body.ngayNhanTaiNuocNgoai, body.trackingLink, req.user?.username || 'system');
   }
 
   /**
@@ -474,8 +475,8 @@ export class OrdersController {
    * Restore soft-deleted order
    */
   @Post(':id/restore')
-  async restore(@Param('id', ParseIntPipe) id: number): Promise<Order> {
-    return this.ordersService.restore(id);
+  async restore(@Param('id', ParseIntPipe) id: number, @Request() req: any): Promise<Order> {
+    return this.ordersService.restore(id, req.user?.username || 'system');
   }
 
   /**
@@ -483,8 +484,8 @@ export class OrdersController {
    * Restore multiple deleted orders
    */
   @Post('batch-restore')
-  async batchRestore(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number }> {
-    return this.ordersService.batchRestore(body.ids);
+  async batchRestore(@Body() body: { ids: number[] }, @Request() req: any): Promise<{ success: boolean; count: number }> {
+    return this.ordersService.batchRestore(body.ids, req.user?.username || 'system');
   }
 
   /**
@@ -492,8 +493,8 @@ export class OrdersController {
    * Permanently delete an order (vĩnh viễn xóa)
    */
   @Delete(':id/permanent')
-  async permanentDelete(@Param('id', ParseIntPipe) id: number): Promise<{ success: boolean }> {
-    return this.ordersService.permanentDelete(id);
+  async permanentDelete(@Param('id', ParseIntPipe) id: number, @Request() req: any): Promise<{ success: boolean }> {
+    return this.ordersService.permanentDelete(id, req.user?.username || 'system');
   }
 
   /**
@@ -501,8 +502,8 @@ export class OrdersController {
    * Mass cancel deleted orders
    */
   @Post('batch-cancel')
-  async batchCancel(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number }> {
-    return this.ordersService.batchCancel(body.ids);
+  async batchCancel(@Body() body: { ids: number[] }, @Request() req: any): Promise<{ success: boolean; count: number }> {
+    return this.ordersService.batchCancel(body.ids, req.user?.username || 'system');
   }
 
   /**
@@ -510,8 +511,8 @@ export class OrdersController {
    * Mass complete deleted orders (only Ordered/Shipped)
    */
   @Post('batch-complete')
-  async batchComplete(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number; message?: string }> {
-    return this.ordersService.batchComplete(body.ids);
+  async batchComplete(@Body() body: { ids: number[] }, @Request() req: any): Promise<{ success: boolean; count: number; message?: string }> {
+    return this.ordersService.batchComplete(body.ids, req.user?.username || 'system');
   }
 
   /**
@@ -519,8 +520,8 @@ export class OrdersController {
    * Mass set orders to Received status
    */
   @Post('batch-received')
-  async batchReceived(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number }> {
-    return this.ordersService.batchReceived(body.ids);
+  async batchReceived(@Body() body: { ids: number[] }, @Request() req: any): Promise<{ success: boolean; count: number }> {
+    return this.ordersService.batchReceived(body.ids, req.user?.username || 'system');
   }
 
   /**
@@ -528,8 +529,8 @@ export class OrdersController {
    * Mass set orders to Shipped status
    */
   @Post('batch-shipped')
-  async batchShipped(@Body() body: { ids: number[] }): Promise<{ success: boolean; count: number }> {
-    return this.ordersService.batchShipped(body.ids);
+  async batchShipped(@Body() body: { ids: number[] }, @Request() req: any): Promise<{ success: boolean; count: number }> {
+    return this.ordersService.batchShipped(body.ids, req.user?.username || 'system');
   }
 
   /**

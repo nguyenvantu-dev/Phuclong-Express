@@ -59,7 +59,7 @@ export class ShipmentsService {
   /**
    * Create a new shipment
    */
-  async create(createShipmentDto: CreateShipmentDto): Promise<Shipment> {
+  async create(createShipmentDto: CreateShipmentDto, nguoiTao = 'system'): Promise<Shipment> {
     if (!createShipmentDto.tenDotHang) {
       createShipmentDto.tenDotHang = this.generateTenDotHang(createShipmentDto.username);
     }
@@ -69,7 +69,17 @@ export class ShipmentsService {
     createShipmentDto.ngayTao = createShipmentDto.ngayTao || new Date().toISOString();
 
     const shipmentData = this.calculateTotals(createShipmentDto as Partial<Shipment>);
-    return this.shipmentModel.create(shipmentData as any);
+    const shipment = await this.shipmentModel.create(shipmentData as any);
+
+    await this.logAction(
+      nguoiTao,
+      'Shipment_Them:ThemDotHangShip',
+      'Them moi',
+      shipment.tenDotHang || '',
+      `TenDotHang: ${shipment.tenDotHang}; UserName: ${createShipmentDto.username}`,
+    );
+
+    return shipment;
   }
 
   /**
@@ -120,7 +130,7 @@ export class ShipmentsService {
   /**
    * Update shipment
    */
-  async update(id: number, updateShipmentDto: UpdateShipmentDto): Promise<Shipment> {
+  async update(id: number, updateShipmentDto: UpdateShipmentDto, nguoiTao = 'system'): Promise<Shipment> {
     const shipment = await this.findOne(id);
 
     const convertedData: Partial<Shipment> = {
@@ -132,16 +142,33 @@ export class ShipmentsService {
     };
 
     const shipmentData = this.calculateTotals({ ...shipment.toJSON(), ...convertedData });
+    const updated = await shipment.update(shipmentData);
 
-    return shipment.update(shipmentData);
+    await this.logAction(
+      nguoiTao,
+      'Shipment_CapNhat:CapNhatDotHangShip',
+      'Chinh sua',
+      shipment.tenDotHang || String(id),
+      `ID: ${id}; TenDotHang: ${shipment.tenDotHang}`,
+    );
+
+    return updated;
   }
 
   /**
    * Delete shipment (hard delete)
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number, nguoiTao = 'system'): Promise<void> {
     const shipment = await this.findOne(id);
     await shipment.destroy();
+
+    await this.logAction(
+      nguoiTao,
+      'Shipment_Xoa:XoaDotHangShip',
+      'Xoa',
+      shipment.tenDotHang || String(id),
+      `ID: ${id}; TenDotHang: ${shipment.tenDotHang}`,
+    );
   }
 
   /**
@@ -159,9 +186,19 @@ export class ShipmentsService {
   /**
    * Mark shipment as completed
    */
-  async complete(id: number): Promise<Shipment> {
+  async complete(id: number, nguoiTao = 'system'): Promise<Shipment> {
     const shipment = await this.findOne(id);
-    return shipment.update({ isCompleted: true });
+    const updated = await shipment.update({ isCompleted: true });
+
+    await this.logAction(
+      nguoiTao,
+      'Shipment_HoanThanh:HoanThanhDotHangShip',
+      'Chinh sua',
+      shipment.tenDotHang || String(id),
+      `ID: ${id}; TenDotHang: ${shipment.tenDotHang}`,
+    );
+
+    return updated;
   }
 
   /**
@@ -199,6 +236,15 @@ export class ShipmentsService {
           @YeuCauGui_GhiChu = :yeuCauGuiGhiChu`,
         { replacements: { tenDotHang, username, yeuCauGuiGhiChu } },
       );
+
+      await this.logAction(
+        username,
+        'YeuCauShipHang:CapNhatYeuCauShipHang',
+        'Chinh sua',
+        tenDotHang,
+        `TenDotHang: ${tenDotHang}; UserName: ${username}; GhiChu: ${yeuCauGuiGhiChu}`,
+      );
+
       return { success: true };
     } catch (error) {
       console.error('Error in capNhatYeuCauShipHang:', (error as any).message);
@@ -222,6 +268,17 @@ export class ShipmentsService {
     } catch (error) {
       console.error('Error in getThongTinShipByID:', (error as any).message);
       return null;
+    }
+  }
+
+  private async logAction(nguoiTao: string, nguon: string, hanhDong: string, doiTuong: string, noiDung: string): Promise<void> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_Them_SystemLogs @NguoiTao = :nguoiTao, @Nguon = :nguon, @HanhDong = :hanhDong, @DoiTuong = :doiTuong, @NoiDung = :noiDung`,
+        { replacements: { nguoiTao, nguon, hanhDong, doiTuong, noiDung } },
+      );
+    } catch (error) {
+      console.error('Error logging shipment action:', (error as any).message);
     }
   }
 }

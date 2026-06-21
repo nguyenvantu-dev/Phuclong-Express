@@ -167,7 +167,17 @@ export class BatchesService {
       `);
 
       const insertId = result[0]?.ID;
-      return this.findOne(insertId);
+      const batch = await this.findOne(insertId);
+
+      await this.logAction(
+        nguoiTao || 'system',
+        'LoHang_Them:ThemLoHang',
+        'Them moi',
+        generatedTenLoHang,
+        `TenLoHang: ${generatedTenLoHang}; UserName: ${username || ''}; LoaiTien: ${loaiTien || 'USD'}`,
+      );
+
+      return batch;
     } catch (error) {
       console.error('Error in create batch:', error.message);
       throw error;
@@ -177,7 +187,7 @@ export class BatchesService {
   /**
    * Update batch
    */
-  async update(id: number, updateBatchDto: UpdateBatchDto): Promise<any> {
+  async update(id: number, updateBatchDto: UpdateBatchDto, nguoiTao = 'system'): Promise<any> {
     await this.findOne(id); // Verify exists
 
     const updates: string[] = [];
@@ -225,18 +235,36 @@ export class BatchesService {
       `);
     }
 
-    return this.findOne(id);
+    const result = await this.findOne(id);
+
+    await this.logAction(
+      nguoiTao,
+      'LoHang_CapNhat:CapNhatLoHang',
+      'Chinh sua',
+      result.TenLoHang || String(id),
+      `LoHangID: ${id}; TenLoHang: ${result.TenLoHang}; Fields: ${Object.keys(updateBatchDto).join(', ')}`,
+    );
+
+    return result;
   }
 
   /**
    * Soft delete batch
    */
-  async remove(id: number): Promise<void> {
-    await this.findOne(id); // Verify exists
+  async remove(id: number, nguoiTao = 'system'): Promise<void> {
+    const batch = await this.findOne(id);
 
     await this.sequelize.query(`
       UPDATE dbo.tbLoHang SET DaXoa = 1 WHERE LoHangID = ${id}
     `);
+
+    await this.logAction(
+      nguoiTao,
+      'LoHang_Xoa:XoaLoHang',
+      'Xoa',
+      batch.TenLoHang || String(id),
+      `LoHangID: ${id}; TenLoHang: ${batch.TenLoHang}`,
+    );
   }
 
   /**
@@ -276,7 +304,7 @@ export class BatchesService {
   /**
    * Add batch cost
    */
-  async addCost(batchId: number, loaiChiPhiLoHangId: number, tienVnd: number): Promise<any> {
+  async addCost(batchId: number, loaiChiPhiLoHangId: number, tienVnd: number, nguoiTao = 'system'): Promise<any> {
     const batch = await this.findOne(batchId);
 
     await this.sequelize.query(`
@@ -284,18 +312,24 @@ export class BatchesService {
       VALUES (${batchId}, ${loaiChiPhiLoHangId}, ${tienVnd}, GETDATE())
     `);
 
+    await this.logAction(nguoiTao, 'LoHang_ChiPhi:ThemChiPhi', 'Them moi', batch.TenLoHang || String(batchId),
+      `LoHangID: ${batchId}; LoaiChiPhiID: ${loaiChiPhiLoHangId}; TienVND: ${tienVnd}`);
+
     return this.findOne(batchId);
   }
 
   /**
    * Update batch cost
    */
-  async updateCost(costId: number, loaiChiPhiLoHangId: number, tienVnd: number): Promise<any> {
+  async updateCost(costId: number, loaiChiPhiLoHangId: number, tienVnd: number, nguoiTao = 'system'): Promise<any> {
     await this.sequelize.query(`
       UPDATE dbo.tbLoHang_ChiPhiLoHang
       SET LoaiChiPhiLoHangID = ${loaiChiPhiLoHangId}, TienVND = ${tienVnd}
       WHERE ID = ${costId}
     `);
+
+    await this.logAction(nguoiTao, 'LoHang_ChiPhi:CapNhatChiPhi', 'Chinh sua', String(costId),
+      `ChiPhiID: ${costId}; LoaiChiPhiID: ${loaiChiPhiLoHangId}; TienVND: ${tienVnd}`);
 
     return { id: costId };
   }
@@ -303,10 +337,12 @@ export class BatchesService {
   /**
    * Delete batch cost
    */
-  async deleteCost(costId: number): Promise<void> {
+  async deleteCost(costId: number, nguoiTao = 'system'): Promise<void> {
     await this.sequelize.query(`
       DELETE FROM dbo.tbLoHang_ChiPhiLoHang WHERE ID = ${costId}
     `);
+
+    await this.logAction(nguoiTao, 'LoHang_ChiPhi:XoaChiPhi', 'Xoa', String(costId), `ChiPhiID: ${costId}`);
   }
 
   /**
@@ -331,11 +367,14 @@ export class BatchesService {
   /**
    * Add batch ship cost
    */
-  async addShipCost(batchId: number, loaiHangShipId: number, canNang: number, donGia: number, tongTienShipVnd: number): Promise<any> {
+  async addShipCost(batchId: number, loaiHangShipId: number, canNang: number, donGia: number, tongTienShipVnd: number, nguoiTao = 'system'): Promise<any> {
     await this.sequelize.query(`
       INSERT INTO dbo.tbLoHang_PhiShipVeVN (LoHangID, LoaiHangShipID, CanNang, DonGia, TongTienShipVeVN_VND, NgayTao)
       VALUES (${batchId}, ${loaiHangShipId}, ${canNang}, ${donGia}, ${tongTienShipVnd}, GETDATE())
     `);
+
+    await this.logAction(nguoiTao, 'LoHang_PhiShip:ThemPhiShip', 'Them moi', String(batchId),
+      `LoHangID: ${batchId}; LoaiHangShipID: ${loaiHangShipId}; CanNang: ${canNang}; DonGia: ${donGia}; TongTien: ${tongTienShipVnd}`);
 
     return this.findOne(batchId);
   }
@@ -343,12 +382,15 @@ export class BatchesService {
   /**
    * Update batch ship cost
    */
-  async updateShipCost(shipCostId: number, loaiHangShipId: number, canNang: number, donGia: number, tongTienShipVnd: number): Promise<any> {
+  async updateShipCost(shipCostId: number, loaiHangShipId: number, canNang: number, donGia: number, tongTienShipVnd: number, nguoiTao = 'system'): Promise<any> {
     await this.sequelize.query(`
       UPDATE dbo.tbLoHang_PhiShipVeVN
       SET LoaiHangShipID = ${loaiHangShipId}, CanNang = ${canNang}, DonGia = ${donGia}, TongTienShipVeVN_VND = ${tongTienShipVnd}
       WHERE ID = ${shipCostId}
     `);
+
+    await this.logAction(nguoiTao, 'LoHang_PhiShip:CapNhatPhiShip', 'Chinh sua', String(shipCostId),
+      `PhiShipID: ${shipCostId}; CanNang: ${canNang}; DonGia: ${donGia}; TongTien: ${tongTienShipVnd}`);
 
     return { id: shipCostId };
   }
@@ -356,10 +398,12 @@ export class BatchesService {
   /**
    * Delete batch ship cost
    */
-  async deleteShipCost(shipCostId: number): Promise<void> {
+  async deleteShipCost(shipCostId: number, nguoiTao = 'system'): Promise<void> {
     await this.sequelize.query(`
       DELETE FROM dbo.tbLoHang_PhiShipVeVN WHERE ID = ${shipCostId}
     `);
+
+    await this.logAction(nguoiTao, 'LoHang_PhiShip:XoaPhiShip', 'Xoa', String(shipCostId), `PhiShipID: ${shipCostId}`);
   }
 
   /**
@@ -384,11 +428,14 @@ export class BatchesService {
   /**
    * Add batch customs
    */
-  async addCustoms(batchId: number, loaiHangThueHaiQuanId: number, canNangSoLuongGiaTri: number, donGia: number, tongTienThueHaiQuanVnd: number): Promise<any> {
+  async addCustoms(batchId: number, loaiHangThueHaiQuanId: number, canNangSoLuongGiaTri: number, donGia: number, tongTienThueHaiQuanVnd: number, nguoiTao = 'system'): Promise<any> {
     await this.sequelize.query(`
       INSERT INTO dbo.tbLoHang_ThueHaiQuan (LoHangID, LoaiHangThueHaiQuanID, CanNangSoLuongGiaTri, DonGia, TongTienThueHaiQuan_VND, NgayTao)
       VALUES (${batchId}, ${loaiHangThueHaiQuanId}, ${canNangSoLuongGiaTri}, ${donGia}, ${tongTienThueHaiQuanVnd}, GETDATE())
     `);
+
+    await this.logAction(nguoiTao, 'LoHang_ThueHaiQuan:ThemThueHaiQuan', 'Them moi', String(batchId),
+      `LoHangID: ${batchId}; LoaiHangThueHaiQuanID: ${loaiHangThueHaiQuanId}; CanNang: ${canNangSoLuongGiaTri}; DonGia: ${donGia}; TongTien: ${tongTienThueHaiQuanVnd}`);
 
     return this.findOne(batchId);
   }
@@ -396,12 +443,15 @@ export class BatchesService {
   /**
    * Update batch customs
    */
-  async updateCustoms(customsId: number, loaiHangThueHaiQuanId: number, canNangSoLuongGiaTri: number, donGia: number, tongTienThueHaiQuanVnd: number): Promise<any> {
+  async updateCustoms(customsId: number, loaiHangThueHaiQuanId: number, canNangSoLuongGiaTri: number, donGia: number, tongTienThueHaiQuanVnd: number, nguoiTao = 'system'): Promise<any> {
     await this.sequelize.query(`
       UPDATE dbo.tbLoHang_ThueHaiQuan
       SET LoaiHangThueHaiQuanID = ${loaiHangThueHaiQuanId}, CanNangSoLuongGiaTri = ${canNangSoLuongGiaTri}, DonGia = ${donGia}, TongTienThueHaiQuan_VND = ${tongTienThueHaiQuanVnd}
       WHERE ID = ${customsId}
     `);
+
+    await this.logAction(nguoiTao, 'LoHang_ThueHaiQuan:CapNhatThueHaiQuan', 'Chinh sua', String(customsId),
+      `ThueHaiQuanID: ${customsId}; CanNang: ${canNangSoLuongGiaTri}; DonGia: ${donGia}; TongTien: ${tongTienThueHaiQuanVnd}`);
 
     return { id: customsId };
   }
@@ -409,9 +459,22 @@ export class BatchesService {
   /**
    * Delete batch customs
    */
-  async deleteCustoms(customsId: number): Promise<void> {
+  async deleteCustoms(customsId: number, nguoiTao = 'system'): Promise<void> {
     await this.sequelize.query(`
       DELETE FROM dbo.tbLoHang_ThueHaiQuan WHERE ID = ${customsId}
     `);
+
+    await this.logAction(nguoiTao, 'LoHang_ThueHaiQuan:XoaThueHaiQuan', 'Xoa', String(customsId), `ThueHaiQuanID: ${customsId}`);
+  }
+
+  private async logAction(nguoiTao: string, nguon: string, hanhDong: string, doiTuong: string, noiDung: string): Promise<void> {
+    try {
+      await this.sequelize.query(
+        `EXEC SP_Them_SystemLogs @NguoiTao = :nguoiTao, @Nguon = :nguon, @HanhDong = :hanhDong, @DoiTuong = :doiTuong, @NoiDung = :noiDung`,
+        { replacements: { nguoiTao, nguon, hanhDong, doiTuong, noiDung } },
+      );
+    } catch (error) {
+      console.error('Error logging batch action:', (error as any).message);
+    }
   }
 }

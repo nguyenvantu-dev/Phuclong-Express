@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
 import { ShipmentsService } from './shipments.service';
 import { Shipment } from './entities/shipment.entity';
@@ -79,8 +80,8 @@ export class ShipmentsController {
    * - tienHangVnd: Auto-calculated as tienHangUsd * tyGia
    */
   @Post()
-  async create(@Body() createShipmentDto: CreateShipmentDto): Promise<Shipment> {
-    return this.shipmentsService.create(createShipmentDto);
+  async create(@Body() createShipmentDto: CreateShipmentDto, @Request() req: any): Promise<Shipment> {
+    return this.shipmentsService.create(createShipmentDto, req.user?.username || 'system');
   }
 
   /**
@@ -93,8 +94,9 @@ export class ShipmentsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateShipmentDto: UpdateShipmentDto,
+    @Request() req: any,
   ): Promise<Shipment> {
-    return this.shipmentsService.update(id, updateShipmentDto);
+    return this.shipmentsService.update(id, updateShipmentDto, req.user?.username || 'system');
   }
 
   /**
@@ -103,8 +105,8 @@ export class ShipmentsController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.shipmentsService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number, @Request() req: any): Promise<void> {
+    return this.shipmentsService.remove(id, req.user?.username || 'system');
   }
 
   /**
@@ -123,8 +125,8 @@ export class ShipmentsController {
    * Mark shipment as completed
    */
   @Post(':id/complete')
-  async complete(@Param('id', ParseIntPipe) id: number): Promise<Shipment> {
-    return this.shipmentsService.complete(id);
+  async complete(@Param('id', ParseIntPipe) id: number, @Request() req: any): Promise<Shipment> {
+    return this.shipmentsService.complete(id, req.user?.username || 'system');
   }
 
   /**

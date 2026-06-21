@@ -181,7 +181,17 @@ export class ShipmentGroupsService {
       `);
 
       const insertId = result[0]?.ID;
-      return this.findOne(insertId);
+      const created = await this.findOne(insertId);
+
+      await this.logAction(
+        nguoiTao,
+        'DotHang_Them:ThemDotHang',
+        'Them moi',
+        tenDotHang || '',
+        `UserName: ${username}; TenDotHang: ${tenDotHang}; CanNang: ${canNang || 0}`,
+      );
+
+      return created;
     } catch (error) {
       console.error('Error in create shipment group:', error.message);
       throw error;
@@ -233,11 +243,19 @@ export class ShipmentGroupsService {
    * Soft delete shipment group
    */
   async remove(id: number, nguoiTao = 'system'): Promise<void> {
-    await this.findOne(id);
+    const group = await this.findOne(id);
 
     await this.sequelize.query(`
       UPDATE dbo.DotHang SET DaXoa = 1 WHERE ID = ${id}
     `);
+
+    await this.logAction(
+      nguoiTao,
+      'DotHang_LietKe:XoaDotHang',
+      'Xoa',
+      group.TenDotHang || String(id),
+      `ID: ${id}; TenDotHang: ${group.TenDotHang}; UserName: ${group.UserName}`,
+    );
   }
 
   /**

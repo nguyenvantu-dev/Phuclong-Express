@@ -63,8 +63,9 @@ export class UsersController {
   async update(
     @Param('id') id: string,
     @Body() userData: Partial<User>,
+    @Request() req: any,
   ): Promise<User> {
-    return this.usersService.update(id, userData);
+    return this.usersService.update(id, userData, req.user?.username || 'system');
   }
 
   /**
@@ -72,8 +73,8 @@ export class UsersController {
    * Delete user
    */
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<void> {
-    return this.usersService.remove(id);
+  async remove(@Param('id') id: string, @Request() req: any): Promise<void> {
+    return this.usersService.remove(id, req.user?.username || 'system');
   }
 
   /**
@@ -139,8 +140,9 @@ export class UsersController {
   async addRole(
     @Param('id') id: string,
     @Body() body: { roleName: string },
+    @Request() req: any,
   ) {
-    return this.usersService.addRoleToUser(id, body.roleName);
+    return this.usersService.addRoleToUser(id, body.roleName, req.user?.username || 'system');
   }
 
   /**
@@ -151,8 +153,9 @@ export class UsersController {
   async removeRole(
     @Param('id') id: string,
     @Param('roleName') roleName: string,
+    @Request() req: any,
   ) {
-    return this.usersService.removeRoleFromUser(id, roleName);
+    return this.usersService.removeRoleFromUser(id, roleName, req.user?.username || 'system');
   }
 
   /**
@@ -163,7 +166,8 @@ export class UsersController {
   async resetPassword(
     @Param('id') id: string,
     @Body() body: { password: string },
+    @Request() req: any,
   ) {
-    return this.usersService.resetPassword(id, body.password);
+    return this.usersService.resetPassword(id, body.password, req.user?.username || 'system');
   }
 }

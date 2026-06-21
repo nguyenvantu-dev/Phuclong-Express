@@ -258,8 +258,6 @@ export class DebtReportsService {
         { type: 'SELECT', raw: true },
       ) as any;
 
-      console.log('SP_BaoCao_CongNoKhachHang results:', JSON.stringify(results));
-
       // Handle array result from sequelize
       let data: any[] = [];
       if (Array.isArray(results)) {
@@ -900,8 +898,6 @@ export class DebtReportsService {
       const denNgay = parseVietnameseDate(toDate || '');
       const tuNgayStr = tuNgay ? formatSqlDate(tuNgay) : '';
       const denNgayStr = denNgay ? formatSqlDate(denNgay) : '';
-      console.log('getTotalDebtByUser params:', { username, tuNgay: tuNgayStr, denNgay: denNgayStr });
-
       const results = await this.sequelize.query(
         `EXEC SP_BaoCao_TongCongNoTheoUser
           @UserName = :username,
@@ -917,7 +913,6 @@ export class DebtReportsService {
         },
       );
 
-      console.log('getTotalDebtByUser raw results:', results);
       return results
     } catch (error) {
       console.error('Error in getTotalDebtByUser:', error.message);
@@ -1317,8 +1312,6 @@ export class DebtReportsService {
       if (dr === 0 && cr === 0) {
         return { success: false, message: 'Phải nhập ít nhất một giá trị Nợ hoặc Có' };
       }
-      console.log("333333333333");
-
       const ngayGhiNo = this.parseDateToSql(dto.ngay);
 
       let ghiChu = dto.ghiChu?.trim() || '';
@@ -1442,8 +1435,6 @@ export class DebtReportsService {
           type: 'SELECT' as const,
         },
       );
-      console.log(checkResult);
-
       const checkDataRaw = Array.isArray(checkResult) && checkResult.length > 0 ? checkResult[0] as any : { Result: -1 };
       const checkValue = checkDataRaw?.Result ?? -1;
 

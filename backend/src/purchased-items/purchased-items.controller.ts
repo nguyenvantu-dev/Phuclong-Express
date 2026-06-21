@@ -88,19 +88,23 @@ export class PurchasedItemsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
   ): Promise<void> {
-    return this.purchasedItemsService.remove(id);
+    return this.purchasedItemsService.remove(id, req.user?.username || 'system');
   }
 
   @Post('mass-delete')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async massDelete(
     @Body() body: { ids: number[] },
+    @Request() req: any,
   ): Promise<{ deleted: number }> {
-    return this.purchasedItemsService.massDelete(body.ids);
+    return this.purchasedItemsService.massDelete(body.ids, req.user?.username || 'system');
   }
 
   @Post('mass-update')

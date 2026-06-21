@@ -645,13 +645,21 @@ export class TrackingService {
    * Add tracking status
    * Note: No dedicated SP in C#, uses direct INSERT
    */
-  async addHistory(id: number, ghiChu: string): Promise<any> {
+  async addHistory(id: number, ghiChu: string, nguoiTao = ''): Promise<any> {
     try {
       await this.sequelize.query(`
         INSERT INTO dbo.tbTinhTrangTracking (TrackingID, GhiChu, NgayTao)
         VALUES (:id, :ghiChu, GETDATE())
       `,
       { replacements: { id, ghiChu }, type: QueryTypes.RAW });
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'Tracking_ThemSua:ThemTinhTrangTracking',
+        hanhDong: 'Them moi',
+        doiTuong: id.toString(),
+        noiDung: `TrackingID: ${id}; GhiChu: ${ghiChu}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
 
       return this.findOne(id);
     } catch (error) {

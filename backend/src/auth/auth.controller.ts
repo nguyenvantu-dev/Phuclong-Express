@@ -87,8 +87,9 @@ export class AuthController {
   /**
    * DELETE /auth/roles/:id - Delete role
    */
+  @UseGuards(JwtAuthGuard)
   @Delete('roles/:id')
-  async deleteRole(@Param('id') id: number) {
-    return this.authService.deleteRole(Number(id));
+  async deleteRole(@Param('id') id: number, @Request() req: any) {
+    return this.authService.deleteRole(Number(id), req.user?.username || 'system');
   }
 }

@@ -47,7 +47,6 @@ export class OrdersService {
     const [rows]: any[] = await this.sequelize.query(
       `SELECT ID as id, username, ordernumber as orderNumber FROM dbo.DON_HANG WHERE ID IN (${idList})`,
     );
-    console.log("99999999", rows);
     return Array.isArray(rows) ? rows : [];
   }
 
@@ -1112,7 +1111,6 @@ export class OrdersService {
         type: QueryTypes.RAW,
       },
     );
-    console.log({checkResult});
     const checkDataRaw = Array.isArray(checkResult) && checkResult.length > 0 ? checkResult[0] as any : { DuocCapNhat: -1 };
     const checkValue = checkDataRaw?.DuocCapNhat ?? -1;
 
@@ -1277,25 +1275,44 @@ export class OrdersService {
   /**
    * Restore soft-deleted order
    */
-  async restore(id: number): Promise<Order> {
+  async restore(id: number, nguoiTao = 'system'): Promise<Order> {
     const order = await this.orderModel.findByPk(id);
 
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
 
-    return order.update({ DaXoa: false });
+    const restored = await order.update({ DaXoa: false });
+
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'OrderDaXoa:KhoiPhucDonHang',
+      hanhDong: 'Chinh sua',
+      doiTuong: String(id),
+      noiDung: `OrderID: ${id}`,
+    }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
+    return restored;
   }
 
   /**
    * Batch restore multiple deleted orders
    */
-  async batchRestore(ids: number[]): Promise<{ success: boolean; count: number }> {
+  async batchRestore(ids: number[], nguoiTao = 'system'): Promise<{ success: boolean; count: number }> {
     try {
       const [updated] = await this.orderModel.update(
         { DaXoa: false },
         { where: { id: { [Op.in]: ids }, DaXoa: true } }
       );
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'OrderDaXoa:KhoiPhucHangLoat',
+        hanhDong: 'Chinh sua',
+        doiTuong: ids.join(','),
+        noiDung: `KhoiPhuc: ${updated} don hang; IDs: ${ids.join(', ')}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true, count: updated };
     } catch (error: any) {
       console.error('Error in batchRestore:', error.message);
@@ -1306,9 +1323,18 @@ export class OrdersService {
   /**
    * Permanently delete an order (vĩnh viễn xóa)
    */
-  async permanentDelete(id: number): Promise<{ success: boolean }> {
+  async permanentDelete(id: number, nguoiTao = 'system'): Promise<{ success: boolean }> {
     try {
       await this.orderModel.destroy({ where: { id }, force: true });
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'OrderDaXoa:XoaVinhVien',
+        hanhDong: 'Xoa',
+        doiTuong: String(id),
+        noiDung: `XoaVinhVien OrderID: ${id}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true };
     } catch (error: any) {
       console.error('Error in permanentDelete:', error.message);
@@ -1319,12 +1345,21 @@ export class OrdersService {
   /**
    * Mass cancel orders
    */
-  async batchCancel(ids: number[]): Promise<{ success: boolean; count: number }> {
+  async batchCancel(ids: number[], nguoiTao = 'system'): Promise<{ success: boolean; count: number }> {
     try {
       const [updated] = await this.orderModel.update(
         { trangThaiOrder: 'Cancelled' },
         { where: { id: { [Op.in]: ids }, DaXoa: true } }
       );
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'OrderDaXoa:HuyHangLoat',
+        hanhDong: 'Chinh sua',
+        doiTuong: ids.join(','),
+        noiDung: `Huy: ${updated} don hang; IDs: ${ids.join(', ')}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true, count: updated };
     } catch (error: any) {
       console.error('Error in batchCancel:', error.message);
@@ -1335,13 +1370,22 @@ export class OrdersService {
   /**
    * Mass complete orders (only Ordered/Shipped can be completed)
    */
-  async batchComplete(ids: number[]): Promise<{ success: boolean; count: number; message?: string }> {
+  async batchComplete(ids: number[], nguoiTao = 'system'): Promise<{ success: boolean; count: number; message?: string }> {
     try {
       // Only update orders that are Ordered or Shipped
       const [updated] = await this.orderModel.update(
         { trangThaiOrder: 'Completed' },
         { where: { id: { [Op.in]: ids }, DaXoa: true, trangThaiOrder: { [Op.in]: ['Ordered', 'Shipped'] } } }
       );
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'OrderDaXoa:HoanThanhHangLoat',
+        hanhDong: 'Chinh sua',
+        doiTuong: ids.join(','),
+        noiDung: `HoanThanh: ${updated} don hang; IDs: ${ids.join(', ')}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true, count: updated };
     } catch (error: any) {
       console.error('Error in batchComplete:', error.message);
@@ -1352,12 +1396,21 @@ export class OrdersService {
   /**
    * Mass set orders to Received status
    */
-  async batchReceived(ids: number[]): Promise<{ success: boolean; count: number }> {
+  async batchReceived(ids: number[], nguoiTao = 'system'): Promise<{ success: boolean; count: number }> {
     try {
       const [updated] = await this.orderModel.update(
         { trangThaiOrder: 'Received' },
         { where: { id: { [Op.in]: ids }, DaXoa: true } }
       );
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'OrderDaXoa:DaNhanHangLoat',
+        hanhDong: 'Chinh sua',
+        doiTuong: ids.join(','),
+        noiDung: `DaNhan: ${updated} don hang; IDs: ${ids.join(', ')}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true, count: updated };
     } catch (error: any) {
       console.error('Error in batchReceived:', error.message);
@@ -1368,12 +1421,21 @@ export class OrdersService {
   /**
    * Mass set orders to Shipped status
    */
-  async batchShipped(ids: number[]): Promise<{ success: boolean; count: number }> {
+  async batchShipped(ids: number[], nguoiTao = 'system'): Promise<{ success: boolean; count: number }> {
     try {
       const [updated] = await this.orderModel.update(
         { trangThaiOrder: 'Shipped' },
         { where: { id: { [Op.in]: ids }, DaXoa: true } }
       );
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'OrderDaXoa:DaShipHangLoat',
+        hanhDong: 'Chinh sua',
+        doiTuong: ids.join(','),
+        noiDung: `DaShip: ${updated} don hang; IDs: ${ids.join(', ')}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true, count: updated };
     } catch (error: any) {
       console.error('Error in batchShipped:', error.message);
@@ -2324,7 +2386,7 @@ export class OrdersService {
    * Converted from: TrackingNumber.aspx - btCapNhat_Click
    * Uses: orderNumber (string) as input, matching C# capNhatTrackingNumber
    */
-  async updateTrackingNumber(orderNumber: string, trackingNumber: string, ngayNhanTaiNuocNgoai: string, trackingLink: string): Promise<{ success: boolean; message: string }> {
+  async updateTrackingNumber(orderNumber: string, trackingNumber: string, ngayNhanTaiNuocNgoai: string, trackingLink: string, nguoiTao = 'system'): Promise<{ success: boolean; message: string }> {
     try {
       const orderNumberSafe = orderNumber.replace(/'/g, "''");
 
@@ -2345,6 +2407,14 @@ export class OrdersService {
           ${ngayNhanTaiNuocNgoai ? `@NgayNhanTaiNuocNgoai = '${ngayNhanTaiNuocNgoai}'` : '@NgayNhanTaiNuocNgoai = NULL'},
           @TrackingLink = N'${trackingLink || ''}'
       `);
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'TrackingNumber:CapNhatTrackingNumber',
+        hanhDong: 'Chinh sua',
+        doiTuong: orderNumber,
+        noiDung: `OrderNumber: ${orderNumber}; TrackingNumber: ${trackingNumber}; NgayNhan: ${ngayNhanTaiNuocNgoai || ''}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
 
       return { success: true, message: 'Đã cập nhật thành công' };
     } catch (error) {

@@ -51,8 +51,6 @@ export class AuthService {
     const userData = user.get();
     const passwordHash = userData.PasswordHash;
 
-    console.log(userData.Id, userData.UserName, passwordHash, password);
-
     if (!passwordHash) {
       return null;
     }
@@ -113,6 +111,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    await this.systemLogsService.create({
+      nguoiTao: user.UserName,
+      nguon: 'Auth:Login',
+      hanhDong: 'Dang nhap',
+      doiTuong: user.Id,
+      noiDung: `UserName: ${user.UserName}`,
+    }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
     return this.generateAuthResponse(user);
   }
 
@@ -159,6 +165,14 @@ export class AuthService {
       roles: ['user'],
     });
 
+    await this.systemLogsService.create({
+      nguoiTao: user.get('UserName') as string,
+      nguon: 'Auth:Register',
+      hanhDong: 'Them moi',
+      doiTuong: user.get('Id') as string,
+      noiDung: `UserName: ${registerDto.username}; Email: ${registerDto.email}; HoTen: ${registerDto.hoTen || ''}`,
+    }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
     return this.generateAuthResponse(user);
   }
 
@@ -192,9 +206,7 @@ export class AuthService {
    * Generate authentication response with tokens
    */
   private generateAuthResponse(user: User): AuthResponseDto {
-    console.log('[Auth] Generating token for user:', user.Id, user.UserName);
     const payload = { sub: user.Id, username: user.UserName };
-    console.log('[Auth] Payload:', payload);
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: '7d' });
     const refreshToken = this.jwtService.sign(payload, {
@@ -286,11 +298,20 @@ export class AuthService {
   /**
    * Delete role
    */
-  async deleteRole(roleId: number): Promise<{ success: boolean }> {
+  async deleteRole(roleId: number, nguoiTao = 'system'): Promise<{ success: boolean }> {
     try {
       await this.sequelize.query(`
         DELETE FROM dbo.AspNetRoles WHERE Id = ${roleId}
       `);
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'DeleteRole',
+        hanhDong: 'Xoa',
+        doiTuong: String(roleId),
+        noiDung: `RoleId: ${roleId}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true };
     } catch (error: any) {
       console.error('Error deleting role:', error.message);

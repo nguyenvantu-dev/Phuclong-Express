@@ -239,20 +239,22 @@ export class PurchasedItemsService {
    *
    * Converted from HangKhoan_LietKe.cs - lbtMassDelete_Click()
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number, nguoiTao = 'system'): Promise<void> {
     await this.sequelize.query(
       `UPDATE dbo.DonHang SET DaXoa = 1 WHERE ID = ${id} AND HangKhoan = 1`
     );
+    await this.logAction(nguoiTao, 'HangKhoan_LietKe:XoaHangKhoan', 'Xoa', String(id), `ID: ${id}`);
   }
 
   /**
    * Mass delete purchased items
    */
-  async massDelete(ids: number[]): Promise<{ deleted: number }> {
+  async massDelete(ids: number[], nguoiTao = 'system'): Promise<{ deleted: number }> {
     const idList = ids.join(',');
     await this.sequelize.query(
       `UPDATE dbo.DonHang SET DaXoa = 1 WHERE ID IN (${idList}) AND HangKhoan = 1`
     );
+    await this.logAction(nguoiTao, 'HangKhoan_LietKe:XoaHangKhoan', 'Xoa', idList, `IDs: ${idList}`);
     return { deleted: ids.length };
   }
 
