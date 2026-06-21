@@ -98,17 +98,32 @@ export class UsersService {
   /**
    * Update user
    */
-  async update(id: string, userData: Partial<User>): Promise<User> {
+  async update(id: string, userData: Partial<User>, nguoiTao = 'system'): Promise<User> {
     const user = await this.findByStringId(id);
-    return user.update(userData);
+    const updated = await user.update(userData);
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'UpdateUser',
+      hanhDong: 'Chinh sua',
+      doiTuong: id,
+      noiDung: `UserName: ${user.UserName}; Fields: ${Object.keys(userData).join(', ')}`,
+    }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+    return updated;
   }
 
   /**
    * Delete user
    */
-  async remove(id: string): Promise<void> {
+  async remove(id: string, nguoiTao = 'system'): Promise<void> {
     const user = await this.findByStringId(id);
     await user.destroy();
+    await this.systemLogsService.create({
+      nguoiTao,
+      nguon: 'DeleteUser',
+      hanhDong: 'Xoa',
+      doiTuong: id,
+      noiDung: `UserName: ${user.UserName}`,
+    }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
   }
 
   /**
@@ -372,7 +387,7 @@ export class UsersService {
   /**
    * Add role to user
    */
-  async addRoleToUser(userId: string, roleName: string): Promise<{ success: boolean; message: string }> {
+  async addRoleToUser(userId: string, roleName: string, nguoiTao = 'system'): Promise<{ success: boolean; message: string }> {
     try {
       // Get role ID
       const [roles]: any[] = await this.sequelize.query(`
@@ -399,6 +414,14 @@ export class UsersService {
         INSERT INTO dbo.AspNetUserRoles (UserId, RoleId) VALUES ('${userId}', '${roleId}')
       `);
 
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'AddRoleToUser',
+        hanhDong: 'Chinh sua',
+        doiTuong: userId,
+        noiDung: `UserId: ${userId}; RoleName: ${roleName}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true, message: 'Role added successfully' };
     } catch (error) {
       console.error('Error adding role to user:', error.message);
@@ -409,7 +432,7 @@ export class UsersService {
   /**
    * Remove role from user
    */
-  async removeRoleFromUser(userId: string, roleName: string): Promise<{ success: boolean; message: string }> {
+  async removeRoleFromUser(userId: string, roleName: string, nguoiTao = 'system'): Promise<{ success: boolean; message: string }> {
     try {
       // Get role ID
       const [roles]: any[] = await this.sequelize.query(`
@@ -427,6 +450,14 @@ export class UsersService {
         DELETE FROM dbo.AspNetUserRoles WHERE UserId = '${userId}' AND RoleId = '${roleId}'
       `);
 
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'RemoveRoleFromUser',
+        hanhDong: 'Xoa',
+        doiTuong: userId,
+        noiDung: `UserId: ${userId}; RoleName: ${roleName}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
+
       return { success: true, message: 'Role removed successfully' };
     } catch (error) {
       console.error('Error removing role from user:', error.message);
@@ -437,13 +468,21 @@ export class UsersService {
   /**
    * Reset user password
    */
-  async resetPassword(userId: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  async resetPassword(userId: string, newPassword: string, nguoiTao = 'system'): Promise<{ success: boolean; message: string }> {
     try {
       const passwordHash = await bcrypt.hash(newPassword, 10);
 
       await this.sequelize.query(`
         UPDATE dbo.AspNetUsers SET PasswordHash = '${passwordHash}' WHERE Id = '${userId}'
       `);
+
+      await this.systemLogsService.create({
+        nguoiTao,
+        nguon: 'ResetPassword',
+        hanhDong: 'Chinh sua',
+        doiTuong: userId,
+        noiDung: `UserId: ${userId}`,
+      }).catch((err) => console.error('[SystemLog]', err?.message ?? err));
 
       return { success: true, message: 'Reset mật khẩu thành công' };
     } catch (error) {
