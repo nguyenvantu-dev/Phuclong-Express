@@ -26,6 +26,7 @@ import {
 } from './dto/import-tracking.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
 
 interface AuthenticatedRequest {
   user?: {
@@ -52,6 +53,7 @@ interface AuthenticatedRequest {
  * - GET /tracking/:id/history - Get tracking status history
  * - POST /tracking/:id/history - Add tracking status
  */
+@UseGuards(JwtAuthGuard)
 @Controller('tracking')
 export class TrackingController {
   constructor(private readonly trackingService: TrackingService) {}
@@ -98,6 +100,7 @@ export class TrackingController {
    * GET /tracking/search/:code
    * Public endpoint to search tracking by code
    */
+  @Public()
   @Get('search/:code')
   async searchByCode(@Param('code') code: string): Promise<any> {
     return this.trackingService.searchByCode(code);

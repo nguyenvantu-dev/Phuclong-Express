@@ -1,7 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { QueryTypes, Transaction } from 'sequelize';
-const tedious = require('tedious');
 
 export interface QuerySystemLogsDto {
   username?: string;
@@ -38,79 +37,64 @@ export class SystemLogsService {
    * Find all system logs with filters and pagination
    */
   async findAll(query: QuerySystemLogsDto): Promise<{ data: SystemLog[]; total: number; page: number; limit: number }> {
-    const { username, nguon, hanhDong, doiTuong, noiDung, startDate, endDate, page = 1, limit = 50 } = query;
+    const { username, nguon, hanhDong, doiTuong, noiDung, startDate, endDate } = query;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 50;
 
     try {
-      const sequelize = new Sequelize({
-        dialect: 'mssql',
-        host: process.env.DB_HOST || 'localhost',
-        username: process.env.DB_USERNAME || 'sa',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_DATABASE || 'PhucLong',
-        logging: false,
-        dialectOptions: {
-          encrypt: true,
-          trustServerCertificate: true,
-        },
-        dialectModule: tedious
-      });
-
-      let whereClause = 'WHERE 1=1';
+      const conditions: string[] = [];
+      const replacements: Record<string, string> = {};
 
       if (username) {
-        whereClause += ` AND NguoiTao LIKE '%${username}%'`;
+        conditions.push(`NguoiTao LIKE :username`);
+        replacements.username = `%${username}%`;
       }
       if (nguon) {
-        whereClause += ` AND Nguon LIKE '%${nguon}%'`;
+        conditions.push(`Nguon LIKE :nguon`);
+        replacements.nguon = `%${nguon}%`;
       }
       if (hanhDong) {
-        whereClause += ` AND HanhDong = '${hanhDong}'`;
+        conditions.push(`HanhDong = :hanhDong`);
+        replacements.hanhDong = hanhDong;
       }
       if (doiTuong) {
-        whereClause += ` AND DoiTuong LIKE '%${doiTuong}%'`;
+        conditions.push(`DoiTuong LIKE :doiTuong`);
+        replacements.doiTuong = `%${doiTuong}%`;
       }
       if (noiDung) {
-        whereClause += ` AND NoiDung LIKE '%${noiDung}%'`;
+        conditions.push(`NoiDung LIKE :noiDung`);
+        replacements.noiDung = `%${noiDung}%`;
       }
       if (startDate) {
-        whereClause += ` AND NgayTao >= '${startDate}'`;
+        conditions.push(`NgayTao >= :startDate`);
+        replacements.startDate = startDate;
       }
       if (endDate) {
-        whereClause += ` AND NgayTao <= '${endDate}'`;
+        conditions.push(`NgayTao <= :endDate`);
+        replacements.endDate = endDate;
       }
 
+      const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
       const offset = (page - 1) * limit;
 
-      // Get total count
-      const [countResult]: any[] = await sequelize.query(
-        `SELECT COUNT(*) as total FROM dbo.tbSystemLogs ${whereClause}`
+      const [countResult] = await this.sequelize.query<{ total: number }>(
+        `SELECT COUNT(*) as total FROM dbo.tbSystemLogs ${whereClause}`,
+        { replacements, type: QueryTypes.SELECT },
       );
-      const total = Number(countResult[0]?.total) || 0;
+      const total = Number((countResult as any)?.total) || 0;
 
-      // Get paginated data
-      const [data]: any[] = await sequelize.query(`
-        SELECT * FROM (
+      const data = await this.sequelize.query<SystemLog>(
+        `SELECT * FROM (
           SELECT ROW_NUMBER() OVER (ORDER BY NgayTao DESC) as RowNum, * FROM dbo.tbSystemLogs ${whereClause}
         ) AS Paginated
-        WHERE RowNum BETWEEN ${offset + 1} AND ${offset + limit}
-      `);
+        WHERE RowNum BETWEEN ${offset + 1} AND ${offset + limit}`,
+        { replacements, type: QueryTypes.SELECT },
+      );
 
-      await sequelize.close();
-
-      return {
-        data: data || [],
-        total,
-        page,
-        limit,
-      };
+      return { data: data || [], total, page, limit };
     } catch (error) {
-      console.error('Error in findAll system logs:', error.message);
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-      };
+      console.error('Error in findAll system logs:', error instanceof Error ? error.message : error);
+      return { data: [], total: 0, page, limit };
     }
   }
 

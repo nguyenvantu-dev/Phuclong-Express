@@ -45,7 +45,9 @@
     "sequelize-typescript": "^2.1.6",
     "sharp": "^0.34.5",
     "tedious": "^19.2.1",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.28",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

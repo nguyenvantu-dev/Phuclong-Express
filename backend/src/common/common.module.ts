@@ -1,7 +1,9 @@
 import { Global, Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from '../auth/auth.module';
 import { UploadController } from './controllers/upload.controller';
 import { ImageUploadService } from './services/image-upload.service';
+import { HttpLogInterceptor } from './interceptors/http-log.interceptor';
 
 /**
  * Global module exposing shared cross-cutting services and controllers.
@@ -15,7 +17,10 @@ import { ImageUploadService } from './services/image-upload.service';
 @Module({
   imports: [AuthModule],
   controllers: [UploadController],
-  providers: [ImageUploadService],
+  providers: [
+    ImageUploadService,
+    { provide: APP_INTERCEPTOR, useClass: HttpLogInterceptor },
+  ],
   exports: [ImageUploadService],
 })
 export class CommonModule {}

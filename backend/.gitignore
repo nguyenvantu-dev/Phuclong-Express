@@ -35,4 +35,4 @@ Thumbs.db
 .env.production.local
 
 # Tệp cấu hình của NestJS
-nestjs-debug.log
+nestjs-debug.loglogs/

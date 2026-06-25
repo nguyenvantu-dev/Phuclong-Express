@@ -33,28 +33,20 @@ export default function SystemLogsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
 
-  const [filters, setFilters] = useState({
-    startDate: '',
-    endDate: '',
-    username: '',
-    hanhDong: '',
-    nguon: '',
-    doiTuong: '',
-    noiDung: '',
-  });
-
-  // Initialize dates to first day of current month
-  useEffect(() => {
+  const [filters, setFilters] = useState(() => {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    setFilters(prev => ({
-      ...prev,
+    return {
       startDate: firstDay.toISOString().split('T')[0],
       endDate: lastDay.toISOString().split('T')[0],
-    }));
-  }, []);
+      username: '',
+      hanhDong: '',
+      nguon: '',
+      doiTuong: '',
+      noiDung: '',
+    };
+  });
 
   // Load users for dropdown
   useEffect(() => {
@@ -302,22 +294,26 @@ export default function SystemLogsPage() {
             >
               Prev
             </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setPage(pageNum)}
-                  className={`rounded border px-3 py-1 text-sm ${
-                    page === pageNum
-                      ? 'bg-[#14264b] text-white'
-                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
+            {(() => {
+              const startPage = Math.max(1, Math.min(page - 2, totalPages - 4));
+              const endPage = Math.min(totalPages, startPage + 4);
+              return Array.from({ length: endPage - startPage + 1 }, (_, i) => {
+                const pageNum = startPage + i;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`rounded border px-3 py-1 text-sm ${
+                      page === pageNum
+                        ? 'bg-[#14264b] text-white'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              });
+            })()}
             <button
               onClick={() => setPage(page + 1)}
               disabled={page === totalPages}
