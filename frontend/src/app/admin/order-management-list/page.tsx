@@ -333,6 +333,11 @@ export default function QLDatHangLietKePage() {
   // Selection state for mass operations
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
+  // Clear selection whenever filters change (new result set → old selections no longer visible)
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [filters]);
+
   // Mass update modal state
   const [massUpdateModalOpen, setMassUpdateModalOpen] = useState(false);
   const [selectedWebsite, setSelectedWebsite] = useState<string>('');
@@ -735,12 +740,6 @@ export default function QLDatHangLietKePage() {
     } else if (!quocGiaInput.trim()) {
       handleQuocGiaSelect(null);
     }
-  };
-
-  // Handle website filter change - store for mass update
-  const handleWebsiteChange = (value: string) => {
-    setSelectedWebsite(value);
-    setFilters((prev) => ({ ...prev, website: value || undefined, page: 1 }));
   };
 
   // Handle search button click - always force refetch even if filters unchanged

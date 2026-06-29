@@ -15,7 +15,7 @@ const logDir = join(__dirname, '../../../../logs');
 const transport = new (winston.transports as any).DailyRotateFile({
   filename: join(logDir, 'requests-%DATE%.log'),
   datePattern: 'YYYY-MM-DD',
-  maxFiles: '30d',
+  maxFiles: '90d',
   zippedArchive: false,
 });
 
@@ -58,7 +58,12 @@ export class HttpLogInterceptor implements NestInterceptor {
     body: any,
     error?: string,
   ) {
-    if (url.startsWith('/imgLink') || url.startsWith('/public')) return;
+    if (
+      url.startsWith('/imgLink') ||
+      url.startsWith('/public') ||
+      (url.startsWith('/api/qna') && url.includes('daTraLoi')) ||
+      url.startsWith('/api/notifications/unread-count')
+    ) return;
 
     const entry: Record<string, any> = {
       method,
