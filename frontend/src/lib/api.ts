@@ -616,6 +616,38 @@ export const importOrders = async (
   return response.data;
 };
 
+export interface ImportOrderJsonItem {
+  excelRowIndex: number;
+  websiteName: string;
+  username: string;
+  loaitien: string;
+  quocGiaId: number;
+  tenQuocGia: string;
+  linkweb: string;
+  linkhinh: string;
+  color: string;
+  size: string;
+  soluong: number;
+  dongiaweb: number;
+  saleoff: number;
+  tygia: number;
+  cong?: number;
+  tax?: number;
+  phuthu?: number;
+  ghichu?: string;
+}
+
+export const importOrdersJson = async (
+  items: ImportOrderJsonItem[],
+  mode: string,
+): Promise<{ imported: number; errors: string[] }> => {
+  const response = await apiClient.post<{ imported: number; errors: string[] }>(
+    '/orders/import-json',
+    { items, mode },
+  );
+  return response.data;
+};
+
 /**
  * API Methods for Debt Reports
  *

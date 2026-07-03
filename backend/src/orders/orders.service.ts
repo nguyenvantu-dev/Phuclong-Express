@@ -10,7 +10,7 @@ import { MassUpdateDto, MassDeleteDto, MassCompleteDto, MassReceivedDto, MassShi
 import { UpdateOrderNoteDto } from './dto/update-order-note.dto';
 import { UpdateReturnDateDto } from './dto/update-return-date.dto';
 import { formatSqlDate, parseVietnameseDate } from '../helpers/sql-date.helper';
-import { ImportOrdersDto } from './dto/import-orders.dto';
+import { ImportOrdersDto, ImportOrderItemDto } from './dto/import-orders.dto';
 import { QueryQLDatHangDto, QLDatHangResponseDto } from './dto/query-qldathang.dto';
 import { SystemLogsService } from '../system-logs/system-logs.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -1772,6 +1772,189 @@ export class OrdersService {
       imported: 0,
       errors: ['Excel import not fully implemented - requires xlsx library'],
     };
+  }
+
+  /**
+   * Generate Excel import template with dropdown validation for
+   * username, currency (loại tiền), and country (quốc gia).
+   * Uses exceljs on the server to avoid browser compatibility issues.
+   */
+  async generateImportTemplate(): Promise<Buffer> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const ExcelJS = require('exceljs');
+    const wb = new ExcelJS.Workbook();
+
+    // Fetch reference data
+    const [usernameRows] = await this.sequelize.query(
+      `SELECT UserName FROM dbo.AspNetUsers ORDER BY UserName`,
+    );
+    const [countryRows] = await this.sequelize.query(
+      `SELECT TenQuocGia FROM dbo.tbQuocGia ORDER BY TenQuocGia`,
+    );
+    const [rateRows] = await this.sequelize.query(
+      `SELECT Name FROM dbo.TY_GIA ORDER BY Name`,
+    );
+
+    const usernames = (usernameRows as any[]).map((r) => r.UserName as string);
+    const countries = (countryRows as any[]).map((r) => r.TenQuocGia as string);
+    const currencies = (rateRows as any[]).map((r) => r.Name as string);
+
+    // Sheet 1: main data entry sheet
+    const ws = wb.addWorksheet('DonHang');
+
+    // Sheet 2: visible reference sheet with dropdown data
+    const refSheet = wb.addWorksheet('RefData');
+    const refHeader = refSheet.getRow(1);
+    ['Username', 'Loại tiền', 'Tên quốc gia'].forEach((h, i) => {
+      const cell = refHeader.getCell(i + 1);
+      cell.value = h;
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6B7280' } };
+      cell.alignment = { horizontal: 'center' };
+    });
+    refHeader.height = 20;
+    refSheet.getColumn(1).width = 24;
+    refSheet.getColumn(2).width = 14;
+    refSheet.getColumn(3).width = 24;
+
+    const maxRef = Math.max(usernames.length, currencies.length, countries.length, 1);
+    for (let i = 0; i < maxRef; i++) {
+      refSheet.addRow([usernames[i] ?? '', currencies[i] ?? '', countries[i] ?? '']);
+    }
+
+    // Freeze header of RefData too
+    refSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const HEADERS = [
+      'Username', 'Loại tiền', 'Tên quốc gia', 'Link sản phẩm',
+      'Màu', 'Size', 'Số lượng', 'Link hình', 'Giá web', '%Sale Off',
+    ];
+    const COL_WIDTHS = [22, 14, 22, 52, 14, 10, 12, 52, 14, 12];
+
+    ws.addRow(HEADERS);
+    const headerRow = ws.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF14264B' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+    headerRow.height = 22;
+    HEADERS.forEach((_, i) => { ws.getColumn(i + 1).width = COL_WIDTHS[i]; });
+
+    // Example row
+    ws.addRow(['nguyen_van_a', 'USD', 'Mỹ', 'https://www.amazon.com/dp/B08N5WRWNW', 'Black', 'M', 1, '', 49.99, 10]);
+
+    // Freeze header
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+    // Data validation dropdowns (rows 2–1000)
+    const dv = ws.dataValidations;
+
+    // RefData row 1 = header → data starts at row 2
+    dv.add('A2:A1000', {
+      type: 'list', allowBlank: false,
+      formulae: [`RefData!$A$2:$A$${usernames.length + 1}`],
+      showErrorMessage: true,
+      errorTitle: 'Username không hợp lệ',
+      error: 'Vui lòng chọn username từ danh sách',
+    });
+    dv.add('B2:B1000', {
+      type: 'list', allowBlank: false,
+      formulae: [`RefData!$B$2:$B$${currencies.length + 1}`],
+      showErrorMessage: true,
+      errorTitle: 'Loại tiền không hợp lệ',
+      error: `Chọn một trong: ${currencies.join(', ')}`,
+    });
+    dv.add('C2:C1000', {
+      type: 'list', allowBlank: false,
+      formulae: [`RefData!$C$2:$C$${countries.length + 1}`],
+      showErrorMessage: true,
+      errorTitle: 'Quốc gia không hợp lệ',
+      error: 'Vui lòng chọn quốc gia từ danh sách',
+    });
+    dv.add('G2:G1000', {
+      type: 'whole', operator: 'greaterThan', formulae: [0],
+      showErrorMessage: true,
+      errorTitle: 'Số lượng không hợp lệ',
+      error: 'Phải là số nguyên dương',
+    });
+    dv.add('J2:J1000', {
+      type: 'decimal', operator: 'between', formulae: [0, 100],
+      showErrorMessage: true,
+      errorTitle: '%Sale Off không hợp lệ',
+      error: 'Phải từ 0 đến 100',
+    });
+
+    return wb.xlsx.writeBuffer();
+  }
+
+  /**
+   * Import orders from parsed Excel JSON rows
+   * Called from POST /orders/import-json
+   */
+  async importOrdersJson(
+    items: ImportOrderItemDto[],
+    mode: string,
+    nguoiTao: string,
+  ): Promise<{ imported: number; errors: string[] }> {
+    const errors: string[] = [];
+    let imported = 0;
+
+    for (const item of items) {
+      const rowLabel = `Dòng ${item.excelRowIndex ?? imported + errors.length + 1}`;
+      try {
+        await this.sequelize.query(
+          `EXEC dbo.SP_Them_DonHang_Simple_CoTamTinh
+            @WebsiteName = :websiteName,
+            @username = :username,
+            @usernamesave = :usernameSave,
+            @linkweb = :linkweb,
+            @linkhinh = :linkhinh,
+            @corlor = :corlor,
+            @size = :size,
+            @soluong = :soLuong,
+            @dongiaweb = :donGiaWeb,
+            @loaitien = :loaitien,
+            @ghichu = :ghiChu,
+            @tygia = :tyGia,
+            @saleoff = :saleOff,
+            @HangKhoan = 0,
+            @cong = :cong,
+            @shipUSA = :shipUsa,
+            @tax = :tax,
+            @phuthu = :phuThu,
+            @QuocGiaID = :quocGiaId`,
+          {
+            replacements: {
+              websiteName: (item.websiteName || '').replace(/'/g, "''"),
+              username: (item.username || '').replace(/'/g, "''"),
+              usernameSave: nguoiTao.replace(/'/g, "''"),
+              linkweb: (item.linkweb || '').replace(/'/g, "''"),
+              linkhinh: (item.linkhinh || '').replace(/'/g, "''"),
+              corlor: (item.color || '').replace(/'/g, "''"),
+              size: (item.size || '').replace(/'/g, "''"),
+              soLuong: item.soluong || 1,
+              donGiaWeb: item.dongiaweb || 0,
+              loaitien: item.loaitien || 'USD',
+              ghiChu: (item.ghichu || '').replace(/'/g, "''"),
+              tyGia: item.tygia || 1,
+              saleOff: item.saleoff || 0,
+              cong: item.cong || 0,
+              shipUsa: null,
+              tax: item.tax || 0,
+              phuThu: item.phuthu || 0,
+              quocGiaId: item.quocGiaId || null,
+            },
+            type: QueryTypes.RAW,
+          },
+        );
+        imported++;
+      } catch (err) {
+        errors.push(`${rowLabel}: ${(err as Error).message}`);
+      }
+    }
+
+    return { imported, errors };
   }
 
   /**
