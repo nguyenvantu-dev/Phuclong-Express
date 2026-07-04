@@ -34,6 +34,7 @@ export class BankAccountsService {
       const [data]: any[] = await this.sequelize.query(`
         SELECT ID, TenTaiKhoanNganHang, GhiChu
         FROM dbo.TaiKhoanNganHang
+        WHERE DaXoa = 0
         ORDER BY TenTaiKhoanNganHang
       `);
       return data || [];
@@ -94,6 +95,31 @@ export class BankAccountsService {
       return { success: true };
     } catch (error) {
       console.error('Error updating bank account:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Soft delete bank account (XoaTaiKhoanNganHang)
+   */
+  async remove(id: number, nguoiXoa: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      await this.sequelize.query(
+        `UPDATE dbo.TaiKhoanNganHang SET DaXoa = 1 WHERE ID = :id`,
+        { replacements: { id } },
+      );
+
+      await this.logAction(
+        nguoiXoa,
+        'DanhMucTaiKhoanNganHang:XoaTaiKhoanNganHang',
+        'Xoa',
+        String(id),
+        `TaiKhoanNganHangID: ${id}`,
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting bank account:', error.message);
       return { success: false, error: error.message };
     }
   }

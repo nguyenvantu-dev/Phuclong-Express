@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BankAccountsService } from './bank-accounts.service';
 import type { CreateBankAccountDto, UpdateBankAccountDto } from './bank-accounts.service';
@@ -30,5 +30,11 @@ export class BankAccountsController {
     @Request() req: any,
   ) {
     return this.bankAccountsService.update(Number(id), updateDto, req.user?.username || 'system');
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  async remove(@Param('id') id: string, @Request() req: any) {
+    return this.bankAccountsService.remove(Number(id), req.user?.username || 'system');
   }
 }

@@ -104,8 +104,10 @@ export default function SystemLogsPage() {
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
+    // API trả về wall-clock giờ VN (gắn hậu tố Z). Format theo UTC để giữ nguyên
+    // chữ số giờ VN, không bị dịch theo múi giờ trình duyệt.
     const date = new Date(dateStr);
-    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
   };
 
   return (

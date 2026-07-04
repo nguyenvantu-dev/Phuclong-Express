@@ -57,7 +57,7 @@ const parseSanLuongTotal = (raw: string): number => {
     .map((t) => parseFloat(t))
     .filter((n) => !isNaN(n))
     .reduce((sum, n) => sum + n, 0);
-  return Math.round(total * 100) / 100;
+  return Math.round(total * 10000) / 10000;
 };
 
 /**
@@ -552,6 +552,7 @@ export default function DebtManagementPage() {
     downloadDataAsExcel(
       buildExcelRows(data.data),
       `QuanLyCongNo_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`,
+      { 'Sản lượng (kg)': 4 },
     );
   };
 
@@ -561,6 +562,7 @@ export default function DebtManagementPage() {
       downloadDataAsExcel(
         buildExcelRows(result.data),
         `QuanLyCongNo_BoLoc_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`,
+        { 'Sản lượng (kg)': 4 },
       );
     },
     onError: (err: Error) => {
@@ -800,7 +802,7 @@ export default function DebtManagementPage() {
                   <p className="text-xs text-slate-500">
                     Tổng:{' '}
                     <span className="font-semibold text-[#14264b]">
-                      {parseSanLuongTotal(newDebt.sanLuongInput).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} kg
+                      {parseSanLuongTotal(newDebt.sanLuongInput).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })} kg
                     </span>
                   </p>
                 </div>
@@ -1115,7 +1117,7 @@ export default function DebtManagementPage() {
                           <span>{getLoaiPhatSinhLabel(item) || '-'}</span>
                           {item.LoaiPhatSinh === 8 && item.SanLuong != null && (
                             <span className="text-xs text-slate-400 font-mono">
-                              {item.SanLuong.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} kg
+                              {item.SanLuong.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 4 })} kg
                             </span>
                           )}
                         </div>

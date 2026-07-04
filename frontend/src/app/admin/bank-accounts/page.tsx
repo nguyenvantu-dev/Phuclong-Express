@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { FiCreditCard, FiEdit2, FiCheck, FiX, FiPlus, FiRefreshCw } from 'react-icons/fi';
+import { FiCreditCard, FiEdit2, FiCheck, FiX, FiPlus, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 import apiClient from '@/lib/api-client';
 
 interface BankAccount {
@@ -87,6 +87,19 @@ export default function BankAccountsPage() {
     setEditTen('');
     setEditGhiChu('');
     setEditError('');
+  };
+
+  // --- Delete ---
+  const handleDelete = async (id: number) => {
+    if (!confirm('Bạn có chắc muốn xóa tài khoản ngân hàng này không?')) return;
+
+    try {
+      await apiClient.delete(`/bank-accounts/${id}`);
+      setAccounts(prev => prev.filter(a => a.ID !== id));
+    } catch (err) {
+      console.error('Failed to delete bank account:', err);
+      setError('Xóa thất bại, vui lòng thử lại');
+    }
   };
 
   const handleSave = async () => {
@@ -313,13 +326,22 @@ export default function BankAccountsPage() {
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => startEdit(account)}
-                          className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-800"
-                        >
-                          <FiEdit2 className="h-3.5 w-3.5" />
-                          Sửa
-                        </button>
+                        <>
+                          <button
+                            onClick={() => startEdit(account)}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                          >
+                            <FiEdit2 className="h-3.5 w-3.5" />
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => handleDelete(account.ID)}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <FiTrash2 className="h-3.5 w-3.5" />
+                            Xoá
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>

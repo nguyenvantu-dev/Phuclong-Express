@@ -9,14 +9,17 @@ const CELL_BORDER: Partial<ExcelJS.Borders> = {
   top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER,
 };
 
-/** Apply formatting to a worksheet: header style, borders, wrap text, auto column width, freeze row 1. */
-function applySheetStyles(ws: ExcelJS.Worksheet): void {
+/** Apply formatting to a worksheet: header style, borders, wrap text, auto column width, freeze row 1.
+ * `decimalPlaces` optionally overrides the max decimal digits for non-integer numeric cells, keyed by header text. */
+function applySheetStyles(ws: ExcelJS.Worksheet, decimalPlaces?: Record<string, number>): void {
   ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+  const headerRow = ws.getRow(1);
 
   ws.eachRow((row, rowIndex) => {
     const isHeader = rowIndex === 1;
 
-    row.eachCell({ includeEmpty: true }, (cell) => {
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
       cell.border = CELL_BORDER;
       cell.alignment = { vertical: 'top', wrapText: true, ...(isHeader ? { horizontal: 'center' } : {}) };
 
@@ -27,8 +30,10 @@ function applySheetStyles(ws: ExcelJS.Worksheet): void {
         cell.numFmt = 'DD/MM/YYYY';
         cell.alignment = { ...cell.alignment, horizontal: 'left' };
       } else if (typeof cell.value === 'number') {
-        // Số nguyên: không hiện thập phân; số lẻ: hiện tối đa 2 chữ số thập phân (vd 19.7)
-        cell.numFmt = Number.isInteger(cell.value) ? '#,##0' : '#,##0.##';
+        // Số nguyên: không hiện thập phân; số lẻ: hiện tối đa N chữ số thập phân (mặc định 2, vd 19.7)
+        const headerText = String(headerRow.getCell(colNumber).value ?? '');
+        const maxDecimals = decimalPlaces?.[headerText] ?? 2;
+        cell.numFmt = Number.isInteger(cell.value) ? '#,##0' : `#,##0.${'#'.repeat(maxDecimals)}`;
         cell.alignment = { ...cell.alignment, horizontal: 'right' };
       } else if (typeof cell.value === 'string' && /^-?\d{1,3}([.,]\d{3})+$/.test(cell.value.trim())) {
         // Formatted number string with thousands separators (e.g. "1.000.000" or "1,000,000") — right-align only
@@ -48,11 +53,14 @@ function applySheetStyles(ws: ExcelJS.Worksheet): void {
   });
 }
 
-async function buildWorkbook(rows: (string | number | null | undefined)[][]): Promise<ExcelJS.Workbook> {
+async function buildWorkbook(
+  rows: (string | number | null | undefined)[][],
+  decimalPlaces?: Record<string, number>,
+): Promise<ExcelJS.Workbook> {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Sheet1');
   ws.addRows(rows);
-  applySheetStyles(ws);
+  applySheetStyles(ws, decimalPlaces);
   return wb;
 }
 
@@ -75,8 +83,9 @@ async function triggerDownload(wb: ExcelJS.Workbook, filename: string): Promise<
 export function downloadDataAsExcel(
   rows: (string | number | null | undefined)[][],
   filename: string,
+  decimalPlaces?: Record<string, number>,
 ): void {
-  buildWorkbook(rows).then((wb) => triggerDownload(wb, filename)).catch(console.error);
+  buildWorkbook(rows, decimalPlaces).then((wb) => triggerDownload(wb, filename)).catch(console.error);
 }
 
 function splitCsvLine(line: string): string[] {
