@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards, Request } from '@nestjs/common';
 import { DebtReportsService } from './debt-reports.service';
 import { QueryDebtReportDto, UpdateDebtDto, ExportDebtReportDto, QueryDebtReportByLotDto, QueryDebtReconciliationDto, UpdateOrderTotalVndDto, QueryTotalRevenueDto, QueryDebtByUserDto, QueryProfitLossByLotDto, QueryShippingSlipDto } from './dto/debt-report.dto';
-import { QueryDebtManagementDto, CreateDebtDto, UpdateDebtManagementDto } from './dto/debt-management.dto';
+import { QueryDebtManagementDto, CreateDebtDto, UpdateDebtManagementDto, ImportCreateDebtDto } from './dto/debt-management.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
@@ -320,6 +320,21 @@ export class DebtReportsController {
   ) {
     return this.debtReportsService.createDebt(
       createDto,
+      req.user?.username || 'system',
+    );
+  }
+
+  /**
+   * Bulk-create debt records from a parsed Excel import ("Thêm mới công nợ" mode)
+   * Matches: ManageCongNo_Import.cs in C# (add-new mode only)
+   */
+  @Post('management/import')
+  async importCreateDebts(
+    @Body() importDto: ImportCreateDebtDto,
+    @Request() req: any,
+  ) {
+    return this.debtReportsService.importCreateDebts(
+      importDto.rows,
       req.user?.username || 'system',
     );
   }
