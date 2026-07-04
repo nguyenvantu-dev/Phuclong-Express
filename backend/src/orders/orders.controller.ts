@@ -14,7 +14,9 @@ import {
   UploadedFile,
   UseGuards,
   Request,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { OrdersService } from './orders.service';
 import { Order } from './entities/order.entity';
@@ -26,7 +28,7 @@ import { MassUpdateDto, MassDeleteDto, MassCompleteDto, MassReceivedDto, MassShi
 import { UpdateOrderNoteDto } from './dto/update-order-note.dto';
 import { BatchUpdateNoteDto } from './dto/batch-update-note.dto';
 import { UpdateReturnDateDto } from './dto/update-return-date.dto';
-import { ImportOrdersDto } from './dto/import-orders.dto';
+import { ImportOrdersDto, ImportOrderItemDto } from './dto/import-orders.dto';
 import { QueryQLDatHangDto, QLDatHangResponseDto } from './dto/query-qldathang.dto';
 import { CreateQuickOrderDto, CreateQuickOrdersDto } from './dto/create-quick-order.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -86,6 +88,21 @@ export class OrdersController {
   @Get('countries')
   async getQuocGia(): Promise<{ QuocGiaID: number; TenQuocGia: string; PhiShipVeVN: number }[]> {
     return this.ordersService.getQuocGia();
+  }
+
+  /**
+   * GET /orders/import-template
+   * Download Excel template with dropdowns for username, currency, country
+   */
+  @Get('import-template')
+  async downloadImportTemplate(@Res() res: Response): Promise<void> {
+    const buffer = await this.ordersService.generateImportTemplate();
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="template_import_donhang.xlsx"',
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 
   /**
@@ -395,6 +412,20 @@ export class OrdersController {
     @Body() importDto: ImportOrdersDto,
   ): Promise<{ imported: number; errors?: string[] }> {
     return this.ordersService.importOrders(file, importDto);
+  }
+
+  /**
+   * POST /orders/import-json
+   * Import orders from parsed Excel rows (JSON)
+   */
+  @Post('import-json')
+  @HttpCode(HttpStatus.OK)
+  async importOrdersJson(
+    @Body() body: { items: ImportOrderItemDto[]; mode?: string },
+    @Request() req: any,
+  ): Promise<{ imported: number; errors: string[] }> {
+    const nguoiTao: string = req.user?.username || '';
+    return this.ordersService.importOrdersJson(body.items || [], body.mode || '0', nguoiTao);
   }
 
   /**
