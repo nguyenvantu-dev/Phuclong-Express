@@ -1896,12 +1896,31 @@ export class OrdersService {
     items: ImportOrderItemDto[],
     mode: string,
     nguoiTao: string,
-  ): Promise<{ imported: number; errors: string[] }> {
+  ): Promise<{
+    imported: number;
+    errors: string[];
+    successItems: Array<{
+      excelRowIndex: number;
+      username: string;
+      loaitien: string;
+      tenQuocGia: string;
+      linkweb: string;
+      color: string;
+      size: string;
+      soluong: number;
+      dongiaweb: number;
+      saleoff: number;
+    }>;
+  }> {
     const errors: string[] = [];
-    let imported = 0;
+    const successItems: Array<{
+      excelRowIndex: number; username: string; loaitien: string;
+      tenQuocGia: string; linkweb: string; color: string; size: string;
+      soluong: number; dongiaweb: number; saleoff: number;
+    }> = [];
 
     for (const item of items) {
-      const rowLabel = `Dòng ${item.excelRowIndex ?? imported + errors.length + 1}`;
+      const rowLabel = `Dòng ${item.excelRowIndex ?? successItems.length + errors.length + 1}`;
       try {
         await this.sequelize.query(
           `EXEC dbo.SP_Them_DonHang_Simple_CoTamTinh
@@ -1948,13 +1967,24 @@ export class OrdersService {
             type: QueryTypes.RAW,
           },
         );
-        imported++;
+        successItems.push({
+          excelRowIndex: item.excelRowIndex ?? 0,
+          username: item.username,
+          loaitien: item.loaitien,
+          tenQuocGia: item.tenQuocGia,
+          linkweb: item.linkweb,
+          color: item.color || '',
+          size: item.size || '',
+          soluong: item.soluong,
+          dongiaweb: item.dongiaweb,
+          saleoff: item.saleoff || 0,
+        });
       } catch (err) {
         errors.push(`${rowLabel}: ${(err as Error).message}`);
       }
     }
 
-    return { imported, errors };
+    return { imported: successItems.length, errors, successItems };
   }
 
   /**

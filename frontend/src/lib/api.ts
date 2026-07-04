@@ -637,11 +637,30 @@ export interface ImportOrderJsonItem {
   ghichu?: string;
 }
 
+export interface ImportSuccessItem {
+  excelRowIndex: number;
+  username: string;
+  loaitien: string;
+  tenQuocGia: string;
+  linkweb: string;
+  color: string;
+  size: string;
+  soluong: number;
+  dongiaweb: number;
+  saleoff: number;
+}
+
+export interface ImportOrdersResult {
+  imported: number;
+  errors: string[];
+  successItems: ImportSuccessItem[];
+}
+
 export const importOrdersJson = async (
   items: ImportOrderJsonItem[],
   mode: string,
-): Promise<{ imported: number; errors: string[] }> => {
-  const response = await apiClient.post<{ imported: number; errors: string[] }>(
+): Promise<ImportOrdersResult> => {
+  const response = await apiClient.post<ImportOrdersResult>(
     '/orders/import-json',
     { items, mode },
   );

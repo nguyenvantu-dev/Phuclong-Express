@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
-import { getCountries, getExchangeRates, getUsernames, importOrdersJson, ImportOrderJsonItem } from '@/lib/api';
+import { getCountries, getExchangeRates, getUsernames, importOrdersJson, ImportOrderJsonItem, ImportOrdersResult } from '@/lib/api';
 import apiClient from '@/lib/api-client';
 
 // ---- Excel column headers (case-insensitive match) ----
@@ -58,7 +58,7 @@ export default function ImportOrdersPage() {
   const [selectedSheet, setSelectedSheet] = useState('');
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
-  const [importResult, setImportResult] = useState<{ imported: number; errors: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<ImportOrdersResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const { data: countries = [], isLoading: loadingCountries } = useQuery({
@@ -546,21 +546,79 @@ export default function ImportOrdersPage() {
 
       {/* STEP 3 — Result */}
       {step === 'result' && importResult && (
-        <div className="rounded-lg bg-white p-6 shadow space-y-4">
-          <div className="rounded-lg bg-green-50 p-4">
-            <p className="text-lg font-semibold text-green-800">
-              Import thành công {importResult.imported} đơn hàng
-            </p>
+        <div className="space-y-4">
+          {/* Summary bar */}
+          <div className="flex gap-3">
+            <div className="flex-1 rounded-lg bg-white p-4 shadow">
+              <p className="text-2xl font-bold text-green-600">{importResult.imported}</p>
+              <p className="text-sm text-gray-500">Thành công</p>
+            </div>
+            <div className="flex-1 rounded-lg bg-white p-4 shadow">
+              <p className="text-2xl font-bold text-red-500">{importResult.errors.length}</p>
+              <p className="text-sm text-gray-500">Thất bại</p>
+            </div>
           </div>
 
+          {/* Error list */}
           {importResult.errors.length > 0 && (
-            <div className="rounded-lg bg-yellow-50 p-4">
-              <p className="mb-2 text-sm font-semibold text-yellow-800">
-                {importResult.errors.length} dòng bị lỗi khi lưu:
+            <div className="rounded-lg bg-red-50 p-4 shadow">
+              <p className="mb-2 text-sm font-semibold text-red-700">
+                Dòng bị lỗi khi lưu:
               </p>
-              <ul className="list-inside list-disc space-y-1 text-xs text-yellow-700">
+              <ul className="list-inside list-disc space-y-1 text-xs text-red-600">
                 {importResult.errors.map((e, i) => <li key={i}>{e}</li>)}
               </ul>
+            </div>
+          )}
+
+          {/* Success detail table */}
+          {importResult.successItems.length > 0 && (
+            <div className="rounded-lg bg-white shadow">
+              <div className="border-b px-4 py-3">
+                <p className="text-sm font-semibold text-gray-700">
+                  Chi tiết {importResult.successItems.length} đơn hàng đã import thành công
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500">
+                    <tr>
+                      <th className="px-3 py-2">#</th>
+                      <th className="px-3 py-2">Username</th>
+                      <th className="px-3 py-2">Tiền</th>
+                      <th className="px-3 py-2">Quốc gia</th>
+                      <th className="px-3 py-2">Link sản phẩm</th>
+                      <th className="px-3 py-2">Màu</th>
+                      <th className="px-3 py-2">Size</th>
+                      <th className="px-3 py-2 text-right">SL</th>
+                      <th className="px-3 py-2 text-right">Giá web</th>
+                      <th className="px-3 py-2 text-right">Sale Off</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {importResult.successItems.map((item, i) => (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 text-gray-400">{item.excelRowIndex}</td>
+                        <td className="px-3 py-2 font-medium text-gray-800">{item.username}</td>
+                        <td className="px-3 py-2">
+                          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono">{item.loaitien}</span>
+                        </td>
+                        <td className="px-3 py-2">{item.tenQuocGia}</td>
+                        <td className="max-w-[180px] truncate px-3 py-2">
+                          <a href={item.linkweb} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                            {(() => { try { return new URL(item.linkweb).hostname.replace('www.', ''); } catch { return item.linkweb; } })()}
+                          </a>
+                        </td>
+                        <td className="px-3 py-2">{item.color || '—'}</td>
+                        <td className="px-3 py-2">{item.size || '—'}</td>
+                        <td className="px-3 py-2 text-right">{item.soluong}</td>
+                        <td className="px-3 py-2 text-right">{item.dongiaweb.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right">{item.saleoff > 0 ? `${item.saleoff}%` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
