@@ -88,6 +88,44 @@ export function downloadDataAsExcel(
   buildWorkbook(rows, decimalPlaces).then((wb) => triggerDownload(wb, filename)).catch(console.error);
 }
 
+/** Read the sheet names of an uploaded .xlsx file, in workbook order. */
+export async function readExcelSheetNames(file: File): Promise<string[]> {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(await file.arrayBuffer());
+  return wb.worksheets.map((ws) => ws.name);
+}
+
+/** Read a sheet's rows as a 2D array of plain values (row 1 = header). Cell objects (formulas, rich text) are unwrapped to their display value. */
+export async function readExcelSheetRows(
+  file: File,
+  sheetName: string,
+): Promise<(string | number | Date | null)[][]> {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(await file.arrayBuffer());
+  const ws = wb.getWorksheet(sheetName);
+  if (!ws) return [];
+
+  const rows: (string | number | Date | null)[][] = [];
+  ws.eachRow({ includeEmpty: false }, (row) => {
+    // ExcelJS row.values is 1-indexed with a leading empty slot at index 0
+    const values = (row.values as unknown[]).slice(1);
+    rows.push(
+      values.map((v) => {
+        if (v === null || v === undefined) return null;
+        if (v instanceof Date) return v;
+        if (typeof v === 'object') {
+          const obj = v as { result?: unknown; text?: unknown };
+          if ('result' in obj) return (obj.result as string | number | null) ?? null;
+          if ('text' in obj) return (obj.text as string) ?? null;
+          return null;
+        }
+        return v as string | number;
+      }),
+    );
+  });
+  return rows;
+}
+
 function splitCsvLine(line: string): string[] {
   const result: string[] = [];
   let current = '';

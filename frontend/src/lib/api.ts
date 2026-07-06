@@ -1176,6 +1176,35 @@ export const createDebt = async (data: CreateDebtParams): Promise<{ success: boo
   return response.data;
 };
 
+export interface ImportDebtRow {
+  username: string;
+  noiDung: string;
+  ngay: string;
+  dr?: number;
+  cr?: number;
+  ghiChu?: string;
+  loaiPhatSinh?: number;
+  bankAccount?: string;
+  sanLuong?: number;
+}
+
+export interface ImportDebtResult {
+  row: number;
+  success: boolean;
+  message?: string;
+}
+
+export interface ImportDebtResponse {
+  successCount: number;
+  failCount: number;
+  results: ImportDebtResult[];
+}
+
+export const importCreateDebts = async (rows: ImportDebtRow[]): Promise<ImportDebtResponse> => {
+  const response = await apiClient.post('/debt-reports/management/import', { rows });
+  return response.data;
+};
+
 export interface UpdateDebtParams {
   username?: string;
   noiDung?: string;

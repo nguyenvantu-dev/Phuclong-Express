@@ -1295,6 +1295,33 @@ export class DebtReportsService {
     },
     username?: string,
   ): Promise<{ success: boolean; message?: string }> {
+    return this.createDebtCore(dto, username);
+  }
+
+  /**
+   * Core insert logic shared by createDebt() and importCreateDebts().
+   * `skipLog` avoids writing one SystemLogs row per record during a bulk Excel
+   * import — importCreateDebts() writes a single summary log entry instead.
+   */
+  private async createDebtCore(
+    dto: {
+      username: string;
+      noiDung: string;
+      ngay: string;
+      dr?: number;
+      cr?: number;
+      ghiChu?: string;
+      loHangId?: number;
+      loHangText?: string;
+      loaiPhatSinh?: number;
+      bankAccount?: string;
+      status?: number;
+      allowEmptyNoiDung?: boolean;
+      sanLuong?: number;
+    },
+    username?: string,
+    opts?: { skipLog?: boolean },
+  ): Promise<{ success: boolean; message?: string }> {
     try {
       const noiDung = dto.noiDung?.trim() || '';
 
@@ -1359,7 +1386,7 @@ export class DebtReportsService {
       );
 
       // Log the action
-      if (username) {
+      if (username && !opts?.skipLog) {
         await this.sequelize.query(
           `EXEC SP_Them_SystemLogs
             @NguoiTao = :username,
@@ -1404,6 +1431,67 @@ export class DebtReportsService {
       console.error('Error in createDebt:', error.message);
       return { success: false, message: error.message };
     }
+  }
+
+  /**
+   * Bulk-create debt records from a parsed Excel import ("Thêm mới công nợ" mode).
+   * Matches: ManageCongNo_Import.cs in C# (add-new mode only)
+   *
+   * Rows are inserted one by one so a single bad row doesn't block the rest;
+   * per-row audit logging is skipped in favor of one summary log entry.
+   */
+  async importCreateDebts(
+    rows: {
+      username: string;
+      noiDung: string;
+      ngay: string;
+      dr?: number;
+      cr?: number;
+      ghiChu?: string;
+      loaiPhatSinh?: number;
+      bankAccount?: string;
+      sanLuong?: number;
+    }[],
+    username: string,
+  ): Promise<{
+    successCount: number;
+    failCount: number;
+    results: { row: number; success: boolean; message?: string }[];
+  }> {
+    const results: { row: number; success: boolean; message?: string }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const result = await this.createDebtCore(rows[i], username, { skipLog: true });
+      results.push({ row: i + 1, success: result.success, message: result.message });
+    }
+
+    const successCount = results.filter((r) => r.success).length;
+    const failCount = results.length - successCount;
+
+    try {
+      await this.sequelize.query(
+        `EXEC SP_Them_SystemLogs
+          @NguoiTao = :username,
+          @Nguon = :chucNang,
+          @HanhDong = :hanhDong,
+          @DoiTuong = :ma,
+          @NoiDung = :ghiChu`,
+        {
+          replacements: {
+            username,
+            chucNang: 'ManageCongNo:Import_CongNo',
+            hanhDong: 'Import Excel',
+            ma: '',
+            ghiChu: `Import Excel công nợ: ${successCount} thành công / ${failCount} lỗi trên tổng ${rows.length} dòng`,
+          },
+          type: 'SELECT' as const,
+        },
+      );
+    } catch (logError) {
+      console.error('Failed to log import summary:', (logError as Error).message);
+    }
+
+    return { successCount, failCount, results };
   }
 
   /**

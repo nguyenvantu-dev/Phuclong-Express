@@ -1,222 +1,501 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { FiArrowLeft, FiDownload, FiUploadCloud } from 'react-icons/fi';
+import {
+  getDebtReportUsers,
+  getBankAccounts,
+  importCreateDebts,
+  ImportDebtRow,
+  ImportDebtResponse,
+} from '@/lib/api';
+import { downloadDataAsExcel, readExcelSheetNames, readExcelSheetRows } from '@/lib/excel-download';
 
 /**
- * Debt Import Page
- *
- * Converted from admin/ManageCongNo_Import.aspx
- * Features:
- * - Upload Excel file
- * - Select sheet
- * - Validate data
- * - Import data
+ * Debt Import Page — bulk "Thêm mới công nợ" from Excel
+ * Converted from admin/ManageCongNo_Import.aspx (add-new mode)
  */
+
+const LOAI_PHAT_SINH_LABELS: Record<number, string> = {
+  1: 'Phí mua hàng',
+  2: 'Phát sinh khác',
+  3: 'Phí ship từ nước ngoài về',
+  4: 'Phí ship trong nước',
+  5: 'Đặt cọc',
+  6: 'Phí ship về VN lô hàng',
+  7: 'Thuế hải quan lô hàng',
+  8: 'Cân Kg',
+};
+
+const LOAI_PHAT_SINH_BY_LABEL: Record<string, number> = Object.fromEntries(
+  Object.entries(LOAI_PHAT_SINH_LABELS).map(([code, label]) => [label.toLowerCase(), Number(code)]),
+);
+
+// Header text (normalized: trim + lowercase) -> parsed field key
+const HEADER_KEY_MAP: Record<string, string> = {
+  'user': 'username',
+  'nội dung': 'noiDung',
+  'ngày': 'ngay',
+  'loại phát sinh': 'loaiPhatSinh',
+  'tài khoản': 'bankAccount',
+  'tiền nợ (dr)': 'dr',
+  'tiền có (cr)': 'cr',
+  'ghi chú': 'ghiChu',
+};
+
+const TEMPLATE_HEADERS = ['User', 'Nội dung', 'Ngày', 'Loại phát sinh', 'Tài khoản', 'Tiền Nợ (DR)', 'Tiền Có (CR)', 'Ghi chú'];
+
+interface ParsedDebtRow {
+  rowIndex: number; // dòng thực tế trong file Excel (tính cả header)
+  username: string;
+  noiDung: string;
+  ngay: string;
+  loaiPhatSinh: number;
+  bankAccount: string;
+  dr: number;
+  cr: number;
+  ghiChu: string;
+  errors: string[];
+}
+
+function isValidCalendarDate(day: number, month: number, year: number): boolean {
+  const d = new Date(year, month - 1, day);
+  return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day;
+}
+
+function formatDateCell(value: unknown): string {
+  if (value instanceof Date) {
+    const day = String(value.getDate()).padStart(2, '0');
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${value.getFullYear()}`;
+  }
+  return String(value ?? '').trim();
+}
+
+function parseImportRows(
+  rawRows: (string | number | Date | null)[][],
+  users: { UserName: string }[],
+  bankAccounts: { TenTaiKhoanNganHang: string }[],
+): ParsedDebtRow[] {
+  if (rawRows.length === 0) return [];
+
+  const headerCells = rawRows[0].map((h) => String(h ?? '').trim().toLowerCase());
+  const colIndex: Record<string, number> = {};
+  headerCells.forEach((h, i) => {
+    const key = HEADER_KEY_MAP[h];
+    if (key) colIndex[key] = i;
+  });
+
+  const userSet = new Set(users.map((u) => u.UserName.toLowerCase()));
+  const bankSet = new Set(bankAccounts.map((b) => b.TenTaiKhoanNganHang.toLowerCase()));
+
+  const dataRows = rawRows
+    .slice(1)
+    .map((row, idx) => ({ row, excelRow: idx + 2 }))
+    .filter(({ row }) => row.some((c) => c !== null && c !== undefined && String(c).trim() !== ''));
+
+  return dataRows.map(({ row, excelRow }) => {
+    const errors: string[] = [];
+    const get = (key: string) => (colIndex[key] !== undefined ? row[colIndex[key]] : null);
+
+    const username = String(get('username') ?? '').trim();
+    if (!username) errors.push('Thiếu User');
+    else if (!userSet.has(username.toLowerCase())) errors.push(`User "${username}" không tồn tại`);
+
+    const noiDung = String(get('noiDung') ?? '').trim();
+    if (!noiDung) errors.push('Thiếu Nội dung');
+
+    const ngay = formatDateCell(get('ngay'));
+    const dateMatch = ngay.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!ngay) errors.push('Thiếu Ngày');
+    else if (!dateMatch) errors.push(`Ngày "${ngay}" không đúng định dạng dd/mm/yyyy`);
+    else if (!isValidCalendarDate(Number(dateMatch[1]), Number(dateMatch[2]), Number(dateMatch[3]))) {
+      errors.push(`Ngày "${ngay}" không tồn tại`);
+    }
+
+    let loaiPhatSinh = 2;
+    const loaiRaw = get('loaiPhatSinh');
+    if (loaiRaw !== null && loaiRaw !== undefined && String(loaiRaw).trim() !== '') {
+      const asNumber = Number(loaiRaw);
+      if (!isNaN(asNumber) && LOAI_PHAT_SINH_LABELS[asNumber]) {
+        loaiPhatSinh = asNumber;
+      } else {
+        const byLabel = LOAI_PHAT_SINH_BY_LABEL[String(loaiRaw).trim().toLowerCase()];
+        if (byLabel) loaiPhatSinh = byLabel;
+        else errors.push(`Loại phát sinh "${loaiRaw}" không hợp lệ`);
+      }
+    }
+
+    const bankAccount = String(get('bankAccount') ?? '').trim();
+    if (bankAccount && !bankSet.has(bankAccount.toLowerCase())) {
+      errors.push(`Tài khoản "${bankAccount}" không tồn tại`);
+    }
+
+    const drRaw = get('dr');
+    const crRaw = get('cr');
+    const drStr = drRaw === null || drRaw === undefined ? '' : String(drRaw).trim();
+    const crStr = crRaw === null || crRaw === undefined ? '' : String(crRaw).trim();
+    const dr = drStr === '' ? 0 : Number(drStr);
+    const cr = crStr === '' ? 0 : Number(crStr);
+    if (isNaN(dr) || isNaN(cr)) {
+      errors.push('Tiền Nợ/Tiền Có phải là số');
+    } else if (dr === 0 && cr === 0) {
+      errors.push('Phải nhập ít nhất Tiền Nợ hoặc Tiền Có');
+    }
+
+    const ghiChu = String(get('ghiChu') ?? '').trim();
+
+    return {
+      rowIndex: excelRow,
+      username,
+      noiDung,
+      ngay,
+      loaiPhatSinh,
+      bankAccount,
+      dr: isNaN(dr) ? 0 : dr,
+      cr: isNaN(cr) ? 0 : cr,
+      ghiChu,
+      errors,
+    };
+  });
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    return response?.data?.message || fallback;
+  }
+  return fallback;
+}
+
 export default function DebtImportPage() {
-  const [step, setStep] = useState(0);
+  const queryClient = useQueryClient();
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [file, setFile] = useState<File | null>(null);
+  const [sheetNames, setSheetNames] = useState<string[]>([]);
   const [sheetName, setSheetName] = useState('');
-  const [mode, setMode] = useState<'0' | '1'>('0');
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [parsedRows, setParsedRows] = useState<ParsedDebtRow[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<ImportDebtResponse | null>(null);
+
+  const { data: users } = useQuery({ queryKey: ['debt-report-users'], queryFn: getDebtReportUsers });
+  const { data: bankAccounts } = useQuery({ queryKey: ['bank-accounts'], queryFn: getBankAccounts });
+
+  const validRows = useMemo(() => parsedRows.filter((r) => r.errors.length === 0), [parsedRows]);
+  const invalidCount = parsedRows.length - validRows.length;
+
+  const importMutation = useMutation({
+    mutationFn: importCreateDebts,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['debt-management'] });
+      setImportResult(result);
+      setStep(4);
+    },
+    onError: (error: unknown) => {
+      setErrorMessage(getErrorMessage(error, 'Import thất bại'));
+    },
+  });
+
+  const handleDownloadTemplate = () => {
+    downloadDataAsExcel(
+      [
+        TEMPLATE_HEADERS,
+        ['user01', 'CK CONG NO', '04/07/2026', 'Phát sinh khác', 'Techcombank - STK 6961691818 - Công ty', 0, 500000, 'Ví dụ dòng mẫu'],
+      ],
+      'Mau_Import_CongNo.xlsx',
+    );
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      if (!selectedFile.name.endsWith('.xlsx')) {
-        setMessage('File không hợp lệ (vui lòng chọn một file .xlsx)!');
+    if (!selectedFile) return;
+    if (!selectedFile.name.endsWith('.xlsx')) {
+      setErrorMessage('File không hợp lệ (vui lòng chọn một file .xlsx)!');
+      return;
+    }
+    setFile(selectedFile);
+    setErrorMessage(null);
+  };
+
+  const handleNextStep1 = async () => {
+    if (!file) {
+      setErrorMessage('Chọn file dữ liệu!');
+      return;
+    }
+    setIsProcessing(true);
+    setErrorMessage(null);
+    try {
+      const names = await readExcelSheetNames(file);
+      if (names.length === 0) {
+        setErrorMessage('File Excel không có sheet nào');
         return;
       }
-      setFile(selectedFile);
-      setMessage('');
+      setSheetNames(names);
+      setSheetName(names[0]);
+      setStep(2);
+    } catch {
+      setErrorMessage('Không đọc được file Excel. Vui lòng kiểm tra lại file.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleNextStep1 = () => {
-    if (!file) {
-      setMessage('Chọn file dữ liệu!');
+  const handleNextStep2 = async () => {
+    if (!file || !sheetName) {
+      setErrorMessage('Phải chọn sheet cần Import');
       return;
     }
-    setStep(2);
-  };
-
-  const handleNextStep2 = () => {
-    if (!sheetName) {
-      setMessage('Phải chọn sheet cần Import');
-      return;
+    setIsProcessing(true);
+    setErrorMessage(null);
+    try {
+      const rawRows = await readExcelSheetRows(file, sheetName);
+      const parsed = parseImportRows(rawRows, users || [], bankAccounts || []);
+      if (parsed.length === 0) {
+        setErrorMessage('Sheet không có dữ liệu để import');
+        return;
+      }
+      setParsedRows(parsed);
+      setStep(3);
+    } catch {
+      setErrorMessage('Không đọc được dữ liệu từ sheet đã chọn.');
+    } finally {
+      setIsProcessing(false);
     }
-    setStep(3);
   };
 
-  const handleNextStep3 = () => {
-    setIsLoading(true);
-    // Simulate import
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep(4);
-      setMessage(`Đã import thành công 0 dòng dữ liệu`);
-    }, 2000);
+  const handleImport = () => {
+    const payload: ImportDebtRow[] = validRows.map((r) => ({
+      username: r.username,
+      noiDung: r.noiDung,
+      ngay: r.ngay,
+      dr: r.dr,
+      cr: r.cr,
+      ghiChu: r.ghiChu || undefined,
+      loaiPhatSinh: r.loaiPhatSinh,
+      bankAccount: r.bankAccount || undefined,
+    }));
+    setErrorMessage(null);
+    importMutation.mutate(payload);
   };
 
-  const handleFinish = () => {
-    setStep(0);
+  const handleReset = () => {
+    setStep(1);
     setFile(null);
+    setSheetNames([]);
     setSheetName('');
-    setMessage('');
+    setParsedRows([]);
+    setImportResult(null);
+    setErrorMessage(null);
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex items-center gap-4 mb-6">
+    <div className="container mx-auto p-4 max-w-6xl space-y-4">
+      <div className="flex items-center gap-3">
         <Link
           href="/admin/debt-management"
-          className="text-blue-600 hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm text-[#14264b] hover:underline"
         >
-          ← Quay lại
+          <FiArrowLeft className="w-4 h-4" /> Quay lại
         </Link>
-        <h1 className="text-2xl font-bold">Import công nợ từ Excel</h1>
+        <h1 className="text-xl font-bold text-slate-800">Import công nợ mới từ Excel</h1>
       </div>
 
-      {/* Mode Selection */}
-      <div className="bg-white p-4 rounded-lg shadow mb-4">
-        <h2 className="text-lg font-semibold mb-4">Chọn chế độ import</h2>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="mode"
-              value="0"
-              checked={mode === '0'}
-              onChange={(e) => setMode(e.target.value as '0' | '1')}
-            />
-            Thêm mới công nợ
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="mode"
-              value="1"
-              checked={mode === '1'}
-              onChange={(e) => setMode(e.target.value as '0' | '1')}
-            />
-            Chỉnh sửa công nợ
-          </label>
-        </div>
-      </div>
-
-      {message && (
-        <div className={`p-4 rounded mb-4 ${message.includes('thành công') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {message}
+      {errorMessage && (
+        <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-xs text-red-600">{errorMessage}</p>
         </div>
       )}
 
-      {/* Step 1: Select File */}
-      <div className={`bg-white p-6 rounded-lg shadow mb-4 ${step !== 1 && step !== 0 ? 'hidden' : ''}`}>
-        <h2 className="text-lg font-semibold mb-4">Bước 1: Chọn file Excel</h2>
-        <div className="space-y-4">
+      {/* Step 1: Select file */}
+      {step === 1 && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">File Excel (.xlsx)</label>
+            <h2 className="text-base font-bold text-slate-800">Bước 1: Chọn file Excel</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              File phải có các cột: {TEMPLATE_HEADERS.join(', ')}. Chỉ hỗ trợ thêm mới công nợ.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            className="inline-flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <FiDownload className="w-3.5 h-3.5" /> Tải file mẫu
+          </button>
+
+          <div className="p-3 bg-slate-50 rounded-lg text-xs text-slate-600 space-y-1">
+            <p className="font-medium text-slate-700">Giá trị hợp lệ cho &quot;Loại phát sinh&quot;:</p>
+            <p>{Object.values(LOAI_PHAT_SINH_LABELS).join(', ')} (để trống = Phát sinh khác)</p>
+            <p className="font-medium text-slate-700 pt-1">Cột &quot;Tài khoản&quot; (nếu điền) phải khớp đúng tên tài khoản ngân hàng đang hoạt động trong hệ thống.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-2">File Excel (.xlsx)</label>
             <input
               type="file"
               accept=".xlsx"
               onChange={handleFileChange}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs"
             />
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleNextStep1}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Tiếp theo
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Step 2: Choose Sheet */}
-      <div className={`bg-white p-6 rounded-lg shadow mb-4 ${step !== 2 ? 'hidden' : ''}`}>
-        <h2 className="text-lg font-semibold mb-4">Bước 2: Chọn Sheet</h2>
-        <div className="space-y-4">
+          <button
+            onClick={handleNextStep1}
+            disabled={!file || isProcessing}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#14264b] text-white rounded-xl hover:bg-cyan-400 transition-colors duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isProcessing ? 'Đang đọc file...' : 'Tiếp theo'}
+          </button>
+        </div>
+      )}
+
+      {/* Step 2: Choose sheet */}
+      {step === 2 && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-4">
+          <h2 className="text-base font-bold text-slate-800">Bước 2: Chọn Sheet</h2>
           <div>
-            <label className="block text-sm font-medium mb-2">Tên Sheet</label>
+            <label className="block text-xs font-medium text-slate-700 mb-2">Tên Sheet</label>
             <select
               value={sheetName}
               onChange={(e) => setSheetName(e.target.value)}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs"
             >
-              <option value="">--Chọn sheet--</option>
-              <option value="Sheet1">Sheet1</option>
-              <option value="Sheet2">Sheet2</option>
-              <option value="Sheet3">Sheet3</option>
+              {sheetNames.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
             </select>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setStep(1)}
-              className="px-4 py-2 border rounded hover:bg-gray-100"
+              className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Quay lại
             </button>
             <button
               onClick={handleNextStep2}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              disabled={isProcessing}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#14264b] text-white rounded-xl hover:bg-cyan-400 transition-colors duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Tiếp theo
+              {isProcessing ? 'Đang xử lý...' : 'Tiếp theo'}
             </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Step 3: Validate Data */}
-      <div className={`bg-white p-6 rounded-lg shadow mb-4 ${step !== 3 ? 'hidden' : ''}`}>
-        <h2 className="text-lg font-semibold mb-4">Bước 3: Xác nhận dữ liệu</h2>
-        <div className="space-y-4">
-          <div className="p-4 bg-gray-50 rounded">
-            <p className="text-sm text-gray-600">
-              File: {file?.name}
-            </p>
-            <p className="text-sm text-gray-600">
-              Sheet: {sheetName}
+      {/* Step 3: Preview & validate */}
+      {step === 3 && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-800">Bước 3: Xác nhận dữ liệu</h2>
+            <p className="text-xs">
+              <span className="text-emerald-600 font-medium">{validRows.length} dòng hợp lệ</span>
+              {invalidCount > 0 && (
+                <span className="text-red-600 font-medium ml-2">{invalidCount} dòng lỗi</span>
+              )}
+              <span className="text-slate-400 ml-2">/ {parsedRows.length} dòng</span>
             </p>
           </div>
-          {isLoading ? (
-            <div className="text-center py-4">Đang xử lý...</div>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={() => setStep(2)}
-                className="px-4 py-2 border rounded hover:bg-gray-100"
-              >
-                Quay lại
-              </button>
-              <button
-                onClick={handleNextStep3}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Import dữ liệu
-              </button>
+
+          <div className="overflow-x-auto border border-slate-100 rounded-lg max-h-[28rem] overflow-y-auto">
+            <table className="min-w-full text-xs">
+              <thead className="bg-slate-50 sticky top-0">
+                <tr>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">Dòng</th>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">User</th>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">Nội dung</th>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">Ngày</th>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">Loại phát sinh</th>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">Tài khoản</th>
+                  <th className="px-2 py-2 text-right font-medium text-slate-600">DR</th>
+                  <th className="px-2 py-2 text-right font-medium text-slate-600">CR</th>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">Ghi chú</th>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">Lỗi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parsedRows.map((r) => (
+                  <tr key={r.rowIndex} className={r.errors.length > 0 ? 'bg-red-50' : 'border-t border-slate-50'}>
+                    <td className="px-2 py-1.5 text-slate-500">{r.rowIndex}</td>
+                    <td className="px-2 py-1.5">{r.username}</td>
+                    <td className="px-2 py-1.5">{r.noiDung}</td>
+                    <td className="px-2 py-1.5">{r.ngay}</td>
+                    <td className="px-2 py-1.5">{LOAI_PHAT_SINH_LABELS[r.loaiPhatSinh]}</td>
+                    <td className="px-2 py-1.5">{r.bankAccount}</td>
+                    <td className="px-2 py-1.5 text-right">{r.dr ? r.dr.toLocaleString('vi-VN') : ''}</td>
+                    <td className="px-2 py-1.5 text-right">{r.cr ? r.cr.toLocaleString('vi-VN') : ''}</td>
+                    <td className="px-2 py-1.5">{r.ghiChu}</td>
+                    <td className="px-2 py-1.5 text-red-600">{r.errors.join('; ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setStep(2)}
+              className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Quay lại
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={validRows.length === 0 || importMutation.isPending}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-colors duration-200 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiUploadCloud className="w-4 h-4" />
+              {importMutation.isPending ? 'Đang import...' : `Import ${validRows.length} dòng hợp lệ`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Result */}
+      {step === 4 && importResult && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-4">
+          <h2 className="text-base font-bold text-slate-800">Kết quả Import</h2>
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
+            Thành công: {importResult.successCount} / Lỗi: {importResult.failCount} / Tổng: {importResult.results.length} dòng
+          </div>
+
+          {importResult.failCount > 0 && (
+            <div className="overflow-x-auto border border-slate-100 rounded-lg max-h-80 overflow-y-auto">
+              <table className="min-w-full text-xs">
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="px-2 py-2 text-left font-medium text-slate-600">Dòng Excel</th>
+                    <th className="px-2 py-2 text-left font-medium text-slate-600">User</th>
+                    <th className="px-2 py-2 text-left font-medium text-slate-600">Lý do lỗi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importResult.results
+                    .filter((r) => !r.success)
+                    .map((r) => (
+                      <tr key={r.row} className="bg-red-50 border-t border-slate-50">
+                        <td className="px-2 py-1.5">{validRows[r.row - 1]?.rowIndex ?? '-'}</td>
+                        <td className="px-2 py-1.5">{validRows[r.row - 1]?.username ?? '-'}</td>
+                        <td className="px-2 py-1.5 text-red-600">{r.message}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Step 4: Finish */}
-      <div className={`bg-white p-6 rounded-lg shadow mb-4 ${step !== 4 ? 'hidden' : ''}`}>
-        <h2 className="text-lg font-semibold mb-4">Hoàn thành</h2>
-        <div className="space-y-4">
-          <div className="p-4 bg-green-100 text-green-800 rounded">
-            {message}
-          </div>
           <button
-            onClick={handleFinish}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={handleReset}
+            className="px-4 py-2.5 bg-[#14264b] text-white rounded-xl hover:bg-cyan-400 transition-colors duration-200 font-medium shadow-sm"
           >
             Import tiếp
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsNumber, IsString, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsNumber, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -177,6 +177,59 @@ export class ImportDebtDto {
   @IsOptional()
   @IsString()
   editFields?: string; // JSON string of fields to edit in edit mode
+}
+
+/**
+ * Single row for bulk "Thêm mới công nợ" import from Excel
+ */
+export class ImportCreateDebtRowDto {
+  @IsString()
+  username: string;
+
+  @IsString()
+  noiDung: string;
+
+  @IsString()
+  ngay: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  dr?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  cr?: number;
+
+  @IsOptional()
+  @IsString()
+  ghiChu?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  loaiPhatSinh?: number;
+
+  @IsOptional()
+  @IsString()
+  bankAccount?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0)
+  sanLuong?: number;
+}
+
+/**
+ * Bulk import debts (Thêm mới mode) — rows already parsed/validated client-side from Excel
+ */
+export class ImportCreateDebtDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImportCreateDebtRowDto)
+  rows: ImportCreateDebtRowDto[];
 }
 
 /**
