@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FiArrowLeft, FiDownload, FiUploadCloud } from 'react-icons/fi';
 import {
@@ -11,21 +12,19 @@ import {
   ImportDebtRow,
   ImportDebtResponse,
 } from '@/lib/api';
+import { useAuth } from '@/hooks/use-auth-context';
 import { downloadDataAsExcel, readExcelSheetNames, readExcelSheetRows } from '@/lib/excel-download';
+
+const DEBT_MANAGEMENT_ALLOWED_ROLES = ['admin', 'order', 'sale'];
 
 /**
  * Debt Import Page — bulk "Thêm mới công nợ" from Excel
  * Converted from admin/ManageCongNo_Import.aspx (add-new mode)
  */
 
+// Chỉ 2 lựa chọn — khớp với select "Loại phát sinh" trên form thêm thủ công (trang Quản lý công nợ)
 const LOAI_PHAT_SINH_LABELS: Record<number, string> = {
-  1: 'Phí mua hàng',
-  2: 'Phát sinh khác',
-  3: 'Phí ship từ nước ngoài về',
-  4: 'Phí ship trong nước',
-  5: 'Đặt cọc',
-  6: 'Phí ship về VN lô hàng',
-  7: 'Thuế hải quan lô hàng',
+  2: 'Phí mua hàng và phát sinh khác',
   8: 'Cân Kg',
 };
 
@@ -39,13 +38,14 @@ const HEADER_KEY_MAP: Record<string, string> = {
   'nội dung': 'noiDung',
   'ngày': 'ngay',
   'loại phát sinh': 'loaiPhatSinh',
+  'sản lượng (kg)': 'sanLuong',
   'tài khoản': 'bankAccount',
   'tiền nợ (dr)': 'dr',
   'tiền có (cr)': 'cr',
   'ghi chú': 'ghiChu',
 };
 
-const TEMPLATE_HEADERS = ['User', 'Nội dung', 'Ngày', 'Loại phát sinh', 'Tài khoản', 'Tiền Nợ (DR)', 'Tiền Có (CR)', 'Ghi chú'];
+const TEMPLATE_HEADERS = ['User', 'Nội dung', 'Ngày', 'Loại phát sinh', 'Sản lượng (kg)', 'Tài khoản', 'Tiền Nợ (DR)', 'Tiền Có (CR)', 'Ghi chú'];
 
 interface ParsedDebtRow {
   rowIndex: number; // dòng thực tế trong file Excel (tính cả header)
@@ -53,6 +53,7 @@ interface ParsedDebtRow {
   noiDung: string;
   ngay: string;
   loaiPhatSinh: number;
+  sanLuong: number | undefined; // chỉ áp dụng khi loaiPhatSinh === 8 (Cân Kg)
   bankAccount: string;
   dr: number;
   cr: number;
@@ -128,6 +129,19 @@ function parseImportRows(
       }
     }
 
+    let sanLuong: number | undefined;
+    const sanLuongRaw = get('sanLuong');
+    const sanLuongStr = sanLuongRaw === null || sanLuongRaw === undefined ? '' : String(sanLuongRaw).trim();
+    if (loaiPhatSinh === 8) {
+      if (sanLuongStr === '') {
+        errors.push('Thiếu Sản lượng (kg) cho loại phát sinh Cân Kg');
+      } else {
+        const parsed = Number(sanLuongStr);
+        if (isNaN(parsed) || parsed <= 0) errors.push(`Sản lượng (kg) "${sanLuongStr}" phải là số lớn hơn 0`);
+        else sanLuong = parsed;
+      }
+    }
+
     const bankAccount = String(get('bankAccount') ?? '').trim();
     if (bankAccount && !bankSet.has(bankAccount.toLowerCase())) {
       errors.push(`Tài khoản "${bankAccount}" không tồn tại`);
@@ -153,6 +167,7 @@ function parseImportRows(
       noiDung,
       ngay,
       loaiPhatSinh,
+      sanLuong,
       bankAccount,
       dr: isNaN(dr) ? 0 : dr,
       cr: isNaN(cr) ? 0 : cr,
@@ -171,7 +186,20 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function DebtImportPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const hasDebtAccess = (authUser?.roles ?? []).some((role) =>
+    DEBT_MANAGEMENT_ALLOWED_ROLES.includes(role.toLowerCase())
+  );
+
+  // Chỉ role admin/order/sale được import công nợ; role khác bị đá về trang chủ admin.
+  useEffect(() => {
+    if (!authLoading && !hasDebtAccess) {
+      router.replace('/admin');
+    }
+  }, [authLoading, hasDebtAccess, router]);
+
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [file, setFile] = useState<File | null>(null);
   const [sheetNames, setSheetNames] = useState<string[]>([]);
@@ -181,8 +209,11 @@ export default function DebtImportPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<ImportDebtResponse | null>(null);
 
-  const { data: users } = useQuery({ queryKey: ['debt-report-users'], queryFn: getDebtReportUsers });
-  const { data: bankAccounts } = useQuery({ queryKey: ['bank-accounts'], queryFn: getBankAccounts });
+  const { data: users, isLoading: usersLoading } = useQuery({ queryKey: ['debt-report-users'], queryFn: getDebtReportUsers, enabled: hasDebtAccess });
+  const { data: bankAccounts, isLoading: bankAccountsLoading } = useQuery({ queryKey: ['bank-accounts'], queryFn: getBankAccounts, enabled: hasDebtAccess });
+  // Chờ 2 danh sách này load xong trước khi cho tải file mẫu, tránh file mẫu bị thiếu dropdown
+  // User/Tài khoản nếu người dùng bấm quá sớm lúc mạng chậm.
+  const templateDataReady = !usersLoading && !bankAccountsLoading;
 
   const validRows = useMemo(() => parsedRows.filter((r) => r.errors.length === 0), [parsedRows]);
   const invalidCount = parsedRows.length - validRows.length;
@@ -200,12 +231,41 @@ export default function DebtImportPage() {
   });
 
   const handleDownloadTemplate = () => {
+    const usernames = (users || []).map((u) => u.UserName);
+    const bankAccountNames = (bankAccounts || [])
+      .map((b) => b.TenTaiKhoanNganHang)
+      .filter((name): name is string => !!name);
+    const dropdowns: Record<string, string[]> = {};
+    if (usernames.length > 0) dropdowns['User'] = usernames;
+    if (bankAccountNames.length > 0) dropdowns['Tài khoản'] = bankAccountNames;
+    dropdowns['Loại phát sinh'] = Object.values(LOAI_PHAT_SINH_LABELS);
+
+    // Cột "Ngày" luôn ở định dạng Text (@) — xem applyTextColumnFormat trong excel-download.ts.
+    // Nếu để Excel tự nhận là kiểu Date, việc gõ tay sẽ bị Excel diễn giải theo locale máy
+    // (có máy hiểu MM/DD, có máy hiểu DD/MM) rồi hiển thị lại gây ra hiện tượng "đảo ngày/tháng".
+    // Dùng text thì đúng y như những gì gõ vào, không phụ thuộc locale.
+    const todayStr = formatDateCell(new Date());
+
     downloadDataAsExcel(
       [
         TEMPLATE_HEADERS,
-        ['user01', 'CK CONG NO', '04/07/2026', 'Phát sinh khác', 'Techcombank - STK 6961691818 - Công ty', 0, 500000, 'Ví dụ dòng mẫu'],
+        [
+          usernames[0] ?? 'user01',
+          'CK CONG NO',
+          todayStr,
+          LOAI_PHAT_SINH_LABELS[2],
+          '',
+          bankAccountNames[0] ?? '',
+          0,
+          500000,
+          'Ví dụ dòng mẫu',
+        ],
       ],
       'Mau_Import_CongNo.xlsx',
+      undefined,
+      Object.keys(dropdowns).length > 0 ? dropdowns : undefined,
+      ['Ngày'],
+      'Import Công Nợ',
     );
   };
 
@@ -275,6 +335,7 @@ export default function DebtImportPage() {
       cr: r.cr,
       ghiChu: r.ghiChu || undefined,
       loaiPhatSinh: r.loaiPhatSinh,
+      sanLuong: r.sanLuong,
       bankAccount: r.bankAccount || undefined,
     }));
     setErrorMessage(null);
@@ -316,20 +377,23 @@ export default function DebtImportPage() {
             <h2 className="text-base font-bold text-slate-800">Bước 1: Chọn file Excel</h2>
             <p className="text-xs text-slate-500 mt-0.5">
               File phải có các cột: {TEMPLATE_HEADERS.join(', ')}. Chỉ hỗ trợ thêm mới công nợ.
+              Trong file mẫu, cột &quot;User&quot;, &quot;Loại phát sinh&quot; và &quot;Tài khoản&quot; có sẵn danh sách để chọn cho đúng, tránh gõ sai. Dòng ví dụ chỉ để minh họa định dạng, hãy xóa hoặc thay bằng dữ liệu thật trước khi import.
             </p>
           </div>
 
           <button
             type="button"
             onClick={handleDownloadTemplate}
-            className="inline-flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50"
+            disabled={!templateDataReady}
+            className="inline-flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FiDownload className="w-3.5 h-3.5" /> Tải file mẫu
+            <FiDownload className="w-3.5 h-3.5" /> {templateDataReady ? 'Tải file mẫu' : 'Đang tải danh sách...'}
           </button>
 
           <div className="p-3 bg-slate-50 rounded-lg text-xs text-slate-600 space-y-1">
             <p className="font-medium text-slate-700">Giá trị hợp lệ cho &quot;Loại phát sinh&quot;:</p>
-            <p>{Object.values(LOAI_PHAT_SINH_LABELS).join(', ')} (để trống = Phát sinh khác)</p>
+            <p>{Object.values(LOAI_PHAT_SINH_LABELS).join(', ')} (để trống = {LOAI_PHAT_SINH_LABELS[2]})</p>
+            <p className="font-medium text-slate-700 pt-1">Cột &quot;Sản lượng (kg)&quot; là bắt buộc khi Loại phát sinh = Cân Kg, ngược lại để trống.</p>
             <p className="font-medium text-slate-700 pt-1">Cột &quot;Tài khoản&quot; (nếu điền) phải khớp đúng tên tài khoản ngân hàng đang hoạt động trong hệ thống.</p>
           </div>
 
@@ -410,6 +474,7 @@ export default function DebtImportPage() {
                   <th className="px-2 py-2 text-left font-medium text-slate-600">Nội dung</th>
                   <th className="px-2 py-2 text-left font-medium text-slate-600">Ngày</th>
                   <th className="px-2 py-2 text-left font-medium text-slate-600">Loại phát sinh</th>
+                  <th className="px-2 py-2 text-right font-medium text-slate-600">SL (kg)</th>
                   <th className="px-2 py-2 text-left font-medium text-slate-600">Tài khoản</th>
                   <th className="px-2 py-2 text-right font-medium text-slate-600">DR</th>
                   <th className="px-2 py-2 text-right font-medium text-slate-600">CR</th>
@@ -425,6 +490,7 @@ export default function DebtImportPage() {
                     <td className="px-2 py-1.5">{r.noiDung}</td>
                     <td className="px-2 py-1.5">{r.ngay}</td>
                     <td className="px-2 py-1.5">{LOAI_PHAT_SINH_LABELS[r.loaiPhatSinh]}</td>
+                    <td className="px-2 py-1.5 text-right">{r.sanLuong != null ? r.sanLuong.toLocaleString('vi-VN', { maximumFractionDigits: 4 }) : ''}</td>
                     <td className="px-2 py-1.5">{r.bankAccount}</td>
                     <td className="px-2 py-1.5 text-right">{r.dr ? r.dr.toLocaleString('vi-VN') : ''}</td>
                     <td className="px-2 py-1.5 text-right">{r.cr ? r.cr.toLocaleString('vi-VN') : ''}</td>

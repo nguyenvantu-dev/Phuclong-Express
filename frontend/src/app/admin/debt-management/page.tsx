@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -21,7 +22,10 @@ import {
   UpdateDebtParams,
 } from '@/lib/api';
 import { useCurrentUser } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-context';
 import { useLocalStorageHistory } from '@/hooks/use-localstorage-history';
+
+const DEBT_MANAGEMENT_ALLOWED_ROLES = ['admin', 'order', 'sale'];
 
 const NOI_DUNG_HISTORY_KEY = 'debt-management:noi-dung-history';
 const NOI_DUNG_HISTORY_MAX = 50;
@@ -73,8 +77,20 @@ const parseSanLuongTotal = (raw: string): number => {
  * UI/UX: Professional enterprise admin dashboard with cyan theme
  */
 export default function DebtManagementPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const currentUser = useCurrentUser();
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const hasDebtAccess = (authUser?.roles ?? []).some((role) =>
+    DEBT_MANAGEMENT_ALLOWED_ROLES.includes(role.toLowerCase())
+  );
+
+  // Chỉ role admin/order/sale được thao tác công nợ; role khác bị đá về trang chủ admin.
+  useEffect(() => {
+    if (!authLoading && !hasDebtAccess) {
+      router.replace('/admin');
+    }
+  }, [authLoading, hasDebtAccess, router]);
 
   const getTodayFormatted = () => {
     const d = new Date();
@@ -237,6 +253,7 @@ export default function DebtManagementPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['debt-management', filters],
     queryFn: () => getDebtManagementList(filters),
+    enabled: hasDebtAccess,
   });
 
   // Đo bề rộng nội dung/khung của bảng để biết khi nào cần thanh scroll ngang ghim.

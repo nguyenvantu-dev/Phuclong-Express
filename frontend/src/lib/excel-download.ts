@@ -53,14 +53,74 @@ function applySheetStyles(ws: ExcelJS.Worksheet, decimalPlaces?: Record<string, 
   });
 }
 
+// How many data rows (below the header) get the dropdown applied in the template
+const DROPDOWN_DATA_ROWS = 500;
+
+/** Add an Excel dropdown (data validation) to a column, backed by a hidden sheet so long lists (e.g. usernames) aren't limited by Excel's ~255-char inline list formula. */
+function applyDropdownValidations(
+  wb: ExcelJS.Workbook,
+  ws: ExcelJS.Worksheet,
+  headerRow: (string | number | Date | null | undefined)[],
+  dropdowns: Record<string, string[]>,
+): void {
+  Object.entries(dropdowns).forEach(([header, options], listIndex) => {
+    if (!options.length) return;
+    const colIndex = headerRow.findIndex((h) => String(h ?? '') === header);
+    if (colIndex === -1) return;
+
+    const listSheetName = `_list${listIndex}`;
+    const listWs = wb.addWorksheet(listSheetName, { state: 'veryHidden' });
+    options.forEach((opt, i) => { listWs.getCell(i + 1, 1).value = opt; });
+
+    const formula = `'${listSheetName}'!$A$1:$A$${options.length}`;
+    for (let r = 2; r <= DROPDOWN_DATA_ROWS + 1; r++) {
+      ws.getCell(r, colIndex + 1).dataValidation = {
+        type: 'list',
+        allowBlank: true,
+        formulae: [formula],
+        showErrorMessage: true,
+        errorStyle: 'stop',
+        errorTitle: 'Giá trị không hợp lệ',
+        error: `Vui lòng chọn một giá trị có trong danh sách cột "${header}"`,
+      };
+    }
+  });
+}
+
+/** Force a column to Excel's Text format ('@') so Excel never auto-converts typed input into a
+ * locale-dependent date/number — what the user types is exactly what gets stored and read back. */
+function applyTextColumnFormat(
+  ws: ExcelJS.Worksheet,
+  headerRow: (string | number | Date | null | undefined)[],
+  columns: string[],
+): void {
+  columns.forEach((header) => {
+    const colIndex = headerRow.findIndex((h) => String(h ?? '') === header);
+    if (colIndex === -1) return;
+    for (let r = 2; r <= DROPDOWN_DATA_ROWS + 1; r++) {
+      ws.getCell(r, colIndex + 1).numFmt = '@';
+    }
+  });
+}
+
+// Excel sheet names: max 31 chars, can't contain \ / ? * [ ] :
+function sanitizeSheetName(name: string): string {
+  return name.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Sheet1';
+}
+
 async function buildWorkbook(
-  rows: (string | number | null | undefined)[][],
+  rows: (string | number | Date | null | undefined)[][],
   decimalPlaces?: Record<string, number>,
+  dropdowns?: Record<string, string[]>,
+  textColumns?: string[],
+  sheetName?: string,
 ): Promise<ExcelJS.Workbook> {
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('Sheet1');
+  const ws = wb.addWorksheet(sheetName ? sanitizeSheetName(sheetName) : 'Sheet1');
   ws.addRows(rows);
   applySheetStyles(ws, decimalPlaces);
+  if (dropdowns) applyDropdownValidations(wb, ws, rows[0] ?? [], dropdowns);
+  if (textColumns) applyTextColumnFormat(ws, rows[0] ?? [], textColumns);
   return wb;
 }
 
@@ -81,11 +141,14 @@ async function triggerDownload(wb: ExcelJS.Workbook, filename: string): Promise<
  * First row is treated as the header — bold, dark background, white text.
  */
 export function downloadDataAsExcel(
-  rows: (string | number | null | undefined)[][],
+  rows: (string | number | Date | null | undefined)[][],
   filename: string,
   decimalPlaces?: Record<string, number>,
+  dropdowns?: Record<string, string[]>,
+  textColumns?: string[],
+  sheetName?: string,
 ): void {
-  buildWorkbook(rows, decimalPlaces).then((wb) => triggerDownload(wb, filename)).catch(console.error);
+  buildWorkbook(rows, decimalPlaces, dropdowns, textColumns, sheetName).then((wb) => triggerDownload(wb, filename)).catch(console.error);
 }
 
 /** Read the sheet names of an uploaded .xlsx file, in workbook order. */

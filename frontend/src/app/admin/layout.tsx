@@ -52,8 +52,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setSidebarCollapsed(localStorage.getItem('admin-sidebar-collapsed') === 'true');
   }, []);
 
-  const { user, logout } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const qnaBadgeCount = useQnaBadgeCount();
+  const hasAdminAccess = isAuthenticated && (user?.roles?.length ?? 0) > 0;
+
+  // Chỉ user đã đăng nhập và có ít nhất 1 role mới được vào khu vực admin.
+  useEffect(() => {
+    if (!authLoading && !hasAdminAccess) {
+      router.replace('/');
+    }
+  }, [authLoading, hasAdminAccess, router]);
 
   // Navigation items with submenus
   const navItems: NavItem[] = [
