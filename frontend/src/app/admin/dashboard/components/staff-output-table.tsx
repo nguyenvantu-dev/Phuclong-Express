@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DataTable } from '@/app/components/admin';
 import { DashboardStaffOutput, getDashboardOutputDetail } from '@/lib/api';
+import { downloadDataAsExcel } from '@/lib/excel-download';
 
 interface StaffOutputTableProps {
   data: DashboardStaffOutput[];
@@ -40,6 +41,15 @@ export function StaffOutputTable({ data, loading }: StaffOutputTableProps) {
 
   const totalDetailKg = (detail.data || []).reduce((s, r) => s + r.sanLuongKg, 0);
 
+  const handleExport = () => {
+    if (!selected || !detail.data?.length) return;
+    const rows = [
+      ['Ngày ghi nợ', 'Khách hàng', 'Nội dung', 'Sản lượng (kg)', 'Ghi chú'],
+      ...detail.data.map((r) => [r.ngayGhiNo, r.khachHang, r.noiDung, r.sanLuongKg, r.ghiChu]),
+    ];
+    downloadDataAsExcel(rows, `ChiTietSanLuong_${selected.nhanVien}_${selected.thang}.xlsx`);
+  };
+
   return (
     <>
       <div className="bg-white rounded-lg border border-[#14264b]/20 p-4 shadow-sm">
@@ -71,12 +81,21 @@ export function StaffOutputTable({ data, loading }: StaffOutputTableProps) {
                   {selected.nhanVien} &mdash; Tháng {selected.thang}
                 </p>
               </div>
-              <button
-                onClick={() => setSelected(null)}
-                className="text-gray-400 hover:text-[#14264b] transition-colors text-xl leading-none"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleExport}
+                  disabled={!detail.data?.length}
+                  className="text-xs font-medium px-3 py-1.5 rounded-md bg-[#14264b] text-white hover:bg-[#14264b]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Xuất Excel
+                </button>
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-gray-400 hover:text-[#14264b] transition-colors text-xl leading-none"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             {/* Body */}
