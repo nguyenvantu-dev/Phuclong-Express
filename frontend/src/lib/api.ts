@@ -1140,6 +1140,7 @@ export interface DebtManagementItem {
   DonHang_ID?: number | null; // FK đơn hàng; null với công nợ thủ công
   OrderNumber?: string | null; // Mã đơn hàng (DonHang.ordernumber) — để kế toán đối chiếu
   Tuyen?: string | null; // Tuyến = Quốc gia (tbQuocGia.TenQuocGia)
+  QuocGiaID?: number | null; // FK tbQuocGia tự nhập trên công nợ (độc lập với đơn hàng)
 }
 
 export interface DebtManagementResponse {
@@ -1169,6 +1170,7 @@ export interface CreateDebtParams {
   status?: number;
   allowEmptyNoiDung?: boolean;
   sanLuong?: number; // Sản lượng (kg) — gửi khi loaiPhatSinh === 8
+  quocGiaId?: number; // Tuyến (Quốc gia)
 }
 
 export const createDebt = async (data: CreateDebtParams): Promise<{ success: boolean; message?: string }> => {
@@ -1186,6 +1188,7 @@ export interface ImportDebtRow {
   loaiPhatSinh?: number;
   bankAccount?: string;
   sanLuong?: number;
+  quocGiaId?: number; // Tuyến (Quốc gia)
 }
 
 export interface ImportDebtResult {
@@ -1216,6 +1219,7 @@ export interface UpdateDebtParams {
   updatedBy?: string;
   loaiPhatSinh?: number; // dùng để backend quyết định lưu/null sản lượng khi sửa
   sanLuong?: number; // Sản lượng (kg) — gửi khi loaiPhatSinh === 8
+  quocGiaId?: number; // Tuyến (Quốc gia)
 }
 
 export const updateDebt = async (

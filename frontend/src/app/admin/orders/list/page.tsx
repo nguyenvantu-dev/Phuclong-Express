@@ -512,8 +512,8 @@ export default function EditOrderListPage() {
       onChange: (dates) => {
         if (dates[0]) {
           const d = dates[0];
-          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-          setFilters(prev => ({ ...prev, startDate: formatted, page: 1 }));
+          const isoFormatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          setFilters(prev => ({ ...prev, startDate: isoFormatted, page: 1 }));
         }
       },
     });
@@ -523,8 +523,8 @@ export default function EditOrderListPage() {
       onChange: (dates) => {
         if (dates[0]) {
           const d = dates[0];
-          const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-          setFilters(prev => ({ ...prev, endDate: formatted, page: 1 }));
+          const isoFormatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          setFilters(prev => ({ ...prev, endDate: isoFormatted, page: 1 }));
         }
       },
     });

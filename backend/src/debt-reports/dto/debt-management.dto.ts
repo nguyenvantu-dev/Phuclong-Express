@@ -106,6 +106,12 @@ export class CreateDebtDto {
   @Type(() => Number)
   @Min(0)
   sanLuong?: number;
+
+  // Tuyến (Quốc gia) — độc lập với đơn hàng, chọn từ tbQuocGia
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  quocGiaId?: number;
 }
 
 /**
@@ -161,6 +167,12 @@ export class UpdateDebtManagementDto {
   @Type(() => Number)
   @Min(0)
   sanLuong?: number;
+
+  // Tuyến (Quốc gia) — độc lập với đơn hàng, chọn từ tbQuocGia
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  quocGiaId?: number;
 }
 
 /**
@@ -220,6 +232,12 @@ export class ImportCreateDebtRowDto {
   @Type(() => Number)
   @Min(0)
   sanLuong?: number;
+
+  // Tuyến (Quốc gia) — độc lập với đơn hàng, chọn từ tbQuocGia
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  quocGiaId?: number;
 }
 
 /**

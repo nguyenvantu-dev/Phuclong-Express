@@ -13,6 +13,7 @@ import {
   getDebtReportUsers,
   getBankAccounts,
   getBatchesByUsername,
+  getQuocGia,
   createDebt,
   updateDebt,
   deleteDebt,
@@ -124,6 +125,7 @@ export default function DebtManagementPage() {
     loaiPhatSinh: 2,
     bankAccount: '' as string,
     sanLuongInput: '', // Chuỗi nhập sản lượng (kg), nhiều số cách nhau bằng dấu cách. Chỉ dùng khi loaiPhatSinh === 8
+    quocGiaId: undefined as number | undefined,
   });
 
   // UI State
@@ -175,6 +177,7 @@ export default function DebtManagementPage() {
       loaiPhatSinh: 2,
       bankAccount: '',
       sanLuongInput: '',
+      quocGiaId: undefined,
     });
     setUsernameInput('');
     setEditingId(null);
@@ -465,6 +468,12 @@ export default function DebtManagementPage() {
     queryFn: getBankAccounts,
   });
 
+  // Fetch countries (Tuyến) for dropdown
+  const { data: countries } = useQuery({
+    queryKey: ['quoc-gia'],
+    queryFn: getQuocGia,
+  });
+
   // Fetch batches when username changes
   const { data: batches } = useQuery({
     queryKey: ['batches', newDebt.username],
@@ -659,6 +668,11 @@ export default function DebtManagementPage() {
                 return;
               }
 
+              if (!newDebt.quocGiaId) {
+                setErrorMessage('Vui lòng chọn Tuyến');
+                return;
+              }
+
               // Tổng sản lượng (kg) từ chuỗi nhập nhiều số, chỉ áp dụng cho loại "Cân Kg"
               const sanLuongTotal =
                 newDebt.loaiPhatSinh === 8 ? parseSanLuongTotal(newDebt.sanLuongInput) : undefined;
@@ -674,6 +688,7 @@ export default function DebtManagementPage() {
                     ghiChu: newDebt.ghiChu,
                     loaiPhatSinh: newDebt.loaiPhatSinh,
                     sanLuong: sanLuongTotal,
+                    quocGiaId: newDebt.quocGiaId,
                     updatedBy: currentUser?.username || 'admin',
                   },
                 });
@@ -788,7 +803,10 @@ export default function DebtManagementPage() {
                 <div className="relative">
                   <select
                     value={newDebt.loaiPhatSinh}
-                    onChange={(e) => setNewDebt({ ...newDebt, loaiPhatSinh: Number(e.target.value) })}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      setNewDebt({ ...newDebt, loaiPhatSinh: value, cr: value === 8 ? 0 : newDebt.cr });
+                    }}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
                   >
                     <option value={2}>Phí mua hàng và phát sinh khác</option>
@@ -844,6 +862,27 @@ export default function DebtManagementPage() {
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">
+                  Tuyến <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={newDebt.quocGiaId ?? ''}
+                    onChange={(e) => setNewDebt({ ...newDebt, quocGiaId: e.target.value ? Number(e.target.value) : undefined })}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all bg-white cursor-pointer appearance-none"
+                  >
+                    <option value="">--Chọn tuyến--</option>
+                    {countries?.map((country) => (
+                      <option key={country.QuocGiaID} value={country.QuocGiaID}>
+                        {country.TenQuocGia}
+                      </option>
+                    ))}
+                  </select>
+                  <FiChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
               {newDebt.username && (
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-700">Lô hàng</label>
@@ -885,8 +924,9 @@ export default function DebtManagementPage() {
                   type="number"
                   value={newDebt.cr === 0 ? '' : newDebt.cr}
                   onChange={(e) => setNewDebt({ ...newDebt, cr: e.target.value === '' ? 0 : Number(e.target.value) })}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all"
-                  placeholder="0"
+                  disabled={newDebt.loaiPhatSinh === 8}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#14264b] focus:ring-2 focus:ring-[#14264b]/20 transition-all disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                  placeholder={newDebt.loaiPhatSinh === 8 ? 'Không áp dụng cho Cân Kg' : '0'}
                 />
               </div>
 
@@ -1188,6 +1228,7 @@ export default function DebtManagementPage() {
                                 loaiPhatSinh: item.LoaiPhatSinh ?? 2,
                                 bankAccount: '',
                                 sanLuongInput: item.SanLuong != null ? String(item.SanLuong) : '',
+                                quocGiaId: item.QuocGiaID ?? undefined,
                               });
                               setUsernameInput(item.UserName || '');
                               setErrorMessage(null);

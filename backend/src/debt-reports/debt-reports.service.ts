@@ -1292,6 +1292,7 @@ export class DebtReportsService {
       status?: number;
       allowEmptyNoiDung?: boolean;
       sanLuong?: number;
+      quocGiaId?: number;
     },
     username?: string,
   ): Promise<{ success: boolean; message?: string }> {
@@ -1318,6 +1319,7 @@ export class DebtReportsService {
       status?: number;
       allowEmptyNoiDung?: boolean;
       sanLuong?: number;
+      quocGiaId?: number;
     },
     username?: string,
     opts?: { skipLog?: boolean },
@@ -1331,6 +1333,10 @@ export class DebtReportsService {
 
       if (!dto.ngay || dto.ngay.trim() === '') {
         return { success: false, message: 'Bạn phải nhập ngày phát sinh công nợ' };
+      }
+
+      if (!dto.quocGiaId) {
+        return { success: false, message: 'Bạn phải chọn Tuyến' };
       }
 
       const dr = dto.dr ?? 0;
@@ -1366,7 +1372,8 @@ export class DebtReportsService {
           @LoHangID = :loHangID,
           @NguoiTao = :nguoiTao,
           @LoaiPhatSinh = :loaiPhatSinh,
-          @SanLuong = :sanLuong`,
+          @SanLuong = :sanLuong,
+          @QuocGiaID = :quocGiaId`,
         {
           replacements: {
             username: dto.username,
@@ -1380,6 +1387,7 @@ export class DebtReportsService {
             nguoiTao: username || 'system',
             loaiPhatSinh: dto.loaiPhatSinh || 2,
             sanLuong,
+            quocGiaId: dto.quocGiaId || null,
           },
           type: 'SELECT' as const,
         },
@@ -1451,6 +1459,7 @@ export class DebtReportsService {
       loaiPhatSinh?: number;
       bankAccount?: string;
       sanLuong?: number;
+      quocGiaId?: number;
     }[],
     username: string,
   ): Promise<{
@@ -1511,6 +1520,7 @@ export class DebtReportsService {
       updatedBy?: string;
       loaiPhatSinh?: number;
       sanLuong?: number;
+      quocGiaId?: number;
     },
     username?: string,
   ): Promise<{ success: boolean; message?: string }> {
@@ -1533,6 +1543,10 @@ export class DebtReportsService {
         return { success: false, message: 'Có lỗi trong quá trình thực hiện' };
       }
 
+      if (!dto.quocGiaId) {
+        return { success: false, message: 'Bạn phải chọn Tuyến' };
+      }
+
       const dr = dto.dr ?? 0;
       const cr = dto.cr ?? 0;
       const status = dto.status ?? 1;
@@ -1551,6 +1565,7 @@ export class DebtReportsService {
           @LoHangID = :loHangID,
           @NguoiTao = :nguoiCapNhat,
           @SanLuong = :sanLuong,
+          @QuocGiaID = :quocGiaId,
           @udUserName = 1,
           @udNoiDung = 1,
           @udDR = 1,
@@ -1558,7 +1573,8 @@ export class DebtReportsService {
           @udGhiChu = 1,
           @udStatus = 1,
           @udLoHangID = 1,
-          @udSanLuong = 1`,
+          @udSanLuong = 1,
+          @udQuocGiaID = 1`,
         {
           replacements: {
             id,
@@ -1571,6 +1587,7 @@ export class DebtReportsService {
             loHangID: dto.loHangId || null,
             nguoiCapNhat: dto.updatedBy || username || 'system',
             sanLuong,
+            quocGiaId: dto.quocGiaId || null,
           },
           type: 'SELECT' as const,
         },

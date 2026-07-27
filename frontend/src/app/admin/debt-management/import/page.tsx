@@ -8,6 +8,7 @@ import { FiArrowLeft, FiDownload, FiUploadCloud } from 'react-icons/fi';
 import {
   getDebtReportUsers,
   getBankAccounts,
+  getQuocGia,
   importCreateDebts,
   ImportDebtRow,
   ImportDebtResponse,
@@ -38,6 +39,7 @@ const HEADER_KEY_MAP: Record<string, string> = {
   'nội dung': 'noiDung',
   'ngày': 'ngay',
   'loại phát sinh': 'loaiPhatSinh',
+  'tuyến': 'tuyen',
   'sản lượng (kg)': 'sanLuong',
   'tài khoản': 'bankAccount',
   'tiền nợ (dr)': 'dr',
@@ -45,7 +47,7 @@ const HEADER_KEY_MAP: Record<string, string> = {
   'ghi chú': 'ghiChu',
 };
 
-const TEMPLATE_HEADERS = ['User', 'Nội dung', 'Ngày', 'Loại phát sinh', 'Sản lượng (kg)', 'Tài khoản', 'Tiền Nợ (DR)', 'Tiền Có (CR)', 'Ghi chú'];
+const TEMPLATE_HEADERS = ['User', 'Nội dung', 'Ngày', 'Loại phát sinh', 'Tuyến', 'Sản lượng (kg)', 'Tài khoản', 'Tiền Nợ (DR)', 'Tiền Có (CR)', 'Ghi chú'];
 
 interface ParsedDebtRow {
   rowIndex: number; // dòng thực tế trong file Excel (tính cả header)
@@ -53,6 +55,8 @@ interface ParsedDebtRow {
   noiDung: string;
   ngay: string;
   loaiPhatSinh: number;
+  tuyen: string;
+  quocGiaId: number | undefined;
   sanLuong: number | undefined; // chỉ áp dụng khi loaiPhatSinh === 8 (Cân Kg)
   bankAccount: string;
   dr: number;
@@ -79,6 +83,7 @@ function parseImportRows(
   rawRows: (string | number | Date | null)[][],
   users: { UserName: string }[],
   bankAccounts: { TenTaiKhoanNganHang: string }[],
+  countries: { QuocGiaID: number; TenQuocGia: string }[],
 ): ParsedDebtRow[] {
   if (rawRows.length === 0) return [];
 
@@ -91,6 +96,7 @@ function parseImportRows(
 
   const userSet = new Set(users.map((u) => u.UserName.toLowerCase()));
   const bankSet = new Set(bankAccounts.map((b) => b.TenTaiKhoanNganHang.toLowerCase()));
+  const countryMap = new Map(countries.map((c) => [c.TenQuocGia.toLowerCase(), c.QuocGiaID]));
 
   const dataRows = rawRows
     .slice(1)
@@ -127,6 +133,16 @@ function parseImportRows(
         if (byLabel) loaiPhatSinh = byLabel;
         else errors.push(`Loại phát sinh "${loaiRaw}" không hợp lệ`);
       }
+    }
+
+    const tuyen = String(get('tuyen') ?? '').trim();
+    let quocGiaId: number | undefined;
+    if (!tuyen) {
+      errors.push('Thiếu Tuyến');
+    } else {
+      const matched = countryMap.get(tuyen.toLowerCase());
+      if (matched === undefined) errors.push(`Tuyến "${tuyen}" không tồn tại`);
+      else quocGiaId = matched;
     }
 
     let sanLuong: number | undefined;
@@ -167,6 +183,8 @@ function parseImportRows(
       noiDung,
       ngay,
       loaiPhatSinh,
+      tuyen,
+      quocGiaId,
       sanLuong,
       bankAccount,
       dr: isNaN(dr) ? 0 : dr,
@@ -211,9 +229,10 @@ export default function DebtImportPage() {
 
   const { data: users, isLoading: usersLoading } = useQuery({ queryKey: ['debt-report-users'], queryFn: getDebtReportUsers, enabled: hasDebtAccess });
   const { data: bankAccounts, isLoading: bankAccountsLoading } = useQuery({ queryKey: ['bank-accounts'], queryFn: getBankAccounts, enabled: hasDebtAccess });
-  // Chờ 2 danh sách này load xong trước khi cho tải file mẫu, tránh file mẫu bị thiếu dropdown
-  // User/Tài khoản nếu người dùng bấm quá sớm lúc mạng chậm.
-  const templateDataReady = !usersLoading && !bankAccountsLoading;
+  const { data: countries, isLoading: countriesLoading } = useQuery({ queryKey: ['quoc-gia'], queryFn: getQuocGia, enabled: hasDebtAccess });
+  // Chờ 3 danh sách này load xong trước khi cho tải file mẫu, tránh file mẫu bị thiếu dropdown
+  // User/Tài khoản/Tuyến nếu người dùng bấm quá sớm lúc mạng chậm.
+  const templateDataReady = !usersLoading && !bankAccountsLoading && !countriesLoading;
 
   const validRows = useMemo(() => parsedRows.filter((r) => r.errors.length === 0), [parsedRows]);
   const invalidCount = parsedRows.length - validRows.length;
@@ -235,9 +254,11 @@ export default function DebtImportPage() {
     const bankAccountNames = (bankAccounts || [])
       .map((b) => b.TenTaiKhoanNganHang)
       .filter((name): name is string => !!name);
+    const countryNames = (countries || []).map((c) => c.TenQuocGia);
     const dropdowns: Record<string, string[]> = {};
     if (usernames.length > 0) dropdowns['User'] = usernames;
     if (bankAccountNames.length > 0) dropdowns['Tài khoản'] = bankAccountNames;
+    if (countryNames.length > 0) dropdowns['Tuyến'] = countryNames;
     dropdowns['Loại phát sinh'] = Object.values(LOAI_PHAT_SINH_LABELS);
 
     // Cột "Ngày" luôn ở định dạng Text (@) — xem applyTextColumnFormat trong excel-download.ts.
@@ -254,6 +275,7 @@ export default function DebtImportPage() {
           'CK CONG NO',
           todayStr,
           LOAI_PHAT_SINH_LABELS[2],
+          countryNames[0] ?? '',
           '',
           bankAccountNames[0] ?? '',
           0,
@@ -312,7 +334,7 @@ export default function DebtImportPage() {
     setErrorMessage(null);
     try {
       const rawRows = await readExcelSheetRows(file, sheetName);
-      const parsed = parseImportRows(rawRows, users || [], bankAccounts || []);
+      const parsed = parseImportRows(rawRows, users || [], bankAccounts || [], countries || []);
       if (parsed.length === 0) {
         setErrorMessage('Sheet không có dữ liệu để import');
         return;
@@ -335,6 +357,7 @@ export default function DebtImportPage() {
       cr: r.cr,
       ghiChu: r.ghiChu || undefined,
       loaiPhatSinh: r.loaiPhatSinh,
+      quocGiaId: r.quocGiaId,
       sanLuong: r.sanLuong,
       bankAccount: r.bankAccount || undefined,
     }));
@@ -377,7 +400,7 @@ export default function DebtImportPage() {
             <h2 className="text-base font-bold text-slate-800">Bước 1: Chọn file Excel</h2>
             <p className="text-xs text-slate-500 mt-0.5">
               File phải có các cột: {TEMPLATE_HEADERS.join(', ')}. Chỉ hỗ trợ thêm mới công nợ.
-              Trong file mẫu, cột &quot;User&quot;, &quot;Loại phát sinh&quot; và &quot;Tài khoản&quot; có sẵn danh sách để chọn cho đúng, tránh gõ sai. Dòng ví dụ chỉ để minh họa định dạng, hãy xóa hoặc thay bằng dữ liệu thật trước khi import.
+              Trong file mẫu, cột &quot;User&quot;, &quot;Loại phát sinh&quot;, &quot;Tuyến&quot; và &quot;Tài khoản&quot; có sẵn danh sách để chọn cho đúng, tránh gõ sai. Dòng ví dụ chỉ để minh họa định dạng, hãy xóa hoặc thay bằng dữ liệu thật trước khi import.
             </p>
           </div>
 
@@ -395,6 +418,7 @@ export default function DebtImportPage() {
             <p>{Object.values(LOAI_PHAT_SINH_LABELS).join(', ')} (để trống = {LOAI_PHAT_SINH_LABELS[2]})</p>
             <p className="font-medium text-slate-700 pt-1">Cột &quot;Sản lượng (kg)&quot; là bắt buộc khi Loại phát sinh = Cân Kg, ngược lại để trống.</p>
             <p className="font-medium text-slate-700 pt-1">Cột &quot;Tài khoản&quot; (nếu điền) phải khớp đúng tên tài khoản ngân hàng đang hoạt động trong hệ thống.</p>
+            <p className="font-medium text-slate-700 pt-1">Cột &quot;Tuyến&quot; là bắt buộc; phải khớp đúng tên quốc gia đang có trong hệ thống.</p>
           </div>
 
           <div>
@@ -474,6 +498,7 @@ export default function DebtImportPage() {
                   <th className="px-2 py-2 text-left font-medium text-slate-600">Nội dung</th>
                   <th className="px-2 py-2 text-left font-medium text-slate-600">Ngày</th>
                   <th className="px-2 py-2 text-left font-medium text-slate-600">Loại phát sinh</th>
+                  <th className="px-2 py-2 text-left font-medium text-slate-600">Tuyến</th>
                   <th className="px-2 py-2 text-right font-medium text-slate-600">SL (kg)</th>
                   <th className="px-2 py-2 text-left font-medium text-slate-600">Tài khoản</th>
                   <th className="px-2 py-2 text-right font-medium text-slate-600">DR</th>
@@ -490,6 +515,7 @@ export default function DebtImportPage() {
                     <td className="px-2 py-1.5">{r.noiDung}</td>
                     <td className="px-2 py-1.5">{r.ngay}</td>
                     <td className="px-2 py-1.5">{LOAI_PHAT_SINH_LABELS[r.loaiPhatSinh]}</td>
+                    <td className="px-2 py-1.5">{r.tuyen}</td>
                     <td className="px-2 py-1.5 text-right">{r.sanLuong != null ? r.sanLuong.toLocaleString('vi-VN', { maximumFractionDigits: 4 }) : ''}</td>
                     <td className="px-2 py-1.5">{r.bankAccount}</td>
                     <td className="px-2 py-1.5 text-right">{r.dr ? r.dr.toLocaleString('vi-VN') : ''}</td>
