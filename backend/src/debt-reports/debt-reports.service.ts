@@ -1335,8 +1335,8 @@ export class DebtReportsService {
         return { success: false, message: 'Bạn phải nhập ngày phát sinh công nợ' };
       }
 
-      if (!dto.quocGiaId) {
-        return { success: false, message: 'Bạn phải chọn Tuyến' };
+      if (dto.loaiPhatSinh === 8 && !dto.quocGiaId) {
+        return { success: false, message: 'Bạn phải chọn Tuyến cho loại phát sinh Cân Kg' };
       }
 
       const dr = dto.dr ?? 0;
@@ -1543,8 +1543,8 @@ export class DebtReportsService {
         return { success: false, message: 'Có lỗi trong quá trình thực hiện' };
       }
 
-      if (!dto.quocGiaId) {
-        return { success: false, message: 'Bạn phải chọn Tuyến' };
+      if (dto.loaiPhatSinh === 8 && !dto.quocGiaId) {
+        return { success: false, message: 'Bạn phải chọn Tuyến cho loại phát sinh Cân Kg' };
       }
 
       const dr = dto.dr ?? 0;

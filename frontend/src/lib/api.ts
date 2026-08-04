@@ -2099,21 +2099,26 @@ export const getDashboardOutputDaily = async (
   return response.data;
 };
 
-/** Sản lượng mỗi nhân viên theo tháng (số đơn + kg). */
+/** Sản lượng mỗi nhân viên theo tháng (số đơn + kg), lọc được theo Tuyến (Quốc gia). */
 export const getDashboardOutputByStaff = async (
   fromDate?: string,
   toDate?: string,
+  quocGiaId?: number,
 ): Promise<DashboardStaffOutput[]> => {
-  const response = await apiClient.get(`/dashboard/output-by-staff?${buildDateParams(fromDate, toDate)}`);
+  const params = new URLSearchParams(buildDateParams(fromDate, toDate));
+  if (quocGiaId) params.append('quocGiaId', String(quocGiaId));
+  const response = await apiClient.get(`/dashboard/output-by-staff?${params}`);
   return response.data;
 };
 
-/** Chi tiết từng bản ghi CONGNO của 1 nhân viên trong 1 tháng. */
+/** Chi tiết từng bản ghi CONGNO của 1 nhân viên trong 1 tháng, lọc được theo Tuyến. */
 export const getDashboardOutputDetail = async (
   nhanVien: string,
   thang: string,
+  quocGiaId?: number,
 ): Promise<DashboardStaffOutputDetail[]> => {
   const params = new URLSearchParams({ nhanVien, thang });
+  if (quocGiaId) params.append('quocGiaId', String(quocGiaId));
   const response = await apiClient.get(`/dashboard/output-detail?${params}`);
   return response.data;
 };

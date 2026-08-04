@@ -74,13 +74,21 @@ export class DashboardService {
     }
   }
 
-  /** Sản lượng mỗi nhân viên theo tháng (số đơn + số kg). */
+  /** Sản lượng mỗi nhân viên theo tháng (số đơn + số kg), lọc được theo Tuyến (Quốc gia). */
   async getOutputByStaff(
     fromDate?: string,
     toDate?: string,
+    quocGiaId?: number,
   ): Promise<{ nhanVien: string; thang: string; soDon: number; sanLuongKg: number }[]> {
     try {
-      const rows = await this.execRange('SP_Dashboard_SanLuongNhanVienTheoThang', fromDate, toDate);
+      const { tuNgay, denNgay } = this.resolveRange(fromDate, toDate);
+      const results = await this.sequelize.query(
+        `EXEC SP_Dashboard_SanLuongNhanVienTheoThang @TuNgay = :tuNgay, @DenNgay = :denNgay, @QuocGiaID = :quocGiaId`,
+        { replacements: { tuNgay, denNgay, quocGiaId: quocGiaId ?? null }, type: 'SELECT' as const },
+      );
+      const rows: any[] = Array.isArray(results)
+        ? Array.isArray(results[0]) ? (results[0] as any[]) : (results as any[])
+        : [];
       return rows.map((r) => ({
         nhanVien: r.NhanVien || '',
         thang: r.Thang || '',
@@ -93,15 +101,16 @@ export class DashboardService {
     }
   }
 
-  /** Chi tiết sản lượng từng bản ghi CONGNO của 1 nhân viên trong 1 tháng. */
+  /** Chi tiết sản lượng từng bản ghi CONGNO của 1 nhân viên trong 1 tháng, lọc được theo Tuyến. */
   async getOutputDetailByStaff(
     nhanVien: string,
     thang: string,
+    quocGiaId?: number,
   ): Promise<{ ngayGhiNo: string; khachHang: string; noiDung: string; sanLuongKg: number; ghiChu: string }[]> {
     try {
       const results = await this.sequelize.query(
-        `EXEC SP_Dashboard_SanLuongChiTiet @NhanVien = :nhanVien, @Thang = :thang`,
-        { replacements: { nhanVien, thang }, type: 'SELECT' as const },
+        `EXEC SP_Dashboard_SanLuongChiTiet @NhanVien = :nhanVien, @Thang = :thang, @QuocGiaID = :quocGiaId`,
+        { replacements: { nhanVien, thang, quocGiaId: quocGiaId ?? null }, type: 'SELECT' as const },
       );
       const rows: any[] = Array.isArray(results)
         ? Array.isArray(results[0]) ? (results[0] as any[]) : (results as any[])

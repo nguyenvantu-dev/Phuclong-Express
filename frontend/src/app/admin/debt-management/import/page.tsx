@@ -138,7 +138,7 @@ function parseImportRows(
     const tuyen = String(get('tuyen') ?? '').trim();
     let quocGiaId: number | undefined;
     if (!tuyen) {
-      errors.push('Thiếu Tuyến');
+      if (loaiPhatSinh === 8) errors.push('Thiếu Tuyến cho loại phát sinh Cân Kg');
     } else {
       const matched = countryMap.get(tuyen.toLowerCase());
       if (matched === undefined) errors.push(`Tuyến "${tuyen}" không tồn tại`);

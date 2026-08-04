@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 /**
  * Query parameters cho các endpoint dashboard.
@@ -13,4 +14,10 @@ export class DashboardQueryDto {
   @IsOptional()
   @IsString()
   toDate?: string;
+
+  /** Lọc theo Tuyến (tbQuocGia.QuocGiaID) — chỉ áp dụng cho output-by-staff. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  quocGiaId?: number;
 }

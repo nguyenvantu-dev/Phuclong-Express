@@ -32,18 +32,19 @@ export class DashboardController {
     return this.dashboardService.getOutputByDay(query.fromDate, query.toDate);
   }
 
-  /** Sản lượng mỗi nhân viên theo tháng (số đơn + kg). */
+  /** Sản lượng mỗi nhân viên theo tháng (số đơn + kg), lọc được theo Tuyến. */
   @Get('output-by-staff')
   async getOutputByStaff(@Query() query: DashboardQueryDto) {
-    return this.dashboardService.getOutputByStaff(query.fromDate, query.toDate);
+    return this.dashboardService.getOutputByStaff(query.fromDate, query.toDate, query.quocGiaId);
   }
 
-  /** Chi tiết từng bản ghi CONGNO của 1 nhân viên trong 1 tháng. */
+  /** Chi tiết từng bản ghi CONGNO của 1 nhân viên trong 1 tháng, lọc được theo Tuyến. */
   @Get('output-detail')
   async getOutputDetail(
     @Query('nhanVien') nhanVien: string,
     @Query('thang') thang: string,
+    @Query() query: DashboardQueryDto,
   ) {
-    return this.dashboardService.getOutputDetailByStaff(nhanVien || '', thang || '');
+    return this.dashboardService.getOutputDetailByStaff(nhanVien || '', thang || '', query.quocGiaId);
   }
 }

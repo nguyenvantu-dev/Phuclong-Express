@@ -12,7 +12,6 @@ import {
   getDashboardNewCustomers,
   getDashboardRevenue,
   getDashboardOutputDaily,
-  getDashboardOutputByStaff,
 } from '@/lib/api';
 import { DateRangeFilter } from './components/date-range-filter';
 import { DailyTrendChart } from './components/daily-trend-chart';
@@ -31,7 +30,7 @@ const getDefaultRange = () => {
 
 const fmtMoney = (v: number) => (v ?? 0).toLocaleString('vi-VN');
 const fmtKg = (v: number) =>
-  (v ?? 0).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  (v ?? 0).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
 const sumBy = <T,>(rows: T[] | undefined, key: keyof T): number =>
   (rows || []).reduce((acc, r) => acc + (Number(r[key]) || 0), 0);
 
@@ -65,12 +64,6 @@ export default function DashboardPage() {
     queryFn: () => getDashboardOutputDaily(applied.fromDate, applied.toDate),
     enabled: isAdmin,
   });
-  const staff = useQuery({
-    queryKey: ['dashboard-output-staff', applied],
-    queryFn: () => getDashboardOutputByStaff(applied.fromDate, applied.toDate),
-    enabled: isAdmin,
-  });
-
   const totals = useMemo(
     () => ({
       khMoi: sumBy(newCustomers.data, 'soKHMoi'),
@@ -136,7 +129,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Bảng nhân viên theo tháng */}
-      <StaffOutputTable data={staff.data || []} loading={staff.isLoading} />
+      <StaffOutputTable fromDate={applied.fromDate} toDate={applied.toDate} />
     </div>
   );
 }

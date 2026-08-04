@@ -668,8 +668,8 @@ export default function DebtManagementPage() {
                 return;
               }
 
-              if (!newDebt.quocGiaId) {
-                setErrorMessage('Vui lòng chọn Tuyến');
+              if (newDebt.loaiPhatSinh === 8 && !newDebt.quocGiaId) {
+                setErrorMessage('Vui lòng chọn Tuyến cho loại phát sinh Cân Kg');
                 return;
               }
 
@@ -864,7 +864,7 @@ export default function DebtManagementPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
-                  Tuyến <span className="text-red-500">*</span>
+                  Tuyến {newDebt.loaiPhatSinh === 8 && <span className="text-red-500">*</span>}
                 </label>
                 <div className="relative">
                   <select

@@ -3,17 +3,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DataTable } from '@/app/components/admin';
-import { DashboardStaffOutput, getDashboardOutputDetail } from '@/lib/api';
+import { DashboardStaffOutput, getDashboardOutputByStaff, getDashboardOutputDetail, getQuocGia } from '@/lib/api';
 import { downloadDataAsExcel } from '@/lib/excel-download';
 
 interface StaffOutputTableProps {
-  data: DashboardStaffOutput[];
-  loading?: boolean;
+  fromDate: string;
+  toDate: string;
 }
 
 const fmtInt = (v: number) => (v ?? 0).toLocaleString('vi-VN');
 const fmtKg = (v: number) =>
-  (v ?? 0).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  (v ?? 0).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
 
 const summaryColumns = [
   { key: 'nhanVien', label: 'Nhân viên' },
@@ -30,12 +30,22 @@ const detailColumns = [
   { key: 'ghiChu', label: 'Ghi chú' },
 ];
 
-export function StaffOutputTable({ data, loading }: StaffOutputTableProps) {
+export function StaffOutputTable({ fromDate, toDate }: StaffOutputTableProps) {
   const [selected, setSelected] = useState<DashboardStaffOutput | null>(null);
+  const [quocGiaId, setQuocGiaId] = useState<number | undefined>(undefined);
+
+  const countries = useQuery({ queryKey: ['quoc-gia-list'], queryFn: getQuocGia });
+
+  const staff = useQuery({
+    queryKey: ['dashboard-output-staff', fromDate, toDate, quocGiaId],
+    queryFn: () => getDashboardOutputByStaff(fromDate, toDate, quocGiaId),
+  });
+  const data = staff.data || [];
+  const loading = staff.isLoading;
 
   const detail = useQuery({
-    queryKey: ['dashboard-output-detail', selected?.nhanVien, selected?.thang],
-    queryFn: () => getDashboardOutputDetail(selected!.nhanVien, selected!.thang),
+    queryKey: ['dashboard-output-detail', selected?.nhanVien, selected?.thang, quocGiaId],
+    queryFn: () => getDashboardOutputDetail(selected!.nhanVien, selected!.thang, quocGiaId),
     enabled: !!selected,
   });
 
@@ -53,7 +63,24 @@ export function StaffOutputTable({ data, loading }: StaffOutputTableProps) {
   return (
     <>
       <div className="bg-white rounded-lg border border-[#14264b]/20 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-[#14264b] mb-3">Sản lượng nhân viên theo tháng</h3>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <h3 className="text-sm font-semibold text-[#14264b]">Sản lượng nhân viên theo tháng</h3>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-600 font-medium">Tuyến</label>
+            <select
+              value={quocGiaId ?? ''}
+              onChange={(e) => setQuocGiaId(e.target.value ? Number(e.target.value) : undefined)}
+              className="border border-[#14264b]/20 rounded px-2 py-1.5 text-sm"
+            >
+              <option value="">Tất cả tuyến</option>
+              {(countries.data || []).map((c) => (
+                <option key={c.QuocGiaID} value={c.QuocGiaID}>
+                  {c.TenQuocGia}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
         <DataTable
           columns={summaryColumns}
           data={(data || []).map((r) => ({ ...r, id: `${r.nhanVien}-${r.thang}` }))}
