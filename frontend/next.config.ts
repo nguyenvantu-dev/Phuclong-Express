@@ -32,6 +32,12 @@ const backendOrigin =
   process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api").replace(/\/api\/?$/, "");
 
+// Chat-suite (chatbot/livechat) requests to /chat-suite/* are proxied by
+// src/app/chat-suite/[...path]/route.ts, which enforces a timeout so an
+// unresponsive chat-suite backend can't stall the whole site. Don't add a
+// rewrite for /chat-suite here — it would intercept requests before they
+// reach that route handler.
+
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],

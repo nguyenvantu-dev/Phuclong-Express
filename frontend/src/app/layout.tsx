@@ -116,6 +116,12 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <Script
+          src="/chat-suite/widget.js"
+          data-site-id="phuc-long-express"
+          data-api-base="/chat-suite"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
