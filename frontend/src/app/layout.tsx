@@ -5,6 +5,7 @@ import { Montserrat } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
+import ChatSuiteWidget from "./components/chat-suite-widget";
 
 const GA_MEASUREMENT_ID = "G-68SHKY12NP";
 import {
@@ -116,12 +117,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
-        <Script
-          src="/chat-suite/widget.js"
-          data-site-id="phuc-long-express"
-          data-api-base="/chat-suite"
-          strategy="afterInteractive"
-        />
+        <ChatSuiteWidget />
       </body>
     </html>
   );

@@ -18,6 +18,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
+function getAccessTokenCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 /**
  * Auth Context Provider
  *
@@ -28,15 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if token exists in localStorage on mount
+    // localStorage's isAuthenticated flag never expires on its own, but the
+    // `accessToken` cookie (the one middleware.ts actually checks) expires
+    // after 24h. If the cookie is gone, the client must not keep claiming
+    // to be authenticated — otherwise protected-link clicks skip the login
+    // popup and go straight into middleware's hard redirect to /login.
     const token = getAccessToken();
-    if (token) {
-      // Optionally validate token with backend here
-      setIsLoading(false);
-    } else {
-      setIsLoading(false);
+    if (token && !getAccessTokenCookie()) {
+      clearStore();
     }
-  }, []);
+    setIsLoading(false);
+  }, [clearStore]);
 
   const login = async (username: string, password: string) => {
     console.log('[Login] Calling:', `${API_URL}/auth/login`);
